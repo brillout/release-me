@@ -122,7 +122,7 @@ async function releaseMe(versionNew: string | null) {
     // Fix for: (see https://github.com/yarnpkg/yarn/issues/2935#issuecomment-487020430)
     // > npm ERR! need auth You need to authorize this machine using `npm adduser`
     const env = { ...process.env, npm_config_registry: undefined }
-    await run('npm', ['publish'], { cwd, env })
+    await run('npm publish', { cwd, env })
   }
 
   async function changelog() {
@@ -132,8 +132,8 @@ async function releaseMe(versionNew: string | null) {
     //  - pnpm exec conventional-changelog --preset angular --infile CHANGELOG.md --same-file --pkg ./path/to/pkg
     const pkgDir = process.cwd()
     await run(
-      'pnpm',
       [
+        'pnpm',
         'exec',
         'conventional-changelog',
         '--preset',
@@ -153,8 +153,10 @@ async function releaseMe(versionNew: string | null) {
   }
 
   async function showPreview(pkg: { packageDir: string }) {
-    await run('git', ['diff', getChangeLogPath()])
-    await run('git', ['diff', pkg.packageDir])
+    console.log()
+    await run(`git diff ${getChangeLogPath()}`)
+    console.log()
+    await run(`git diff ${pkg.packageDir}`)
   }
 
   function askConfirmation(): Promise<void> {
@@ -173,15 +175,15 @@ async function releaseMe(versionNew: string | null) {
 
   async function gitCommit(versionNew: string) {
     const tag = `v${versionNew}`
-    await run('git', ['commit', '-am', `release: ${tag}`])
-    await run('git', ['tag', tag])
+    await run(['git', 'commit', '-am', `release: ${tag}`])
+    await run(`git tag ${tag}`)
   }
   async function gitPush() {
-    await run('git', ['push'])
-    await run('git', ['push', '--tags'])
+    await run('git push')
+    await run('git push --tags')
   }
   async function build() {
-    await run('pnpm', ['run', 'build'])
+    await run('pnpm run build')
   }
 
   function getVersion(
@@ -321,12 +323,13 @@ async function releaseMe(versionNew: string | null) {
     devDependencies: Record<string, string>
   }
 
-  async function run(cmd: string, args: string[], { cwd = process.cwd(), env = process.env } = {}) {
+  async function run(cmd: string | string[], { cwd = process.cwd(), env = process.env } = {}) {
     const stdio = 'inherit'
-    await execa(cmd, args, { cwd, stdio, env })
+    const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
+    await execa(command, args, { cwd, stdio, env })
   }
-  async function run__return(cmd: string, { cwd = process.cwd() } = {}): Promise<string> {
-    const [command, ...args] = cmd.split(' ')
+  async function run__return(cmd: string | string[], { cwd = process.cwd() } = {}): Promise<string> {
+    const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
     const { stdout } = await execa(command, args, { cwd })
     return stdout
   }
