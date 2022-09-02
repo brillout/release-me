@@ -30,9 +30,12 @@ async function releaseMe(versionNew: string | null) {
   updatePackageJsonVersion(pkg, versionNew)
 
   await updateDependencies(pkg, versionNew, versionOld)
-  bumpBoilerplateVersion(pkg)
-  /*
+  const boilerplatePackageJson = await findBoilerplatePacakge(pkg)
+  if (boilerplatePackageJson) {
+    bumpBoilerplateVersion(boilerplatePackageJson)
+  }
 
+  /*
   await bumpPnpmLockFile()
 
   await changelog()
@@ -190,9 +193,7 @@ async function releaseMe(versionNew: string | null) {
     })
   }
 
-  async function bumpBoilerplateVersion(pkg: { packageName: string }) {
-    const packageJsonFile = await findBoilerplatePacakge(pkg)
-    if (!packageJsonFile) return
+  async function bumpBoilerplateVersion(packageJsonFile: string) {
     assert(path.isAbsolute(packageJsonFile))
     const packageJson = require(packageJsonFile)
     assert(packageJson.version.startsWith('0.0.'))
