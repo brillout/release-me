@@ -9,6 +9,7 @@ import * as path from 'path'
 // import yaml from 'js-yaml'
 import readline from 'readline'
 import pc from 'picocolors'
+import conventionalChangelog from 'conventional-changelog'
 
 const DEV_MODE = process.argv.includes('--dev')
 
@@ -129,11 +130,17 @@ async function releaseMe(versionTarget: VersionTarget) {
   }
 
   async function changelog() {
+    const readable = conventionalChangelog({
+      preset: 'angular'
+    })
+    const changelog = await streamToString(readable)
+    prerendFile(getChangeLogPath(), changelog)
+    /*
+    const pkgDir = process.cwd()
     // Usage examples:
     //  - pnpm exec conventional-changelog --preset angular
     //  - pnpm exec conventional-changelog --preset angular --infile CHANGELOG.md --same-file
     //  - pnpm exec conventional-changelog --preset angular --infile CHANGELOG.md --same-file --pkg ./path/to/pkg
-    const pkgDir = process.cwd()
     await run(
       [
         'pnpm',
@@ -149,6 +156,29 @@ async function releaseMe(versionTarget: VersionTarget) {
       ],
       { cwd: pkgDir }
     )
+    */
+  }
+
+  function streamToString(readable: ReturnType<typeof conventionalChangelog>): Promise<string> {
+    let data = ''
+    readable.on('data', (chunk) => (data += chunk))
+
+    let resolve: (data: string) => void
+    const promise = new Promise<string>((r) => (resolve = r))
+    readable.on('end', () => {
+      resolve(data)
+    })
+
+    return promise
+  }
+
+  function prerendFile(filePath: string, prerendString: string) {
+    let content = ''
+    try {
+      content = readFileSync(filePath, 'utf8')
+    } catch {}
+    content = prerendString + content
+    writeFileSync(filePath, content)
   }
 
   function getChangeLogPath() {
@@ -156,12 +186,17 @@ async function releaseMe(versionTarget: VersionTarget) {
   }
 
   async function showPreview(pkg: { packageDir: string }) {
+    await showCmd('git status')
     await diffAndLog(getChangeLogPath())
-    await diffAndLog(pkg.packageDir)
-    async function diffAndLog(dirPath: string) {
+    await diffAndLog(path.join(pkg.packageDir, 'package.json'))
+    async function diffAndLog(filePath: string) {
+      showCmd(`git diff ${filePath}`, `git --no-pager diff ${filePath}`)
+    }
+    async function showCmd(cmd: string, cmdReal?: string) {
+      cmdReal ??= cmd
       console.log()
-      console.log(pc.bold(pc.blue(`$ git diff ${dirPath}`)))
-      await run(`git --no-pager diff ${dirPath}`)
+      console.log(pc.bold(pc.blue(`$ ${cmd}`)))
+      await run(cmdReal)
     }
   }
 
