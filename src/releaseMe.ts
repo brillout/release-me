@@ -9,7 +9,7 @@ import * as path from 'path'
 import yaml from 'js-yaml'
 import readline from 'readline'
 
-const DEV_MODE = true
+const DEV_MODE = process.argv.includes('--dev')
 
 async function releaseMe(versionNew: string | null) {
   const projectRootDir = (await run__return('git rev-parse --show-toplevel', { cwd: process.cwd() })).trim()
@@ -37,17 +37,17 @@ async function releaseMe(versionNew: string | null) {
   await showPreview(pkg)
   await askConfirmation()
 
-  /*
   await bumpPnpmLockFile()
-  await build()
 
   await gitCommit(versionNew)
+
+  await build()
+
   await publish()
-  if( boilerplatePackageJson) {
-  await publishBoilerplates(boilerplatePackageJson)
+  if (boilerplatePackageJson) {
+    await publishBoilerplates(boilerplatePackageJson)
   }
   await gitPush()
-  */
 
   async function findPackage() {
     const cwd = process.cwd()
