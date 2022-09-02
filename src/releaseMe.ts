@@ -6,7 +6,7 @@ import assert from 'assert'
 import * as semver from 'semver'
 import { runCommand } from './utils'
 import * as path from 'path'
-import yaml from 'js-yaml'
+// import yaml from 'js-yaml'
 import readline from 'readline'
 import pc from 'picocolors'
 
@@ -47,7 +47,10 @@ async function releaseMe(versionTarget: VersionTarget) {
   if (boilerplatePackageJson) {
     await publishBoilerplates(boilerplatePackageJson)
   }
+
   await gitPush()
+
+  return
 
   async function findPackage() {
     const cwd = process.cwd()
@@ -104,11 +107,13 @@ async function releaseMe(versionTarget: VersionTarget) {
     const fileParsed: Record<string, unknown> = JSON.parse(fileContent)
     return { packageJson: fileParsed, packageJsonFile: filePath }
   }
+  /*
   function readYaml(filePathRelative: string, { cwd }: { cwd: string }): Record<string, unknown> {
     const { fileContent } = readFile(filePathRelative, { cwd })
     const fileParsed: Record<string, unknown> = yaml.load(fileContent) as any
     return fileParsed
   }
+  */
 
   async function publish() {
     await npmPublish(process.cwd())
@@ -170,6 +175,7 @@ async function releaseMe(versionTarget: VersionTarget) {
     console.log()
     rl.question(pc.blue(pc.bold('Press <ENTER> to confirm release.')), () => {
       resolve()
+      rl.close()
     })
     return promise
   }
