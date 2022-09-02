@@ -1,5 +1,5 @@
 {
-  "name": "@brillout/release",
+  "name": "@brillout/release-me",
   "version": "0.0.1",
   "scripts": {
     "// === Dev ===": "",
@@ -18,7 +18,7 @@
   "files": [
     "dist/"
   ],
-  "repository": "github:brillout/release",
+  "repository": "github:brillout/release-me",
   "license": "MIT",
   "publishConfig": {
     "access": "public"

@@ -1,8 +1,8 @@
-import { release } from './release'
+import { releaseMe } from './releaseMe'
 
 const { version } = parseArgs()
 
-release(version)
+releaseMe(version)
 
 function parseArgs() {
   const args = process.argv.slice(2)
@@ -17,8 +17,8 @@ function parseArgs() {
     [
       // prettier-ignore
       'Commands:',
-      '  $ pnpm exec release',
-      '  $ pnpm exec release ${version}'
+      '  $ pnpm exec release-me',
+      '  $ pnpm exec release-me ${version}'
     ].join('\n')
   )
   process.exit(0)
