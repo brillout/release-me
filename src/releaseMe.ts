@@ -15,13 +15,11 @@ async function releaseMe(versionNew: string | null) {
   const projectRootDir = (await run__return('git rev-parse --show-toplevel', { cwd: process.cwd() })).trim()
 
   const pkg = await findPackage()
-  console.log(pkg)
 
   const versions = getVersion(pkg, versionNew)
   const { versionOld } = versions
   versionNew = versions.versionNew
   assert(versionNew)
-  console.log(versionOld, versionNew)
 
   await updateVersionMacro(versionOld, versionNew)
 
@@ -153,21 +151,29 @@ async function releaseMe(versionNew: string | null) {
   }
 
   async function showPreview(pkg: { packageDir: string }) {
-    console.log()
-    await run(`git diff ${getChangeLogPath()}`)
-    console.log()
-    await run(`git diff ${pkg.packageDir}`)
+    {
+      const cmd = `git diff ${getChangeLogPath()}`
+      console.log()
+      console.log(`$ ${cmd}`)
+      await run(cmd)
+    }
+    {
+      const cmd = `git diff ${pkg.packageDir}`
+      console.log()
+      console.log(`$ ${cmd}`)
+      await run(cmd)
+    }
   }
 
   function askConfirmation(): Promise<void> {
-    const readline = require('readline')
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
     })
     let resolve: () => void
     const promise = new Promise<void>((r) => (resolve = r))
-    rl.question('Press <enter> to confirm release.', () => {
+    console.log()
+    rl.question('Press <ENTER> to confirm release.', () => {
       resolve()
     })
     return promise
