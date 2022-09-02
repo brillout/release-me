@@ -14,11 +14,14 @@ import yaml from 'js-yaml'
 
 const DEV_MODE = true
 
-async function releaseMe(v: string | null) {
+async function releaseMe(versionNew: string | null) {
   const pkg = await findPackage()
   console.log(pkg)
 
-  const { versionOld, versionNew } = getVersion(pkg)
+  const versions = getVersion(pkg, versionNew)
+  const { versionOld } = versions
+  versionNew = versions.versionNew
+  assert(versionNew)
   console.log(versionOld, versionNew)
 
   await updateVersionMacro(versionOld, versionNew)
@@ -27,7 +30,7 @@ async function releaseMe(v: string | null) {
   updatePackageJsonVersion(pkg, versionNew)
 
   await updateDependencies(pkg, versionNew, versionOld)
-  return
+  /*
   bumpBoilerplateVersion()
 
   await bumpPnpmLockFile()
@@ -41,6 +44,7 @@ async function releaseMe(v: string | null) {
 
   await gitCommit(versionNew)
   await gitPush()
+  */
 
   async function findPackage() {
     const cwd = process.cwd()
@@ -147,12 +151,10 @@ async function releaseMe(v: string | null) {
     await run('pnpm', ['run', 'build'])
   }
 
-  function getVersion(pkg: { packageDir: string }): { versionNew: string; versionOld: string } {
+  function getVersion(pkg: { packageDir: string }, versionNew: string | null): { versionNew: string; versionOld: string } {
     const packageJson = require(`${pkg.packageDir}/package.json`) as PackageJson
     const versionOld = packageJson.version
     assert(versionOld)
-    const cliArgs = getCliArgs()
-    let versionNew = cliArgs[0]
     if (!versionNew) {
       versionNew = semver.inc(versionOld, 'patch') as string
     }
@@ -275,11 +277,5 @@ async function releaseMe(v: string | null) {
     const [command, ...args] = cmd.split(' ')
     const { stdout } = await execa(command, args, { cwd })
     return stdout
-  }
-
-  function getCliArgs(): string[] {
-    const args = process.argv.slice(2)
-    assert(args.length <= 1)
-    return args
   }
 }
