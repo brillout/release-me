@@ -7,6 +7,7 @@ import * as semver from 'semver'
 import { runCommand } from './utils'
 import * as path from 'path'
 import yaml from 'js-yaml'
+import readline from 'readline'
 
 const DEV_MODE = true
 
@@ -35,7 +36,8 @@ async function releaseMe(versionNew: string | null) {
 
   await changelog()
 
-  await previewAndConfirm()
+  await showPreview(pkg)
+  await askConfirmation()
 
   /*
   await bumpPnpmLockFile()
@@ -61,6 +63,7 @@ async function releaseMe(versionNew: string | null) {
       }
     }
 
+    /* Following is commented out because we want to ensure user always runs `pnpm exec release-me` at the package's root directory.
     // ${packagePath}/package.json#name
     if (files.includes('pnpm-workspace.yaml')) {
       const pnpmWorkspaceYaml = readYaml('pnpm-workspace.yaml', { cwd })
@@ -76,6 +79,7 @@ async function releaseMe(versionNew: string | null) {
         }
       }
     }
+    */
 
     throw new Error("Couldn't find package")
   }
@@ -126,6 +130,7 @@ async function releaseMe(versionNew: string | null) {
     //  - pnpm exec conventional-changelog --preset angular
     //  - pnpm exec conventional-changelog --preset angular --infile CHANGELOG.md --same-file
     //  - pnpm exec conventional-changelog --preset angular --infile CHANGELOG.md --same-file --pkg ./path/to/pkg
+    const pkgDir = process.cwd()
     await run(
       'pnpm',
       [
@@ -134,17 +139,36 @@ async function releaseMe(versionNew: string | null) {
         '--preset',
         'angular',
         '--infile',
-        'CHANGELOG.md',
+        getChangeLogPath(),
         '--same-file',
         '--pkg',
-        projectRootDir
+        pkgDir
       ],
-      { cwd: process.cwd() }
+      { cwd: pkgDir }
     )
   }
 
-  async function previewAndConfirm() {
-    await run('git', ['diff'])
+  function getChangeLogPath() {
+    return path.join(projectRootDir, 'CHANGELOG.md')
+  }
+
+  async function showPreview(pkg: { packageDir: string }) {
+    await run('git', ['diff', getChangeLogPath()])
+    await run('git', ['diff', pkg.packageDir])
+  }
+
+  function askConfirmation(): Promise<void> {
+    const readline = require('readline')
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    })
+    let resolve: () => void
+    const promise = new Promise<void>((r) => (resolve = r))
+    rl.question('Press <enter> to confirm release.', () => {
+      resolve()
+    })
+    return promise
   }
 
   async function gitCommit(versionNew: string) {
