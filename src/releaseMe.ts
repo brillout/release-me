@@ -48,7 +48,7 @@ async function releaseMe(versionNew: string | null) {
 
   async function findPackage() {
     const cwd = process.cwd()
-    const files = await getFiles()
+    const files = await getFilesCwd(cwd)
 
     // package.json#name
     if (files.includes('package.json')) {
@@ -135,7 +135,7 @@ async function releaseMe(versionNew: string | null) {
       'CHANGELOG.md',
       '--same-file',
       '--pkg',
-      DIR_SRC,
+      DIR_SRC
     ])
   }
   async function gitCommit(versionNew: string) {
@@ -151,7 +151,10 @@ async function releaseMe(versionNew: string | null) {
     await run('pnpm', ['run', 'build'])
   }
 
-  function getVersion(pkg: { packageDir: string }, versionNew: string | null): { versionNew: string; versionOld: string } {
+  function getVersion(
+    pkg: { packageDir: string },
+    versionNew: string | null
+  ): { versionNew: string; versionOld: string } {
     const packageJson = require(`${pkg.packageDir}/package.json`) as PackageJson
     const versionOld = packageJson.version
     assert(versionOld)
@@ -163,13 +166,11 @@ async function releaseMe(versionNew: string | null) {
     return { versionNew, versionOld }
   }
   async function updateVersionMacro(versionOld: string, versionNew: string) {
-    const cwd = process.cwd()
-    const files = await getFiles()
-    files
+    const filesAll = await getFilesAll()
+    filesAll
       .filter((f) => f.endsWith('/projectInfo.ts'))
-      .forEach((filePathRelative) => {
-        assert(filePathRelative.endsWith('/projectInfo.ts'))
-        const filePath = `${cwd}/${filePathRelative}`
+      .forEach((filePath) => {
+        assert(path.isAbsolute(filePath))
         const getCodeSnippet = (version: string) => `const PROJECT_VERSION = '${version}'`
         const codeSnippetOld = getCodeSnippet(versionOld)
         const codeSnippetNew = getCodeSnippet(versionNew)
@@ -213,41 +214,45 @@ async function releaseMe(versionNew: string | null) {
     }
   }
 
-  async function getFiles(): Promise<string[]> {
-    const cwd = process.cwd()
+  async function getFilesCwd(cwd: string): Promise<string[]> {
     const stdout = await run__return('git ls-files', { cwd })
     const files = stdout.split(/\s/)
     return files
   }
 
-  async function updateDependencies(pkg: { packageName: string }, versionNew: string, versionOld: string) {
-    const files = await getFiles()
-    const packageJsonFiles = files
-      .filter((f) => f.endsWith('package.json'))
-      .map((f) => require.resolve(path.join(DIR_ROOT, f)))
+  async function getFilesAll(): Promise<string[]> {
+    const projectRootDir = (await run__return('git rev-parse --show-toplevel')).trim()
+    let filesAll = await getFilesCwd(projectRootDir)
+    filesAll = filesAll.map((filePathRelative) => path.join(projectRootDir, filePathRelative))
+    return filesAll
+  }
 
-    for (const packageJsonFile of packageJsonFiles) {
-      modifyPackageJson(packageJsonFile, (packageJson) => {
-        let hasChanged = false
-        ;(['dependencies', 'devDependencies'] as const).forEach((deps) => {
-          const version = packageJson[deps]?.[pkg.packageName];
-          if (!version) {
-            return
+  async function updateDependencies(pkg: { packageName: string }, versionNew: string, versionOld: string) {
+    const filesAll = await getFilesAll()
+    filesAll
+      .filter((f) => f.endsWith('package.json'))
+      .forEach((packageJsonFile) => {
+        modifyPackageJson(packageJsonFile, (packageJson) => {
+          let hasChanged = false
+          ;(['dependencies', 'devDependencies'] as const).forEach((deps) => {
+            const version = packageJson[deps]?.[pkg.packageName]
+            if (!version) {
+              return
+            }
+            hasChanged = true
+            const hasRange = version.startsWith('^')
+            const versionOld_range = !hasRange ? versionOld : `^${versionOld}`
+            const versionNew_range = !hasRange ? versionNew : `^${versionNew}`
+            if (!DEV_MODE) {
+              assert.strictEqual(version, versionOld_range)
+            }
+            packageJson[deps][pkg.packageName] = versionNew_range
+          })
+          if (!hasChanged) {
+            return 'SKIP'
           }
-          hasChanged = true
-          const hasRange = version.startsWith('^')
-          const versionOld_range = !hasRange ? versionOld : `^${versionOld}`
-          const versionNew_range = !hasRange ? versionNew : `^${versionNew}`
-          if (!DEV_MODE) {
-            assert.strictEqual(version, versionOld_range)
-          }
-          packageJson[deps][pkg.packageName] = versionNew_range
         })
-        if (!hasChanged) {
-          return 'SKIP'
-        }
       })
-    }
   }
 
   function modifyPackageJson(pkgPath: string, updater: (pkg: PackageJson) => void | 'SKIP') {
