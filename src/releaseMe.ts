@@ -30,8 +30,8 @@ async function releaseMe(versionNew: string | null) {
   updatePackageJsonVersion(pkg, versionNew)
 
   await updateDependencies(pkg, versionNew, versionOld)
+  bumpBoilerplateVersion(pkg)
   /*
-  bumpBoilerplateVersion()
 
   await bumpPnpmLockFile()
 
@@ -190,18 +190,32 @@ async function releaseMe(versionNew: string | null) {
     })
   }
 
-  function bumpBoilerplateVersion() {
-    if (!DIR_BOILERPLATES) {
-      return
-    }
-    const pkgPath = require.resolve(`${DIR_BOILERPLATES}/package.json`)
-    const pkg = require(pkgPath)
-    assert(pkg.version.startsWith('0.0.'))
-    const versionParts = pkg.version.split('.')
+  async function bumpBoilerplateVersion(pkg: { packageName: string }) {
+    const packageJsonFile = await findBoilerplatePacakge(pkg)
+    if (!packageJsonFile) return
+    assert(path.isAbsolute(packageJsonFile))
+    const packageJson = require(packageJsonFile)
+    assert(packageJson.version.startsWith('0.0.'))
+    const versionParts = packageJson.version.split('.')
     assert(versionParts.length === 3)
     const newPatch = parseInt(versionParts[2], 10) + 1
-    pkg.version = `0.0.${newPatch}`
-    writePackageJson(pkgPath, pkg)
+    packageJson.version = `0.0.${newPatch}`
+    writePackageJson(packageJsonFile, packageJson)
+  }
+
+  async function findBoilerplatePacakge(pkg: { packageName: string }) {
+    const filesAll = await getFilesAll()
+    const packageJsonFiles = filesAll.filter((f) => f.endsWith('package.json'))
+    for (const packageJsonFile of packageJsonFiles) {
+      const packageJson = require(packageJsonFile) as Record<string, unknown>
+      const { name } = packageJson
+      if (!name) continue
+      assert(typeof name === 'string')
+      if (name === `create-${pkg.packageName}`) {
+        return packageJsonFile
+      }
+    }
+    return null
   }
 
   async function bumpPnpmLockFile() {
@@ -221,7 +235,7 @@ async function releaseMe(versionNew: string | null) {
   }
 
   async function getFilesAll(): Promise<string[]> {
-    const projectRootDir = (await run__return('git rev-parse --show-toplevel')).trim()
+    const projectRootDir = (await run__return('git rev-parse --show-toplevel', { cwd: process.cwd() })).trim()
     let filesAll = await getFilesCwd(projectRootDir)
     filesAll = filesAll.map((filePathRelative) => path.join(projectRootDir, filePathRelative))
     return filesAll
