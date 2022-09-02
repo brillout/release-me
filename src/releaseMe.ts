@@ -12,15 +12,14 @@ import pc from 'picocolors'
 
 const DEV_MODE = process.argv.includes('--dev')
 
-async function releaseMe(versionNew: string | null) {
+type VersionTarget = null | 'minor' | 'patch' | 'major' | string
+
+async function releaseMe(versionTarget: VersionTarget) {
   const projectRootDir = (await run__return('git rev-parse --show-toplevel', { cwd: process.cwd() })).trim()
 
   const pkg = await findPackage()
 
-  const versions = getVersion(pkg, versionNew)
-  const { versionOld } = versions
-  versionNew = versions.versionNew
-  assert(versionNew)
+  const { versionOld, versionNew } = getVersion(pkg, versionTarget)
 
   await updateVersionMacro(versionOld, versionNew)
 
@@ -190,16 +189,23 @@ async function releaseMe(versionNew: string | null) {
 
   function getVersion(
     pkg: { packageDir: string },
-    versionNew: string | null
+    versionTarget: VersionTarget
   ): { versionNew: string; versionOld: string } {
     const packageJson = require(`${pkg.packageDir}/package.json`) as PackageJson
     const versionOld = packageJson.version
     assert(versionOld)
-    if (!versionNew) {
-      versionNew = semver.inc(versionOld, 'patch') as string
+    if (!versionTarget) {
+      versionTarget = 'patch'
     }
-    assert(versionNew.startsWith('0.'))
-    assert(versionOld.startsWith('0.'))
+    let versionNew: string
+    if (versionTarget === 'patch' || versionTarget === 'minor' || versionTarget === 'major') {
+      versionNew = semver.inc(versionOld, versionTarget) as string
+    } else {
+      if (versionTarget.startsWith('v')) {
+        versionTarget = versionTarget.slice(1)
+      }
+      versionNew = versionTarget
+    }
     return { versionNew, versionOld }
   }
   async function updateVersionMacro(versionOld: string, versionNew: string) {

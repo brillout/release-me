@@ -1,27 +1,27 @@
 import { releaseMe } from './releaseMe'
 
-const { updateTarget } = parseArgs()
+const { versionTarget } = parseArgs()
 
-releaseMe(updateTarget)
+releaseMe(versionTarget)
 
 function parseArgs() {
   const args = process.argv.slice(2)
-  if (args.length === 0) {
-    return { updateTarget: null }
+  if (args.length !== 1) {
+    showUsage()
+    process.exit(0)
   }
-  if (args.length === 1) {
-    const updateTarget = args[0]
-    return { updateTarget }
-  }
+  const versionTarget = args[0]
+  return { versionTarget }
+}
+
+function showUsage() {
   console.log(
     [
-      // prettier-ignore
       'Commands:',
       '  $ pnpm exec release-me patch',
       '  $ pnpm exec release-me minor',
       '  $ pnpm exec release-me major',
-      '  $ pnpm exec release-me ${version}',
+      '  $ pnpm exec release-me ${version}'
     ].join('\n')
   )
-  process.exit(0)
 }
