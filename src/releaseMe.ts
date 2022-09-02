@@ -299,7 +299,12 @@ async function releaseMe(versionNew: string | null) {
             const versionOld_range = !hasRange ? versionOld : `^${versionOld}`
             const versionNew_range = !hasRange ? versionNew : `^${versionNew}`
             if (!DEV_MODE) {
-              assert.strictEqual(version, versionOld_range)
+              try {
+                assert.strictEqual(version, versionOld_range)
+              } catch (err) {
+                console.log(`Wrong ${pkg.packageName} version in ${packageJsonFile}`)
+                throw err
+              }
             }
             packageJson[deps][pkg.packageName] = versionNew_range
           })
