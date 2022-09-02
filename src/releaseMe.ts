@@ -3,10 +3,6 @@ export { releaseMe }
 import execa from 'execa'
 import { writeFileSync, readFileSync } from 'fs'
 import assert from 'assert'
-//import { DIR_BOILERPLATES, DIR_SRC, DIR_ROOT } from './helpers/locations'
-const DIR_BOILERPLATES = 'TODO'
-const DIR_SRC = 'TODO'
-const DIR_ROOT = 'TODO'
 import * as semver from 'semver'
 import { runCommand } from './utils'
 import * as path from 'path'
@@ -15,6 +11,8 @@ import yaml from 'js-yaml'
 const DEV_MODE = true
 
 async function releaseMe(versionNew: string | null) {
+  const projectRootDir = (await run__return('git rev-parse --show-toplevel', { cwd: process.cwd() })).trim()
+
   const pkg = await findPackage()
   console.log(pkg)
 
@@ -35,17 +33,19 @@ async function releaseMe(versionNew: string | null) {
     bumpBoilerplateVersion(boilerplatePackageJson)
   }
 
-  /*
-  await bumpPnpmLockFile()
-
   await changelog()
 
+  await previewAndConfirm()
+
+  /*
+  await bumpPnpmLockFile()
   await build()
 
-  await publish()
-  await publishBoilerplates()
-
   await gitCommit(versionNew)
+  await publish()
+  if( boilerplatePackageJson) {
+  await publishBoilerplates(boilerplatePackageJson)
+  }
   await gitPush()
   */
 
@@ -109,13 +109,10 @@ async function releaseMe(versionNew: string | null) {
   }
 
   async function publish() {
-    await npmPublish(DIR_SRC)
+    await npmPublish(process.cwd())
   }
-  async function publishBoilerplates() {
-    if (!DIR_BOILERPLATES) {
-      return
-    }
-    await npmPublish(DIR_BOILERPLATES)
+  async function publishBoilerplates(boilerplatePackageJson: string) {
+    await npmPublish(path.dirname(boilerplatePackageJson))
   }
   async function npmPublish(cwd: string) {
     // Fix for: (see https://github.com/yarnpkg/yarn/issues/2935#issuecomment-487020430)
@@ -129,18 +126,27 @@ async function releaseMe(versionNew: string | null) {
     //  - pnpm exec conventional-changelog --preset angular
     //  - pnpm exec conventional-changelog --preset angular --infile CHANGELOG.md --same-file
     //  - pnpm exec conventional-changelog --preset angular --infile CHANGELOG.md --same-file --pkg ./path/to/pkg
-    await run('pnpm', [
-      'exec',
-      'conventional-changelog',
-      '--preset',
-      'angular',
-      '--infile',
-      'CHANGELOG.md',
-      '--same-file',
-      '--pkg',
-      DIR_SRC
-    ])
+    await run(
+      'pnpm',
+      [
+        'exec',
+        'conventional-changelog',
+        '--preset',
+        'angular',
+        '--infile',
+        'CHANGELOG.md',
+        '--same-file',
+        '--pkg',
+        projectRootDir
+      ],
+      { cwd: process.cwd() }
+    )
   }
+
+  async function previewAndConfirm() {
+    await run('git', ['diff'])
+  }
+
   async function gitCommit(versionNew: string) {
     const tag = `v${versionNew}`
     await run('git', ['commit', '-am', `release: ${tag}`])
@@ -220,8 +226,11 @@ async function releaseMe(versionNew: string | null) {
   }
 
   async function bumpPnpmLockFile() {
+    if (DEV_MODE) {
+      return
+    }
     try {
-      await runCommand('pnpm install', { cwd: DIR_ROOT, timeout: 10 * 60 * 1000 })
+      await runCommand('pnpm install', { cwd: projectRootDir, timeout: 10 * 60 * 1000 })
     } catch (err) {
       if (!(err as Error).message.includes('ERR_PNPM_PEER_DEP_ISSUES')) {
         throw err
@@ -236,7 +245,6 @@ async function releaseMe(versionNew: string | null) {
   }
 
   async function getFilesAll(): Promise<string[]> {
-    const projectRootDir = (await run__return('git rev-parse --show-toplevel', { cwd: process.cwd() })).trim()
     let filesAll = await getFilesCwd(projectRootDir)
     filesAll = filesAll.map((filePathRelative) => path.join(projectRootDir, filePathRelative))
     return filesAll
@@ -289,11 +297,11 @@ async function releaseMe(versionNew: string | null) {
     devDependencies: Record<string, string>
   }
 
-  async function run(cmd: string, args: string[], { cwd = DIR_ROOT, env = process.env } = {}) {
+  async function run(cmd: string, args: string[], { cwd = process.cwd(), env = process.env } = {}) {
     const stdio = 'inherit'
     await execa(cmd, args, { cwd, stdio, env })
   }
-  async function run__return(cmd: string, { cwd = DIR_ROOT } = {}): Promise<string> {
+  async function run__return(cmd: string, { cwd = process.cwd() } = {}): Promise<string> {
     const [command, ...args] = cmd.split(' ')
     const { stdout } = await execa(command, args, { cwd })
     return stdout
