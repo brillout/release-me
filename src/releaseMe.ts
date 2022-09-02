@@ -8,6 +8,7 @@ import { runCommand } from './utils'
 import * as path from 'path'
 import yaml from 'js-yaml'
 import readline from 'readline'
+import pc from 'picocolors'
 
 const DEV_MODE = process.argv.includes('--dev')
 
@@ -151,17 +152,12 @@ async function releaseMe(versionNew: string | null) {
   }
 
   async function showPreview(pkg: { packageDir: string }) {
-    {
-      const cmd = `git diff ${getChangeLogPath()}`
+    await diffAndLog(getChangeLogPath())
+    await diffAndLog(pkg.packageDir)
+    async function diffAndLog(dirPath: string) {
       console.log()
-      console.log(`$ ${cmd}`)
-      await run(cmd)
-    }
-    {
-      const cmd = `git diff ${pkg.packageDir}`
-      console.log()
-      console.log(`$ ${cmd}`)
-      await run(cmd)
+      console.log(pc.bold(pc.blue(`$ git diff ${dirPath}`)))
+      await run(`git --no-pager diff ${dirPath}`)
     }
   }
 
@@ -173,7 +169,7 @@ async function releaseMe(versionNew: string | null) {
     let resolve: () => void
     const promise = new Promise<void>((r) => (resolve = r))
     console.log()
-    rl.question('Press <ENTER> to confirm release.', () => {
+    rl.question(pc.blue(pc.bold('Press <ENTER> to confirm release.')), () => {
       resolve()
     })
     return promise
