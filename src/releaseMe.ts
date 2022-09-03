@@ -217,6 +217,7 @@ async function releaseMe(versionTarget: VersionTarget) {
 
   async function gitCommit(versionNew: string) {
     const tag = `v${versionNew}`
+    await run('git add .', { cwd: projectRootDir })
     await run(['git', 'commit', '-am', `release: ${tag}`])
     await run(`git tag ${tag}`)
   }
