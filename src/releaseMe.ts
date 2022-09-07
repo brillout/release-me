@@ -190,7 +190,7 @@ async function releaseMe(versionTarget: VersionTarget) {
     await diffAndLog(getChangeLogPath())
     await diffAndLog(path.join(pkg.packageDir, 'package.json'))
     async function diffAndLog(filePath: string) {
-      showCmd(`git diff ${filePath}`, `git --no-pager diff ${filePath}`)
+      await showCmd(`git diff ${filePath}`, `git --no-pager diff ${filePath}`)
     }
     async function showCmd(cmd: string, cmdReal?: string) {
       cmdReal ??= cmd
