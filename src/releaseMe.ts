@@ -253,7 +253,7 @@ async function releaseMe(versionTarget: VersionTarget) {
   async function updateVersionMacro(versionOld: string, versionNew: string) {
     const filesAll = await getFilesAll()
     filesAll
-      .filter((f) => f.endsWith('/projectInfo.ts'))
+      .filter((f) => f.endsWith('/projectInfo.ts') || f.endsWith('/projectInfo.tsx'))
       .forEach((filePath) => {
         assert(path.isAbsolute(filePath))
         const getCodeSnippet = (version: string) => `const PROJECT_VERSION = '${version}'`
