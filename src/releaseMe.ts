@@ -342,15 +342,17 @@ async function releaseMe(versionTarget: VersionTarget) {
             const hasRange = version.startsWith('^')
             const versionOld_range = !hasRange ? versionOld : `^${versionOld}`
             const versionNew_range = !hasRange ? versionNew : `^${versionNew}`
-            if (!DEV_MODE) {
-              try {
-                assert.strictEqual(version, versionOld_range)
-              } catch (err) {
-                console.log(`Wrong ${pkg.packageName} version in ${packageJsonFile}`)
-                throw err
+            if (!version.startsWith('link:')) {
+              if (!DEV_MODE) {
+                try {
+                  assert.strictEqual(version, versionOld_range)
+                } catch (err) {
+                  console.log(`Wrong ${pkg.packageName} version in ${packageJsonFile}`)
+                  throw err
+                }
               }
+              packageJson[deps][pkg.packageName] = versionNew_range
             }
-            packageJson[deps][pkg.packageName] = versionNew_range
           })
           if (!hasChanged) {
             return 'SKIP'
