@@ -27,11 +27,11 @@ function showUsage() {
   console.log(
     [
       'Commands:',
-      '  $ pnpm exec release-me patch',
-      '  $ pnpm exec release-me minor',
-      '  $ pnpm exec release-me major',
-      '  $ pnpm exec release-me experiment',
-      '  $ pnpm exec release-me v${string}'
+      '  $ pnpm exec release-me patch # bump patch semver',
+      '  $ pnpm exec release-me minor # bump minor semver',
+      '  $ pnpm exec release-me major # bump major semver',
+      '  $ pnpm exec release-me draft # experimental release ',
+      '  $ pnpm exec release-me v${major}.${minor}.${patch} # release specific version'
     ].join('\n')
   )
 }

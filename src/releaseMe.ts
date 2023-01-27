@@ -16,16 +16,26 @@ import conventionalChangelog from 'conventional-changelog'
 
 const DEV_MODE = process.argv.includes('--dev')
 
-const releaseTypes = ['minor', 'patch', 'major'] as const
+const releaseTypes = ['minor', 'patch', 'major', 'draft'] as const
 type ReleaseType = typeof releaseTypes[number]
 type ReleaseTarget = ReleaseType | `v${string}`
 
 async function releaseMe(releaseTarget: ReleaseTarget) {
+  await abortIfUncommitedChanges()
+
   const projectRootDir = (await run__return('git rev-parse --show-toplevel', { cwd: process.cwd() })).trim()
 
   const pkg = await findPackage()
 
-  const { versionOld, versionNew } = getVersion(pkg, releaseTarget)
+  const { versionOld, versionNew, isDraft } = getVersion(pkg, releaseTarget)
+
+  if (isDraft) {
+    updatePackageJsonVersion(pkg, versionNew)
+    await build()
+    await publishDraft()
+    await undoChanges()
+    return
+  }
 
   await updateVersionMacro(versionOld, versionNew)
 
@@ -124,14 +134,31 @@ async function releaseMe(releaseTarget: ReleaseTarget) {
   async function publish() {
     await npmPublish(process.cwd())
   }
+  async function publishDraft() {
+    const cwd = process.cwd()
+    await npmPublish(cwd, 'draft')
+    await removeNpmTag(cwd, 'draft')
+  }
   async function publishBoilerplates(boilerplatePackageJson: string) {
     await npmPublish(path.dirname(boilerplatePackageJson))
   }
-  async function npmPublish(cwd: string) {
-    // Fix for: (see https://github.com/yarnpkg/yarn/issues/2935#issuecomment-487020430)
-    // > npm ERR! need auth You need to authorize this machine using `npm adduser`
-    const env = { ...process.env, npm_config_registry: undefined }
-    await run('npm publish', { cwd, env })
+  async function npmPublish(cwd: string, tag?: string) {
+    const env = getNpmFix()
+    let cmd = 'npm publish'
+    if (tag) {
+      cmd = `${cmd} --tag ${tag}`
+    }
+    await run(cmd, { cwd, env })
+  }
+  async function removeNpmTag(cwd: string, tag: string) {
+    const env = getNpmFix()
+    await run(`npm dist-tag rm ${tag}`, { cwd, env })
+  }
+
+  // Fix for: (see https://github.com/yarnpkg/yarn/issues/2935#issuecomment-487020430)
+  // > npm ERR! need auth You need to authorize this machine using `npm adduser`
+  function getNpmFix() {
+    return { ...process.env, npm_config_registry: undefined }
   }
 
   async function changelog() {
@@ -237,24 +264,24 @@ async function releaseMe(releaseTarget: ReleaseTarget) {
   function getVersion(
     pkg: { packageDir: string },
     releaseTarget: ReleaseTarget
-  ): { versionNew: string; versionOld: string } {
+  ): { versionNew: string; versionOld: string; isDraft: boolean } {
     const packageJson = require(`${pkg.packageDir}/package.json`) as PackageJson
     const versionOld = packageJson.version
     assert(versionOld)
-    if (!releaseTarget) {
-      releaseTarget = 'patch'
-    }
+    let isDraft = false
     let versionNew: string
-    if (releaseTarget === 'patch' || releaseTarget === 'minor' || releaseTarget === 'major') {
+    if (releaseTarget === 'draft') {
+      const randomId = (Math.random() * Math.pow(10, 5)).toString().split('.')[0]!
+      assert(/^[0-9]+$/.test(randomId) && randomId.length === 5)
+      versionNew = `${versionOld}-draft.${randomId}`
+      isDraft = true
+    } else if (releaseTarget === 'patch' || releaseTarget === 'minor' || releaseTarget === 'major') {
       versionNew = semver.inc(versionOld, releaseTarget) as string
     } else {
-      if (releaseTarget.startsWith('v')) {
-        versionNew = releaseTarget.slice(1)
-      } else {
-        versionNew = releaseTarget
-      }
+      assert(releaseTarget.startsWith('v'))
+      versionNew = releaseTarget.slice(1)
     }
-    return { versionNew, versionOld }
+    return { versionNew, versionOld, isDraft }
   }
   async function updateVersionMacro(versionOld: string, versionNew: string) {
     const filesAll = await getFilesAll()
@@ -326,6 +353,10 @@ async function releaseMe(releaseTarget: ReleaseTarget) {
     return files
   }
 
+  async function undoChanges() {
+    await run('git reset --hard HEAD')
+  }
+
   async function getFilesAll(): Promise<string[]> {
     let filesAll = await getFilesCwd(projectRootDir)
     filesAll = filesAll.map((filePathRelative) => path.join(projectRootDir, filePathRelative))
@@ -395,5 +426,19 @@ async function releaseMe(releaseTarget: ReleaseTarget) {
     const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
     const { stdout } = await execa(command!, args, { cwd })
     return stdout
+  }
+
+  async function abortIfUncommitedChanges() {
+    const stdout = await run__return(`git status --porcelain`)
+    const isDirty = stdout !== ''
+    if (isDirty) {
+      throw new Error(
+        pc.red(
+          pc.bold(
+            `Cannot release: your Git repository has uncommitted changes. Make sure to commit all changes before releasing a new version.`
+          )
+        )
+      )
+    }
   }
 }
