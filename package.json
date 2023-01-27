@@ -1,6 +1,6 @@
 {
   "name": "@brillout/release-me",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "scripts": {
     "// === Dev ===": "",
     "dev": "tsc --watch",
