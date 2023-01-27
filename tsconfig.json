@@ -5,8 +5,10 @@
     "module": "CommonJS",
     "skipLibCheck": true,
     "esModuleInterop": true,
+    "declaration": true,
     "strict": true,
-    "declaration": true
+    "noUncheckedIndexedAccess": true,
+    "noImplicitAny": true
   },
   "rootDir": "./src/",
   "include": ["src/**/*"]

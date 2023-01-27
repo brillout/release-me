@@ -1,4 +1,7 @@
 export { releaseMe }
+export { releaseTypes }
+export type { ReleaseType }
+export type { ReleaseTarget }
 
 import execa from 'execa'
 import { writeFileSync, readFileSync } from 'fs'
@@ -13,14 +16,16 @@ import conventionalChangelog from 'conventional-changelog'
 
 const DEV_MODE = process.argv.includes('--dev')
 
-type VersionTarget = null | 'minor' | 'patch' | 'major' | string
+const releaseTypes = ['minor', 'patch', 'major'] as const
+type ReleaseType = typeof releaseTypes[number]
+type ReleaseTarget = ReleaseType | `v${string}`
 
-async function releaseMe(versionTarget: VersionTarget) {
+async function releaseMe(releaseTarget: ReleaseTarget) {
   const projectRootDir = (await run__return('git rev-parse --show-toplevel', { cwd: process.cwd() })).trim()
 
   const pkg = await findPackage()
 
-  const { versionOld, versionNew } = getVersion(pkg, versionTarget)
+  const { versionOld, versionNew } = getVersion(pkg, releaseTarget)
 
   await updateVersionMacro(versionOld, versionNew)
 
@@ -231,22 +236,23 @@ async function releaseMe(versionTarget: VersionTarget) {
 
   function getVersion(
     pkg: { packageDir: string },
-    versionTarget: VersionTarget
+    releaseTarget: ReleaseTarget
   ): { versionNew: string; versionOld: string } {
     const packageJson = require(`${pkg.packageDir}/package.json`) as PackageJson
     const versionOld = packageJson.version
     assert(versionOld)
-    if (!versionTarget) {
-      versionTarget = 'patch'
+    if (!releaseTarget) {
+      releaseTarget = 'patch'
     }
     let versionNew: string
-    if (versionTarget === 'patch' || versionTarget === 'minor' || versionTarget === 'major') {
-      versionNew = semver.inc(versionOld, versionTarget) as string
+    if (releaseTarget === 'patch' || releaseTarget === 'minor' || releaseTarget === 'major') {
+      versionNew = semver.inc(versionOld, releaseTarget) as string
     } else {
-      if (versionTarget.startsWith('v')) {
-        versionTarget = versionTarget.slice(1)
+      if (releaseTarget.startsWith('v')) {
+        versionNew = releaseTarget.slice(1)
+      } else {
+        versionNew = releaseTarget
       }
-      versionNew = versionTarget
     }
     return { versionNew, versionOld }
   }
@@ -383,11 +389,11 @@ async function releaseMe(versionTarget: VersionTarget) {
   async function run(cmd: string | string[], { cwd = process.cwd(), env = process.env } = {}) {
     const stdio = 'inherit'
     const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
-    await execa(command, args, { cwd, stdio, env })
+    await execa(command!, args, { cwd, stdio, env })
   }
   async function run__return(cmd: string | string[], { cwd = process.cwd() } = {}): Promise<string> {
     const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
-    const { stdout } = await execa(command, args, { cwd })
+    const { stdout } = await execa(command!, args, { cwd })
     return stdout
   }
 }
