@@ -270,8 +270,11 @@ function getVersion(
   let isDraft = false
   let versionNew: string
   if (releaseTarget === 'draft') {
-    const randomId = (Math.random() * Math.pow(10, 5)).toString().split('.')[0]!
-    assert(/^[0-9]+$/.test(randomId) && randomId.length === 5)
+    const idLength = 5
+    const randomId = Math.random()
+      .toString()
+      .slice(2, 2 + idLength)
+    assert(/^[0-9]+$/.test(randomId) && randomId.length === idLength)
     versionNew = `${versionOld}-draft.${randomId}`
     isDraft = true
   } else if (releaseTarget === 'patch' || releaseTarget === 'minor' || releaseTarget === 'major') {
