@@ -32,7 +32,7 @@ async function releaseMe(releaseTarget: ReleaseTarget) {
   if (isDraft) {
     updatePackageJsonVersion(pkg, versionNew)
     await build()
-    await publishDraft()
+    await publishDraft(pkg)
     await undoChanges()
     return
   }
@@ -133,10 +133,10 @@ function readJson(filePathRelative: string, { cwd }: { cwd: string }) {
 async function publish() {
   await npmPublish(process.cwd())
 }
-async function publishDraft() {
+async function publishDraft(pkg: { packageName: string }) {
   const cwd = process.cwd()
   await npmPublish(cwd, 'draft')
-  await removeNpmTag(cwd, 'draft')
+  await removeNpmTag(cwd, 'draft', pkg.packageName)
 }
 async function publishBoilerplates(boilerplatePackageJson: string) {
   await npmPublish(path.dirname(boilerplatePackageJson))
@@ -149,9 +149,9 @@ async function npmPublish(cwd: string, tag?: string) {
   }
   await run(cmd, { cwd, env })
 }
-async function removeNpmTag(cwd: string, tag: string) {
+async function removeNpmTag(cwd: string, tag: string, packageName: string) {
   const env = getNpmFix()
-  await run(`npm dist-tag rm ${tag}`, { cwd, env })
+  await run(`npm dist-tag rm ${packageName} ${tag}`, { cwd, env })
 }
 
 // Fix for: (see https://github.com/yarnpkg/yarn/issues/2935#issuecomment-487020430)
