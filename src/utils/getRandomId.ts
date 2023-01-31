@@ -2,11 +2,10 @@ export { getRandomId }
 
 import assert from 'assert'
 
-function getRandomId(): string {
-  const idLength = 5
+function getRandomId(length = 5): string {
   const randomId = Math.random()
     .toString()
-    .slice(2, 2 + idLength)
-  assert(/^[0-9]+$/.test(randomId) && randomId.length === idLength)
+    .slice(2, 2 + length)
+  assert(/^[0-9]+$/.test(randomId) && randomId.length === length)
   return randomId
 }
