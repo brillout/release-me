@@ -7,7 +7,7 @@ import execa from 'execa'
 import { writeFileSync, readFileSync } from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
-import { runCommand } from './utils'
+import { getRandomId, runCommand } from './utils'
 import * as path from 'path'
 // import yaml from 'js-yaml'
 import readline from 'readline'
@@ -270,12 +270,7 @@ function getVersion(
   let isDraft = false
   let versionNew: string
   if (releaseTarget === 'draft') {
-    const idLength = 5
-    const randomId = Math.random()
-      .toString()
-      .slice(2, 2 + idLength)
-    assert(/^[0-9]+$/.test(randomId) && randomId.length === idLength)
-    versionNew = `${versionOld}-draft.${randomId}`
+    versionNew = `${versionOld}-draft.${getRandomId()}`
     isDraft = true
   } else if (releaseTarget === 'patch' || releaseTarget === 'minor' || releaseTarget === 'major') {
     versionNew = semver.inc(versionOld, releaseTarget) as string
