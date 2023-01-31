@@ -270,7 +270,7 @@ function getVersion(
   let isDraft = false
   let versionNew: string
   if (releaseTarget === 'draft') {
-    versionNew = `${versionOld}-draft.${getRandomId()}`
+    versionNew = `${versionOld}-draft.${getRandomId(5)}`
     isDraft = true
   } else if (releaseTarget === 'patch' || releaseTarget === 'minor' || releaseTarget === 'major') {
     versionNew = semver.inc(versionOld, releaseTarget) as string

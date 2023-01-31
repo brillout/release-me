@@ -2,7 +2,7 @@ export { getRandomId }
 
 import assert from 'assert'
 
-function getRandomId(length = 5): string {
+function getRandomId(length: number): string {
   const randomId = Math.random()
     .toString()
     .slice(2, 2 + length)
