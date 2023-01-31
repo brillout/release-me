@@ -5,7 +5,7 @@ import assert from 'assert'
 
 function runCommand(
   cmd: string,
-  { swallowError, timeout = 5000, cwd }: { swallowError?: true; timeout?: number; cwd?: string } = {},
+  { swallowError, timeout = 5000, cwd }: { swallowError?: true; timeout?: number; cwd?: string } = {}
 ): Promise<string> {
   const { promise, resolvePromise, rejectPromise } = genPromise<string>()
 
@@ -17,7 +17,7 @@ function runCommand(
   exec(cmd, options, (err, stdout, stderr) => {
     clearTimeout(t)
     if (err || stderr) {
-      assert(err!==null)
+      assert(err !== null)
       if (swallowError) {
         resolvePromise('SWALLOWED_ERROR')
       } else {
@@ -36,9 +36,9 @@ function runCommand(
               `============== ERROR ==============`,
               errMsg,
               ``,
-              `===================================`,
-            ].join('\n'),
-          ),
+              `===================================`
+            ].join('\n')
+          )
         )
       }
     } else {
