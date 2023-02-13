@@ -290,10 +290,13 @@ async function updateVersionMacro(versionOld: string, versionNew: string, projec
       const codeSnippetOld = getCodeSnippet(versionOld)
       const codeSnippetNew = getCodeSnippet(versionNew)
       const contentOld = readFileSync(filePath, 'utf8')
+      assert(contentOld.includes(codeSnippetOld))
+      /*
       if (!contentOld.includes(codeSnippetOld)) {
         assert(DEV_MODE)
         return
       }
+      */
       const contentNew = contentOld.replace(codeSnippetOld, codeSnippetNew)
       assert(contentNew !== contentOld)
       writeFileSync(filePath, contentNew)
