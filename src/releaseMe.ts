@@ -271,7 +271,7 @@ async function getVersion(
   let versionNew: string
   if (releaseTarget === 'commit') {
     const commitHash = await getCommitHash()
-    versionNew = `${versionOld}-commit.${commitHash}`
+    versionNew = `${versionOld}-commit-${commitHash}`
     isCommitRelease = true
   } else if (releaseTarget === 'patch' || releaseTarget === 'minor' || releaseTarget === 'major') {
     versionNew = semver.inc(versionOld, releaseTarget) as string
