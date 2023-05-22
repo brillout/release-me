@@ -7,7 +7,7 @@ import execa from 'execa'
 import { writeFileSync, readFileSync } from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
-import { getRandomId, runCommand } from './utils'
+import { runCommand } from './utils'
 import * as path from 'path'
 // import yaml from 'js-yaml'
 import readline from 'readline'
@@ -16,7 +16,7 @@ import conventionalChangelog from 'conventional-changelog'
 
 const DEV_MODE = process.argv.includes('--dev')
 
-const releaseTypes = ['minor', 'patch', 'major', 'draft'] as const
+const releaseTypes = ['minor', 'patch', 'major', 'commit'] as const
 type ReleaseType = typeof releaseTypes[number]
 type ReleaseTarget = ReleaseType | `v${string}`
 
@@ -27,12 +27,12 @@ async function releaseMe(releaseTarget: ReleaseTarget) {
 
   const pkg = await findPackage()
 
-  const { versionOld, versionNew, isDraft } = getVersion(pkg, releaseTarget)
+  const { versionOld, versionNew, isCommitRelease } = await getVersion(pkg, releaseTarget)
 
-  if (isDraft) {
+  if (isCommitRelease) {
     updatePackageJsonVersion(pkg, versionNew)
     await build()
-    await publishDraft(pkg)
+    await publishCommitRelease(pkg)
     await undoChanges()
     return
   }
@@ -133,10 +133,10 @@ function readJson(filePathRelative: string, { cwd }: { cwd: string }) {
 async function publish() {
   await npmPublish(process.cwd())
 }
-async function publishDraft(pkg: { packageName: string }) {
+async function publishCommitRelease(pkg: { packageName: string }) {
   const cwd = process.cwd()
-  await npmPublish(cwd, 'draft')
-  await removeNpmTag(cwd, 'draft', pkg.packageName)
+  await npmPublish(cwd, 'commit')
+  await removeNpmTag(cwd, 'commit', pkg.packageName)
 }
 async function publishBoilerplates(boilerplatePackageJson: string) {
   await npmPublish(path.dirname(boilerplatePackageJson))
@@ -260,25 +260,26 @@ async function build() {
   await run('pnpm run build')
 }
 
-function getVersion(
+async function getVersion(
   pkg: { packageDir: string },
   releaseTarget: ReleaseTarget
-): { versionNew: string; versionOld: string; isDraft: boolean } {
+): Promise<{ versionNew: string; versionOld: string; isCommitRelease: boolean }> {
   const packageJson = require(`${pkg.packageDir}/package.json`) as PackageJson
   const versionOld = packageJson.version
   assert(versionOld)
-  let isDraft = false
+  let isCommitRelease = false
   let versionNew: string
-  if (releaseTarget === 'draft') {
-    versionNew = `${versionOld}-draft.${getRandomId(5)}`
-    isDraft = true
+  if (releaseTarget === 'commit') {
+    const commitHash = await getCommitHash()
+    versionNew = `${versionOld}-commit.${commitHash}`
+    isCommitRelease = true
   } else if (releaseTarget === 'patch' || releaseTarget === 'minor' || releaseTarget === 'major') {
     versionNew = semver.inc(versionOld, releaseTarget) as string
   } else {
     assert(releaseTarget.startsWith('v'))
     versionNew = releaseTarget.slice(1)
   }
-  return { versionNew, versionOld, isDraft }
+  return { versionNew, versionOld, isCommitRelease }
 }
 async function updateVersionMacro(versionOld: string, versionNew: string, projectRootDir: string) {
   const filesAll = await getFilesAll(projectRootDir)
@@ -445,4 +446,9 @@ async function abortIfUncommitedChanges() {
       )
     )
   }
+}
+
+async function getCommitHash() {
+  const commitHash = (await run__return('git rev-parse --short HEAD', { cwd: process.cwd() })).trim()
+  return commitHash
 }

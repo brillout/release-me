@@ -30,7 +30,7 @@ function showUsage() {
       '  $ pnpm exec release-me patch # bump patch semver',
       '  $ pnpm exec release-me minor # bump minor semver',
       '  $ pnpm exec release-me major # bump major semver',
-      '  $ pnpm exec release-me draft # experimental release ',
+      '  $ pnpm exec release-me commit # out-of-band release (as x.y.z-commit-123456 without npm tag)',
       '  $ pnpm exec release-me v${major}.${minor}.${patch} # release specific version'
     ].join('\n')
   )
