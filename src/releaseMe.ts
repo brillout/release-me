@@ -29,6 +29,8 @@ async function releaseMe(releaseTarget: ReleaseTarget) {
 
   const { versionOld, versionNew, isCommitRelease } = await getVersion(pkg, releaseTarget)
 
+  await updateVersionMacro(versionOld, versionNew, projectRootDir)
+
   if (isCommitRelease) {
     updatePackageJsonVersion(pkg, versionNew)
     await build()
@@ -36,8 +38,6 @@ async function releaseMe(releaseTarget: ReleaseTarget) {
     await undoChanges()
     return
   }
-
-  await updateVersionMacro(versionOld, versionNew, projectRootDir)
 
   // Update pacakge.json versions
   updatePackageJsonVersion(pkg, versionNew)
