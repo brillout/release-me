@@ -449,6 +449,9 @@ async function abortIfUncommitedChanges() {
 }
 
 async function getCommitHash() {
-  const commitHash = (await run__return('git rev-parse --short HEAD', { cwd: process.cwd() })).trim()
+  const commitHash = (await run__return('git rev-parse HEAD', { cwd: process.cwd() }))
+    .trim()
+    // Align with GitHub: GitHub (always?) only shows the first 7 characters
+    .slice(0, 7)
   return commitHash
 }
