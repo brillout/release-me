@@ -17,7 +17,7 @@ import conventionalChangelog from 'conventional-changelog'
 const DEV_MODE = process.argv.includes('--dev')
 
 const releaseTypes = ['minor', 'patch', 'major', 'commit'] as const
-type ReleaseType = typeof releaseTypes[number]
+type ReleaseType = (typeof releaseTypes)[number]
 type ReleaseTarget = ReleaseType | `v${string}`
 
 async function releaseMe(releaseTarget: ReleaseTarget) {
@@ -161,9 +161,17 @@ function getNpmFix() {
 }
 
 async function changelog(projectRootDir: string) {
-  const readable = conventionalChangelog({
-    preset: 'angular'
-  })
+  const readable = conventionalChangelog(
+    {
+      preset: 'angular'
+    },
+    undefined,
+    undefined,
+    {
+      // Modify revertPattern set by node_modules/conventional-changelog-angular/parserOpts.js to skip the default commit message upon `$ git revert`
+      revertPattern: /^revert:\s"?([\s\S]+?)"?\s*This reverts commit (\w*)\./i
+    }
+  )
   const changelog = await streamToString(readable)
   prerendFile(getChangeLogPath(projectRootDir), changelog)
   /*
