@@ -15,6 +15,7 @@ import pc from 'picocolors'
 import conventionalChangelog from 'conventional-changelog'
 
 const DEV_MODE = process.argv.includes('--dev')
+const FORCE = process.argv.includes('--force')
 
 const releaseTypes = ['minor', 'patch', 'major', 'commit'] as const
 type ReleaseType = (typeof releaseTypes)[number]
@@ -22,6 +23,7 @@ type ReleaseTarget = ReleaseType | `v${string}`
 
 async function releaseMe(releaseTarget: ReleaseTarget) {
   await abortIfUncommitedChanges()
+  await abortIfNotLatestMainCommit()
 
   const projectRootDir = (await run__return('git rev-parse --show-toplevel', { cwd: process.cwd() })).trim()
 
@@ -97,7 +99,7 @@ async function findPackage() {
     }
     */
 
-  throw new Error("Couldn't find package")
+  throw new Error(pc.red(pc.bold("Couldn't find package")))
 }
 
 function readPkg(cwd: string) {
@@ -453,6 +455,43 @@ async function abortIfUncommitedChanges() {
         )
       )
     )
+  }
+}
+
+async function abortIfNotLatestMainCommit() {
+  if (FORCE) return
+  const errPrefix = 'Cannot release:'
+  {
+    const stdout = await run__return(`git rev-parse --abbrev-ref HEAD`)
+    const branch = stdout.trim()
+    if ('main' !== branch) {
+      throw new Error(
+        pc.red(
+          pc.bold(
+            `${errPrefix} the current branch is ${pc.cyan(branch)} but it should be ${pc.cyan(
+              'main'
+            )} (or use ${pc.cyan('--force')})`
+          )
+        )
+      )
+    }
+  }
+  {
+    await runCommand('git fetch')
+    const stdout = await run__return(`git status`)
+    const isDirty =
+      stdout.trim() !==
+      `On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean`
+    if (isDirty) {
+      throw new Error(
+        pc.red(
+          pc.bold(`${errPrefix} ${pc.cyan('HEAD')} should be ${pc.cyan('origin/main')} (or use ${pc.cyan('--force')})`)
+        )
+      )
+    }
   }
 }
 
