@@ -17,13 +17,13 @@ function runCommand(
   exec(cmd, options, (err, stdout, stderr) => {
     clearTimeout(t)
     if (err || stderr) {
-      assert(err !== null)
       if (swallowError) {
         resolvePromise('SWALLOWED_ERROR')
       } else {
         // Useless generic message
-        assert(err.message.startsWith(`Command failed: ${cmd}`))
-        const errMsg = stderr || stdout || err.message
+        assert(err === null || err.message.startsWith(`Command failed: ${cmd}`))
+        const errMsg = stderr || stdout || err?.message || err
+        assert(errMsg)
         rejectPromise(
           new Error(
             [
