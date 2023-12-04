@@ -23,13 +23,16 @@ type ReleaseTarget = ReleaseType | `v${string}`
 
 async function releaseMe(releaseTarget: ReleaseTarget) {
   await abortIfUncommitedChanges()
-  await abortIfNotLatestMainCommit()
-
-  const projectRootDir = (await run__return('git rev-parse --show-toplevel', { cwd: process.cwd() })).trim()
 
   const pkg = await findPackage()
 
   const { versionOld, versionNew, isCommitRelease } = await getVersion(pkg, releaseTarget)
+
+  if (!isCommitRelease) {
+    await abortIfNotLatestMainCommit()
+  }
+
+  const projectRootDir = (await run__return('git rev-parse --show-toplevel', { cwd: process.cwd() })).trim()
 
   await updateVersionMacro(versionOld, versionNew, projectRootDir)
 
