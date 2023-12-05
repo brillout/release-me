@@ -1,17 +1,18 @@
 import { releaseMe, type ReleaseType, releaseTypes, type ReleaseTarget } from './releaseMe'
 
-const releaseTarget = parseArgs()
-releaseMe(releaseTarget)
+const { releaseTarget, gitTagPrefix } = parseArgs()
+releaseMe(releaseTarget, gitTagPrefix)
 
 function parseArgs() {
   const args = process.argv.slice(2)
   const releaseTarget = args[0]
+  const gitTagPrefix = args[1] || ''
   if (!releaseTarget) {
     console.error('Wrong CLI usage: argument is missing.')
     showUsage()
     process.exit(0)
   }
-  if (args.length !== 1) {
+  if (args.length < 1 || args.length > 2) {
     showUsage()
     process.exit(0)
   }
@@ -20,18 +21,22 @@ function parseArgs() {
     showUsage()
     process.exit(0)
   }
-  return releaseTarget
+  return {
+    releaseTarget,
+    gitTagPrefix
+  }
 }
 
 function showUsage() {
   console.log(
     [
       'Commands:',
-      '  $ pnpm exec release-me patch # bump patch semver',
-      '  $ pnpm exec release-me minor # bump minor semver',
-      '  $ pnpm exec release-me major # bump major semver',
-      '  $ pnpm exec release-me commit # out-of-band release (as x.y.z-commit-123456 without npm tag)',
-      '  $ pnpm exec release-me v${major}.${minor}.${patch} # release specific version'
+      '  $ pnpm exec release-me patch                        # bump patch semver',
+      '  $ pnpm exec release-me minor                        # bump minor semver',
+      '  $ pnpm exec release-me major                        # bump major semver',
+      '  $ pnpm exec release-me commit                       # out-of-band release (as x.y.z-commit-123456 without npm tag)',
+      '  $ pnpm exec release-me v${major}.${minor}.${patch}  # release specific version',
+      '  $ pnpm exec release-me patch my-pkg-                # git tag prefix -> my-pkg-v${major}.${minor}.${patch}'
     ].join('\n')
   )
 }

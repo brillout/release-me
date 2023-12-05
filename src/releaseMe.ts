@@ -21,7 +21,7 @@ const releaseTypes = ['minor', 'patch', 'major', 'commit'] as const
 type ReleaseType = (typeof releaseTypes)[number]
 type ReleaseTarget = ReleaseType | `v${string}`
 
-async function releaseMe(releaseTarget: ReleaseTarget) {
+async function releaseMe(releaseTarget: ReleaseTarget, gitTagPrefix: string) {
   await abortIfUncommitedChanges()
 
   const pkg = await findPackage()
@@ -60,7 +60,7 @@ async function releaseMe(releaseTarget: ReleaseTarget) {
 
   await bumpPnpmLockFile(projectRootDir)
 
-  await gitCommit(versionNew, projectRootDir)
+  await gitCommit(versionNew, projectRootDir, gitTagPrefix)
 
   await build()
 
@@ -259,8 +259,8 @@ function askConfirmation(): Promise<void> {
   return promise
 }
 
-async function gitCommit(versionNew: string, projectRootDir: string) {
-  const tag = `v${versionNew}`
+async function gitCommit(versionNew: string, projectRootDir: string, tagPrefix: string) {
+  const tag = `${tagPrefix}v${versionNew}`
   await run('git add .', { cwd: projectRootDir })
   await run(['git', 'commit', '-am', `release: ${tag}`])
   await run(`git tag ${tag}`)
