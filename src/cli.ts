@@ -1,42 +1,56 @@
-import { releaseMe, type ReleaseType, releaseTypes, type ReleaseTarget } from './releaseMe'
+import { Command, program } from 'commander'
+import { type Args, releaseMe, type ReleaseType, releaseTypes, type ReleaseTarget } from './releaseMe'
 
-const { releaseTarget, gitTagPrefix } = parseArgs()
-releaseMe(releaseTarget, gitTagPrefix)
+const args = parseArgs()
+releaseMe(args)
 
-function parseArgs() {
-  const args = process.argv.slice(2)
-  const releaseTarget = args[0]
-  const gitTagPrefix = args[1] || ''
-  if (!releaseTarget) {
-    console.error('Wrong CLI usage: argument is missing.')
-    showUsage()
+function parseArgs(): Args {
+  program
+    .name('release-me')
+    .option('--dev', 'dev mode')
+    .option('--force')
+    .option('--git-prefix <string>')
+    .argument('<release-target>')
+  program.parse()
+  // At this point, program.args contains the positional arguments and program.opts() contains the flags.
+
+  if (program.args.length !== 1) {
+    showUsage(program)
     process.exit(0)
   }
-  if (args.length < 1 || args.length > 2) {
-    showUsage()
+
+  const releaseTarget = program.args[0]
+  if (!releaseTarget) {
+    console.error('Wrong CLI usage: argument is missing.')
+    showUsage(program)
     process.exit(0)
   }
   if (!isValidReleaseTarget(releaseTarget)) {
     console.error('Wrong CLI usage: argument is invalid.')
-    showUsage()
+    showUsage(program)
     process.exit(0)
   }
+
   return {
-    releaseTarget,
-    gitTagPrefix
+    dev: (program.opts().dev as boolean) || false,
+    force: (program.opts().force as boolean) || false,
+    gitPrefix: (program.opts().gitPrefix as string) || null,
+    releaseTarget
   }
 }
 
-function showUsage() {
+function showUsage(program: Command) {
+  program.outputHelp()
   console.log(
     [
-      'Commands:',
+      '',
+      'Examples:',
       '  $ pnpm exec release-me patch                        # bump patch semver',
       '  $ pnpm exec release-me minor                        # bump minor semver',
       '  $ pnpm exec release-me major                        # bump major semver',
       '  $ pnpm exec release-me commit                       # out-of-band release (as x.y.z-commit-123456 without npm tag)',
       '  $ pnpm exec release-me v${major}.${minor}.${patch}  # release specific version',
-      '  $ pnpm exec release-me patch my-pkg-                # git tag prefix -> my-pkg-v${major}.${minor}.${patch}'
+      '  $ pnpm exec release-me --git-prefix my-pkg patch    # git tag prefix -> my-pkg@${major}.${minor}.${patch}'
     ].join('\n')
   )
 }
