@@ -403,7 +403,7 @@ async function updateDependencies(
           const hasRange = version.startsWith('^')
           const versionOld_range = !hasRange ? versionOld : `^${versionOld}`
           const versionNew_range = !hasRange ? versionNew : `^${versionNew}`
-          if (!version.startsWith('link:')) {
+          if (!version.startsWith('link:') && !version.startsWith('workspace:')) {
             if (!devMode) {
               try {
                 assert.strictEqual(version, versionOld_range)
