@@ -23,6 +23,7 @@ type Args = {
   dev: boolean
   force: boolean
   gitPrefix: string | null
+  changelogDir: string
   releaseTarget: ReleaseTarget
 }
 
@@ -58,9 +59,9 @@ async function releaseMe(args: Args) {
     bumpBoilerplateVersion(boilerplatePackageJson)
   }
 
-  await changelog(projectRootDir)
+  await changelog(projectRootDir, args.changelogDir)
 
-  await showPreview(pkg, projectRootDir)
+  await showPreview(pkg, projectRootDir, args.changelogDir)
   await askConfirmation()
 
   if (!args.dev) {
@@ -172,7 +173,7 @@ function getNpmFix() {
   return { ...process.env, npm_config_registry: undefined }
 }
 
-async function changelog(projectRootDir: string) {
+async function changelog(projectRootDir: string, changelogDir: string) {
   const readable = conventionalChangelog(
     {
       preset: 'angular'
@@ -185,7 +186,7 @@ async function changelog(projectRootDir: string) {
     }
   )
   const changelog = await streamToString(readable)
-  prerendFile(getChangeLogPath(projectRootDir), changelog)
+  prerendFile(getChangeLogPath(projectRootDir, changelogDir), changelog)
   /*
     const pkgDir = process.cwd()
     // Usage examples:
@@ -232,13 +233,13 @@ function prerendFile(filePath: string, prerendString: string) {
   writeFileSync(filePath, content)
 }
 
-function getChangeLogPath(projectRootDir: string) {
-  return path.join(projectRootDir, 'CHANGELOG.md')
+function getChangeLogPath(projectRootDir: string, changelogDir: string) {
+  return path.join(projectRootDir, changelogDir, 'CHANGELOG.md')
 }
 
-async function showPreview(pkg: { packageDir: string }, projectRootDir: string) {
+async function showPreview(pkg: { packageDir: string }, projectRootDir: string, changelogDir: string) {
   await showCmd('git status')
-  await diffAndLog(getChangeLogPath(projectRootDir))
+  await diffAndLog(getChangeLogPath(projectRootDir, changelogDir))
   await diffAndLog(path.join(pkg.packageDir, 'package.json'))
   async function diffAndLog(filePath: string) {
     await showCmd(`git diff ${filePath}`, `git --no-pager diff ${filePath}`)

@@ -10,6 +10,7 @@ function parseArgs(): Args {
     .option('--dev', 'dev mode')
     .option('--force')
     .option('--git-prefix <string>')
+    .option('--changelog-dir <string>', 'relative to git root, e.g. packages/my-pkg/')
     .argument('<release-target>')
   program.parse()
   // At this point, program.args contains the positional arguments and program.opts() contains the flags.
@@ -35,6 +36,7 @@ function parseArgs(): Args {
     dev: (program.opts().dev as boolean) || false,
     force: (program.opts().force as boolean) || false,
     gitPrefix: (program.opts().gitPrefix as string) || null,
+    changelogDir: (program.opts().changelogDir as string) || './',
     releaseTarget
   }
 }
