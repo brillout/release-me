@@ -11,6 +11,7 @@
     "release": "npm version patch && npm publish && git push && git push --tags"
   },
   "dependencies": {
+    "commander": "^11.1.0",
     "conventional-changelog": "^5.1.0",
     "execa": "^5.1.1",
     "js-yaml": "^4.1.0",

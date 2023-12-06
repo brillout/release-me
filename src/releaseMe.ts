@@ -1,5 +1,6 @@
 export { releaseMe }
 export { releaseTypes }
+export type { Args }
 export type { ReleaseType }
 export type { ReleaseTarget }
 
@@ -14,21 +15,25 @@ import readline from 'readline'
 import pc from 'picocolors'
 import conventionalChangelog from 'conventional-changelog'
 
-const DEV_MODE = process.argv.includes('--dev')
-const FORCE = process.argv.includes('--force')
-
 const releaseTypes = ['minor', 'patch', 'major', 'commit'] as const
 type ReleaseType = (typeof releaseTypes)[number]
 type ReleaseTarget = ReleaseType | `v${string}`
 
-async function releaseMe(releaseTarget: ReleaseTarget) {
+type Args = {
+  dev: boolean
+  force: boolean
+  gitPrefix: string | null
+  releaseTarget: ReleaseTarget
+}
+
+async function releaseMe(args: Args) {
   await abortIfUncommitedChanges()
 
   const pkg = await findPackage()
 
-  const { versionOld, versionNew, isCommitRelease } = await getVersion(pkg, releaseTarget)
+  const { versionOld, versionNew, isCommitRelease } = await getVersion(pkg, args.releaseTarget)
 
-  if (!isCommitRelease) {
+  if (!isCommitRelease && !args.force) {
     await abortIfNotLatestMainCommit()
   }
 
@@ -47,7 +52,7 @@ async function releaseMe(releaseTarget: ReleaseTarget) {
   // Update pacakge.json versions
   updatePackageJsonVersion(pkg, versionNew)
 
-  await updateDependencies(pkg, versionNew, versionOld, projectRootDir)
+  await updateDependencies(pkg, versionNew, versionOld, projectRootDir, args.dev)
   const boilerplatePackageJson = await findBoilerplatePacakge(pkg, projectRootDir)
   if (boilerplatePackageJson) {
     bumpBoilerplateVersion(boilerplatePackageJson)
@@ -58,9 +63,11 @@ async function releaseMe(releaseTarget: ReleaseTarget) {
   await showPreview(pkg, projectRootDir)
   await askConfirmation()
 
-  await bumpPnpmLockFile(projectRootDir)
+  if (!args.dev) {
+    await bumpPnpmLockFile(projectRootDir)
+  }
 
-  await gitCommit(versionNew, projectRootDir)
+  await gitCommit(versionNew, projectRootDir, args.gitPrefix)
 
   await build()
 
@@ -259,8 +266,8 @@ function askConfirmation(): Promise<void> {
   return promise
 }
 
-async function gitCommit(versionNew: string, projectRootDir: string) {
-  const tag = `v${versionNew}`
+async function gitCommit(versionNew: string, projectRootDir: string, prefix: string | null) {
+  const tag = !!prefix ? `${prefix}@${versionNew}` : `v${versionNew}`
   await run('git add .', { cwd: projectRootDir })
   await run(['git', 'commit', '-am', `release: ${tag}`])
   await run(`git tag ${tag}`)
@@ -349,9 +356,6 @@ async function findBoilerplatePacakge(pkg: { packageName: string }, projectRootD
 }
 
 async function bumpPnpmLockFile(projectRootDir: string) {
-  if (DEV_MODE) {
-    return
-  }
   try {
     await runCommand('pnpm install', { cwd: projectRootDir, timeout: 10 * 60 * 1000 })
   } catch (err) {
@@ -381,7 +385,8 @@ async function updateDependencies(
   pkg: { packageName: string },
   versionNew: string,
   versionOld: string,
-  projectRootDir: string
+  projectRootDir: string,
+  devMode: boolean
 ) {
   const filesAll = await getFilesAll(projectRootDir)
   filesAll
@@ -399,7 +404,7 @@ async function updateDependencies(
           const versionOld_range = !hasRange ? versionOld : `^${versionOld}`
           const versionNew_range = !hasRange ? versionNew : `^${versionNew}`
           if (!version.startsWith('link:')) {
-            if (!DEV_MODE) {
+            if (!devMode) {
               try {
                 assert.strictEqual(version, versionOld_range)
               } catch (err) {
@@ -462,7 +467,6 @@ async function abortIfUncommitedChanges() {
 }
 
 async function abortIfNotLatestMainCommit() {
-  if (FORCE) return
   const errPrefix = 'Cannot release:'
   {
     const stdout = await run__return(`git rev-parse --abbrev-ref HEAD`)
