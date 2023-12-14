@@ -59,9 +59,9 @@ async function releaseMe(args: Args) {
     bumpBoilerplateVersion(boilerplatePackageJson)
   }
 
-  const gitPrefix = args.gitPrefix ? `${args.gitPrefix}@` : 'v'
+  const gitTagPrefix = args.gitPrefix ? `${args.gitPrefix}@` : 'v'
 
-  await changelog(projectRootDir, args.changelogDir, gitPrefix)
+  await changelog(projectRootDir, args.changelogDir, gitTagPrefix)
 
   await showPreview(pkg, projectRootDir, args.changelogDir)
   await askConfirmation()
@@ -70,7 +70,7 @@ async function releaseMe(args: Args) {
     await bumpPnpmLockFile(projectRootDir)
   }
 
-  await gitCommit(versionNew, projectRootDir, gitPrefix)
+  await gitCommit(versionNew, projectRootDir, gitTagPrefix)
 
   await build()
 
@@ -175,11 +175,11 @@ function getNpmFix() {
   return { ...process.env, npm_config_registry: undefined }
 }
 
-async function changelog(projectRootDir: string, changelogDir: string, tagPrefix: string) {
+async function changelog(projectRootDir: string, changelogDir: string, gitTagPrefix: string) {
   const readable = conventionalChangelog(
     {
       preset: 'angular',
-      tagPrefix
+      tagPrefix: gitTagPrefix
     },
     undefined,
     undefined,
@@ -270,8 +270,8 @@ function askConfirmation(): Promise<void> {
   return promise
 }
 
-async function gitCommit(versionNew: string, projectRootDir: string, prefix: string) {
-  const tag = `${prefix}${versionNew}`
+async function gitCommit(versionNew: string, projectRootDir: string, gitTagPrefix: string) {
+  const tag = `${gitTagPrefix}${versionNew}`
   await run('git add .', { cwd: projectRootDir })
   await run(['git', 'commit', '-am', `release: ${tag}`])
   await run(`git tag ${tag}`)
