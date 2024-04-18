@@ -27,12 +27,10 @@ type Args = {
   releaseTarget: ReleaseTarget
 }
 
-const packageRootDir = process.cwd()
-
-async function releaseMe(args: Args) {
+async function releaseMe(args: Args, packageRootDir: string) {
   await abortIfUncommitedChanges()
 
-  const pkg = await findPackage()
+  const pkg = await findPackage(packageRootDir)
 
   const { versionOld, versionNew, isCommitRelease } = await getVersion(pkg, args.releaseTarget)
 
@@ -47,7 +45,7 @@ async function releaseMe(args: Args) {
   if (isCommitRelease) {
     updatePackageJsonVersion(pkg, versionNew)
     await build()
-    await publishCommitRelease(pkg)
+    await publishCommitRelease(packageRootDir, pkg)
     await undoChanges()
     return
   }
@@ -76,7 +74,7 @@ async function releaseMe(args: Args) {
 
   await build()
 
-  await publish()
+  await npmPublish(packageRootDir)
   if (boilerplatePackageJson) {
     await publishBoilerplates(boilerplatePackageJson)
   }
@@ -84,7 +82,7 @@ async function releaseMe(args: Args) {
   await gitPush()
 }
 
-async function findPackage() {
+async function findPackage(packageRootDir: string) {
   const files = await getFilesInsideDir(packageRootDir)
 
   // package.json#name
@@ -146,10 +144,7 @@ function readYaml(filePathRelative: string, dir: string): Record<string, unknown
 }
 */
 
-async function publish() {
-  await npmPublish(packageRootDir)
-}
-async function publishCommitRelease(pkg: { packageName: string }) {
+async function publishCommitRelease(packageRootDir: string, pkg: { packageName: string }) {
   await npmPublish(packageRootDir, 'commit')
   await removeNpmTag(packageRootDir, 'commit', pkg.packageName)
 }

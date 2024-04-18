@@ -1,8 +1,9 @@
 import { Command, program } from 'commander'
 import { type Args, releaseMe, type ReleaseType, releaseTypes, type ReleaseTarget } from './releaseMe'
 
+const packageRootDir = process.cwd()
 const args = parseArgs()
-releaseMe(args)
+releaseMe(args, packageRootDir)
 
 function parseArgs(): Args {
   program
