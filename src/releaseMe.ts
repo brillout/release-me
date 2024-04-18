@@ -38,9 +38,9 @@ async function releaseMe(args: Args) {
     await abortIfNotLatestMainCommit()
   }
 
-  const projectRootDir = (await run__return('git rev-parse --show-toplevel', { cwd: process.cwd() })).trim()
+  const monorepoRootDir = (await run__return('git rev-parse --show-toplevel', { cwd: process.cwd() })).trim()
 
-  await updateVersionMacro(versionOld, versionNew, projectRootDir)
+  await updateVersionMacro(versionOld, versionNew, monorepoRootDir)
 
   if (isCommitRelease) {
     updatePackageJsonVersion(pkg, versionNew)
@@ -53,24 +53,24 @@ async function releaseMe(args: Args) {
   // Update pacakge.json versions
   updatePackageJsonVersion(pkg, versionNew)
 
-  await updateDependencies(pkg, versionNew, versionOld, projectRootDir, args.dev)
-  const boilerplatePackageJson = await findBoilerplatePacakge(pkg, projectRootDir)
+  await updateDependencies(pkg, versionNew, versionOld, monorepoRootDir, args.dev)
+  const boilerplatePackageJson = await findBoilerplatePacakge(pkg, monorepoRootDir)
   if (boilerplatePackageJson) {
     bumpBoilerplateVersion(boilerplatePackageJson)
   }
 
   const gitTagPrefix = args.gitPrefix ? `${args.gitPrefix}@` : 'v'
 
-  await changelog(projectRootDir, args.changelogDir, gitTagPrefix)
+  await changelog(monorepoRootDir, args.changelogDir, gitTagPrefix)
 
-  await showPreview(pkg, projectRootDir, args.changelogDir)
+  await showPreview(pkg, monorepoRootDir, args.changelogDir)
   await askConfirmation()
 
   if (!args.dev) {
-    await bumpPnpmLockFile(projectRootDir)
+    await bumpPnpmLockFile(monorepoRootDir)
   }
 
-  await gitCommit(versionNew, projectRootDir, gitTagPrefix)
+  await gitCommit(versionNew, monorepoRootDir, gitTagPrefix)
 
   await build()
 
