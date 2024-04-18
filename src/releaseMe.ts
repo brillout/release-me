@@ -500,7 +500,9 @@ nothing to commit, working tree clean`
       throw new Error(
         pc.red(
           pc.bold(
-            `Release aborted, because ${errPrefix} ${pc.cyan('HEAD')} should be 1. ${pc.cyan('main')} and 2. up to date with ${pc.cyan('origin/main')}, or use ${pc.cyan('--force')}.`,
+            `Release aborted, because ${errPrefix} ${pc.cyan('HEAD')} should be 1. ${pc.cyan(
+              'main',
+            )} and 2. up to date with ${pc.cyan('origin/main')}, or use ${pc.cyan('--force')}.`,
           ),
         ),
       )
