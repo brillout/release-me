@@ -84,7 +84,7 @@ async function releaseMe(args: Args) {
 
 async function findPackage() {
   const cwd = process.cwd()
-  const files = await getFilesCwd(cwd)
+  const files = await getFilesInsideDir(cwd)
 
   // package.json#name
   if (files.includes('package.json')) {
@@ -375,7 +375,7 @@ async function bumpPnpmLockFile(projectRootDir: string) {
   }
 }
 
-async function getFilesCwd(dir: string): Promise<string[]> {
+async function getFilesInsideDir(dir: string): Promise<string[]> {
   const stdout = await run__return('git ls-files', dir)
   const files = stdout.split(/\s/)
   return files
@@ -386,7 +386,7 @@ async function undoChanges() {
 }
 
 async function getFilesAll(projectRootDir: string): Promise<string[]> {
-  let filesAll = await getFilesCwd(projectRootDir)
+  let filesAll = await getFilesInsideDir(projectRootDir)
   filesAll = filesAll.map((filePathRelative) => path.join(projectRootDir, filePathRelative))
   return filesAll
 }
