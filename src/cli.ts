@@ -9,7 +9,7 @@ function parseArgs(): Args {
     .name('release-me')
     .option('--dev', 'dev mode')
     .option('--force')
-    .option('--git-prefix <string>')
+    .option('--git-tag-prefix <string>')
     .option('--changelog-dir <string>', 'relative to git root, e.g. packages/my-pkg/')
     .argument('<release-target>')
   program.parse()
@@ -35,7 +35,7 @@ function parseArgs(): Args {
   return {
     dev: (program.opts().dev as boolean) || false,
     force: (program.opts().force as boolean) || false,
-    gitPrefix: (program.opts().gitPrefix as string) || null,
+    gitTagPrefix: (program.opts().gitTagPrefix as string) || null,
     changelogDir: (program.opts().changelogDir as string) || './',
     releaseTarget,
   }

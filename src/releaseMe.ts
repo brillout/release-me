@@ -22,7 +22,7 @@ type ReleaseTarget = ReleaseType | `v${string}`
 type Args = {
   dev: boolean
   force: boolean
-  gitPrefix: string | null
+  gitTagPrefix: string | null
   changelogDir: string
   releaseTarget: ReleaseTarget
 }
@@ -61,7 +61,7 @@ async function releaseMe(args: Args) {
     bumpBoilerplateVersion(boilerplatePackageJson)
   }
 
-  const gitTagPrefix = args.gitPrefix ? `${args.gitPrefix}@` : 'v'
+  const gitTagPrefix = args.gitTagPrefix ? `${args.gitTagPrefix}@` : 'v'
 
   await changelog(monorepoRootDir, args.changelogDir, gitTagPrefix)
 
