@@ -115,8 +115,8 @@ async function findPackage() {
   throw new Error(pc.red(pc.bold("Couldn't find package")))
 }
 
-function readPkg(cwd: string) {
-  const { packageJson, packageJsonFile } = readJson('package.json', { cwd })
+function readPkg(dir: string) {
+  const { packageJson, packageJsonFile } = readJson('package.json', dir)
   const { name } = packageJson
   if (!name) {
     return null
@@ -126,20 +126,20 @@ function readPkg(cwd: string) {
   return { packageName: name, packageDir }
 }
 
-function readFile(filePathRelative: string, { cwd }: { cwd: string }) {
-  const filePathAbsolute = path.join(cwd, filePathRelative)
+function readFile(filePathRelative: string, dir: string) {
+  const filePathAbsolute = path.join(dir, filePathRelative)
   const fileContent = readFileSync(filePathAbsolute, 'utf8')
   return { fileContent, filePath: filePathAbsolute }
 }
 
-function readJson(filePathRelative: string, { cwd }: { cwd: string }) {
-  const { fileContent, filePath } = readFile(filePathRelative, { cwd })
+function readJson(filePathRelative: string, dir: string) {
+  const { fileContent, filePath } = readFile(filePathRelative, dir)
   const fileParsed: Record<string, unknown> = JSON.parse(fileContent)
   return { packageJson: fileParsed, packageJsonFile: filePath }
 }
 /*
-function readYaml(filePathRelative: string, { cwd }: { cwd: string }): Record<string, unknown> {
-  const { fileContent } = readFile(filePathRelative, { cwd })
+function readYaml(filePathRelative: string, dir: string): Record<string, unknown> {
+  const { fileContent } = readFile(filePathRelative, dir)
   const fileParsed: Record<string, unknown> = yaml.load(fileContent) as any
   return fileParsed
 }
