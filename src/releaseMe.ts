@@ -156,17 +156,17 @@ async function publishCommitRelease(pkg: { packageName: string }) {
 async function publishBoilerplates(boilerplatePackageJson: string) {
   await npmPublish(path.dirname(boilerplatePackageJson))
 }
-async function npmPublish(cwd: string, tag?: string) {
+async function npmPublish(dir: string, tag?: string) {
   const env = getNpmFix()
   let cmd = 'npm publish'
   if (tag) {
     cmd = `${cmd} --tag ${tag}`
   }
-  await run(cmd, { cwd, env })
+  await run(cmd, { dir, env })
 }
-async function removeNpmTag(cwd: string, tag: string, packageName: string) {
+async function removeNpmTag(dir: string, tag: string, packageName: string) {
   const env = getNpmFix()
-  await run(`npm dist-tag rm ${packageName} ${tag}`, { cwd, env })
+  await run(`npm dist-tag rm ${packageName} ${tag}`, { dir, env })
 }
 
 // Fix for: (see https://github.com/yarnpkg/yarn/issues/2935#issuecomment-487020430)
@@ -215,7 +215,7 @@ async function changelog(projectRootDir: string, changelogDir: string, gitTagPre
       '--pkg',
       pkgDir
     ],
-    { cwd: pkgDir }
+    { dir: pkgDir }
   )
   */
 }
@@ -278,7 +278,7 @@ function askConfirmation(): Promise<void> {
 
 async function gitCommit(versionNew: string, projectRootDir: string, gitTagPrefix: string) {
   const tag = `${gitTagPrefix}${versionNew}`
-  await run('git add .', { cwd: projectRootDir })
+  await run('git add .', { dir: projectRootDir })
   await run(['git', 'commit', '-am', `release: ${tag}`])
   await run(`git tag ${tag}`)
 }
@@ -451,10 +451,10 @@ type PackageJson = {
   devDependencies: Record<string, string>
 }
 
-async function run(cmd: string | string[], { cwd = process.cwd(), env = process.env } = {}) {
+async function run(cmd: string | string[], { dir = process.cwd(), env = process.env } = {}) {
   const stdio = 'inherit'
   const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
-  await execa(command!, args, { cwd, stdio, env })
+  await execa(command!, args, { cwd: dir, stdio, env })
 }
 async function run__return(cmd: string | string[], dir = process.cwd()): Promise<string> {
   const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
