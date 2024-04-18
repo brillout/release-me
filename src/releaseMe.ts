@@ -60,7 +60,7 @@ async function releaseMe(args: Args, packageRootDir: string) {
 
   const gitTagPrefix = args.gitTagPrefix ? `${args.gitTagPrefix}@` : 'v'
 
-  await changelog(packageRootDir, gitTagPrefix)
+  await changelog(monorepoRootDir, packageRootDir, gitTagPrefix)
 
   await showPreview(pkg, packageRootDir)
   await askConfirmation()
@@ -169,7 +169,7 @@ function getNpmFix() {
   return { ...process.env, npm_config_registry: undefined }
 }
 
-async function changelog(packageRootDir: string, gitTagPrefix: string) {
+async function changelog(monorepoRootDir: string, packageRootDir: string, gitTagPrefix: string) {
   const readable = conventionalChangelog(
     {
       preset: 'angular',
@@ -180,7 +180,10 @@ async function changelog(packageRootDir: string, gitTagPrefix: string) {
       // Filter commits.
       // - Equivalent to CLI argument `--commit-path`.
       // - https://github.com/conventional-changelog/conventional-changelog/issues/556#issuecomment-555539998
-      path: packageRootDir,
+      path: isSamePath(monorepoRootDir, packageRootDir)
+        ? // Set to `undefined` in order to enable empty release commits (e.g. `fix: `).
+          undefined
+        : packageRootDir,
     },
     {
       // Skip revert commits.
@@ -515,4 +518,16 @@ async function getCommitHash() {
     // Align with GitHub: GitHub (always?) only shows the first 7 characters
     .slice(0, 7)
   return commitHash
+}
+
+function isSamePath(p1: string, p2: string) {
+  p1 = path.normalize(p1)
+  p2 = path.normalize(p2)
+  assert(!p1.includes('\\'))
+  assert(!p2.includes('\\'))
+  assert(p1.startsWith('/'))
+  assert(p2.startsWith('/'))
+  assert(!p1.endsWith('/'))
+  assert(!p2.endsWith('/'))
+  return p1 === p2
 }
