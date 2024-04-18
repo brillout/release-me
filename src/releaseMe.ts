@@ -95,22 +95,22 @@ async function findPackage() {
   }
 
   /* Following is commented out because we want to ensure user always runs `pnpm exec release-me` at the package's root directory.
-    // ${packagePath}/package.json#name
-    if (files.includes('pnpm-workspace.yaml')) {
-      const pnpmWorkspaceYaml = readYaml('pnpm-workspace.yaml', { cwd })
-      const { packages } = pnpmWorkspaceYaml
-      if (packages) {
-        assert(Array.isArray(packages))
-        const [packagePath] = packages
-        assert(typeof packagePath === 'string')
-        console.log(cwd)
-        const pkg = readPkg(path.join(cwd, packagePath))
-        if (pkg) {
-          return pkg
-        }
+  // ${packagePath}/package.json#name
+  if (files.includes('pnpm-workspace.yaml')) {
+    const pnpmWorkspaceYaml = readYaml('pnpm-workspace.yaml', { cwd })
+    const { packages } = pnpmWorkspaceYaml
+    if (packages) {
+      assert(Array.isArray(packages))
+      const [packagePath] = packages
+      assert(typeof packagePath === 'string')
+      console.log(cwd)
+      const pkg = readPkg(path.join(cwd, packagePath))
+      if (pkg) {
+        return pkg
       }
     }
-    */
+  }
+  */
 
   throw new Error(pc.red(pc.bold("Couldn't find package")))
 }
@@ -138,12 +138,12 @@ function readJson(filePathRelative: string, { cwd }: { cwd: string }) {
   return { packageJson: fileParsed, packageJsonFile: filePath }
 }
 /*
-  function readYaml(filePathRelative: string, { cwd }: { cwd: string }): Record<string, unknown> {
-    const { fileContent } = readFile(filePathRelative, { cwd })
-    const fileParsed: Record<string, unknown> = yaml.load(fileContent) as any
-    return fileParsed
-  }
-  */
+function readYaml(filePathRelative: string, { cwd }: { cwd: string }): Record<string, unknown> {
+  const { fileContent } = readFile(filePathRelative, { cwd })
+  const fileParsed: Record<string, unknown> = yaml.load(fileContent) as any
+  return fileParsed
+}
+*/
 
 async function publish() {
   await npmPublish(process.cwd())
