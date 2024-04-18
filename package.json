@@ -13,7 +13,8 @@
     "format:check": "biome format . || echo Fix formatting by running: $ pnpm -w run format",
     "// === Release ===": "",
     "prepublishOnly": "pnpm run build",
-    "release": "npm version patch && npm publish && git push && git push --tags"
+    "release": "npm version patch && npm publish && git push && git push --tags",
+    "release:minor": "npm version minor && npm publish && git push && git push --tags"
   },
   "dependencies": {
     "commander": "^11.1.0",
