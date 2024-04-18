@@ -182,7 +182,12 @@ async function changelog(projectRootDir: string, changelogDir: string, gitTagPre
       tagPrefix: gitTagPrefix,
     },
     undefined,
-    undefined,
+    {
+      // Filter commits.
+      // - Equivalent to CLI argument `--commit-path`.
+      // - https://github.com/conventional-changelog/conventional-changelog/issues/556#issuecomment-555539998
+      path: changelogDir,
+    },
     {
       // Skip revert commits.
       // - Modify revertPattern set by node_modules/conventional-changelog-angular/parserOpts.js to skip the default commit message upon `$ git revert`.
