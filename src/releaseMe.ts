@@ -27,6 +27,8 @@ type Args = {
   releaseTarget: ReleaseTarget
 }
 
+const packageRootDir = process.cwd()
+
 async function releaseMe(args: Args) {
   await abortIfUncommitedChanges()
 
@@ -83,12 +85,11 @@ async function releaseMe(args: Args) {
 }
 
 async function findPackage() {
-  const cwd = process.cwd()
-  const files = await getFilesInsideDir(cwd)
+  const files = await getFilesInsideDir(packageRootDir)
 
   // package.json#name
   if (files.includes('package.json')) {
-    const pkg = readPkg(cwd)
+    const pkg = readPkg(packageRootDir)
     if (pkg) {
       return pkg
     }
@@ -146,12 +147,11 @@ function readYaml(filePathRelative: string, dir: string): Record<string, unknown
 */
 
 async function publish() {
-  await npmPublish(process.cwd())
+  await npmPublish(packageRootDir)
 }
 async function publishCommitRelease(pkg: { packageName: string }) {
-  const cwd = process.cwd()
-  await npmPublish(cwd, 'commit')
-  await removeNpmTag(cwd, 'commit', pkg.packageName)
+  await npmPublish(packageRootDir, 'commit')
+  await removeNpmTag(packageRootDir, 'commit', pkg.packageName)
 }
 async function publishBoilerplates(boilerplatePackageJson: string) {
   await npmPublish(path.dirname(boilerplatePackageJson))
@@ -197,7 +197,6 @@ async function changelog(monorepoRootDir: string, changelogDir: string, gitTagPr
   const changelog = await streamToString(readable)
   prerendFile(getChangeLogPath(monorepoRootDir, changelogDir), changelog)
   /*
-  const pkgDir = process.cwd()
   // Usage examples:
   //  - pnpm exec conventional-changelog --preset angular
   //  - pnpm exec conventional-changelog --preset angular --infile CHANGELOG.md --same-file
@@ -213,9 +212,9 @@ async function changelog(monorepoRootDir: string, changelogDir: string, gitTagPr
       getChangeLogPath(),
       '--same-file',
       '--pkg',
-      pkgDir
+      packageRootDir
     ],
-    { dir: pkgDir }
+    { dir: packageRootDir
   )
   */
 }
@@ -451,12 +450,12 @@ type PackageJson = {
   devDependencies: Record<string, string>
 }
 
-async function run(cmd: string | string[], { dir = process.cwd(), env = process.env } = {}) {
+async function run(cmd: string | string[], { dir, env = process.env }: { dir?: string; env?: NodeJS.ProcessEnv } = {}) {
   const stdio = 'inherit'
   const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
   await execa(command!, args, { cwd: dir, stdio, env })
 }
-async function run__return(cmd: string | string[], dir = process.cwd()): Promise<string> {
+async function run__return(cmd: string | string[], dir?: string): Promise<string> {
   const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
   const { stdout } = await execa(command!, args, { cwd: dir })
   return stdout
