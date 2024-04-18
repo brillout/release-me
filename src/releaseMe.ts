@@ -184,7 +184,7 @@ async function changelog(projectRootDir: string, changelogDir: string, gitTagPre
     undefined,
     undefined,
     {
-      // Modify revertPattern set by node_modules/conventional-changelog-angular/parserOpts.js to skip the default commit message upon `$ git revert`
+      // Skip revert commits. (Modify revertPattern set by node_modules/conventional-changelog-angular/parserOpts.js to skip the default commit message upon `$ git revert`.)
       revertPattern: /^revert:\s"?([\s\S]+?)"?\s*This reverts commit (\w*)\./i
     }
   )
