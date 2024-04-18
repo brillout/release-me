@@ -60,9 +60,9 @@ async function releaseMe(args: Args, packageRootDir: string) {
 
   const gitTagPrefix = args.gitTagPrefix ? `${args.gitTagPrefix}@` : 'v'
 
-  await changelog(monorepoRootDir, packageRootDir, gitTagPrefix)
+  await changelog(packageRootDir, gitTagPrefix)
 
-  await showPreview(pkg, monorepoRootDir, packageRootDir)
+  await showPreview(pkg, packageRootDir)
   await askConfirmation()
 
   if (!args.dev) {
@@ -169,7 +169,7 @@ function getNpmFix() {
   return { ...process.env, npm_config_registry: undefined }
 }
 
-async function changelog(monorepoRootDir: string, packageRootDir: string, gitTagPrefix: string) {
+async function changelog(packageRootDir: string, gitTagPrefix: string) {
   const readable = conventionalChangelog(
     {
       preset: 'angular',
@@ -189,7 +189,7 @@ async function changelog(monorepoRootDir: string, packageRootDir: string, gitTag
     },
   )
   const changelog = await streamToString(readable)
-  prerendFile(getChangeLogPath(monorepoRootDir, packageRootDir), changelog)
+  prerendFile(getChangeLogPath(packageRootDir), changelog)
   /*
   // Usage examples:
   //  - pnpm exec conventional-changelog --preset angular
@@ -235,13 +235,13 @@ function prerendFile(filePath: string, prerendString: string) {
   writeFileSync(filePath, content)
 }
 
-function getChangeLogPath(monorepoRootDir: string, packageRootDir: string) {
-  return path.join(monorepoRootDir, packageRootDir, 'CHANGELOG.md')
+function getChangeLogPath(packageRootDir: string) {
+  return path.join(packageRootDir, 'CHANGELOG.md')
 }
 
-async function showPreview(pkg: { packageDir: string }, monorepoRootDir: string, packageRootDir: string) {
+async function showPreview(pkg: { packageDir: string }, packageRootDir: string) {
   await showCmd('git status')
-  await diffAndLog(getChangeLogPath(monorepoRootDir, packageRootDir))
+  await diffAndLog(getChangeLogPath(packageRootDir))
   await diffAndLog(path.join(pkg.packageDir, 'package.json'))
   async function diffAndLog(filePath: string) {
     await showCmd(`git diff ${filePath}`, `git --no-pager diff ${filePath}`)
