@@ -23,7 +23,6 @@ type Args = {
   dev: boolean
   force: boolean
   gitTagPrefix: string | null
-  changelogDir: string
   releaseTarget: ReleaseTarget
 }
 
@@ -61,9 +60,9 @@ async function releaseMe(args: Args, packageRootDir: string) {
 
   const gitTagPrefix = args.gitTagPrefix ? `${args.gitTagPrefix}@` : 'v'
 
-  await changelog(monorepoRootDir, args.changelogDir, gitTagPrefix)
+  await changelog(monorepoRootDir, packageRootDir, gitTagPrefix)
 
-  await showPreview(pkg, monorepoRootDir, args.changelogDir)
+  await showPreview(pkg, monorepoRootDir, packageRootDir)
   await askConfirmation()
 
   if (!args.dev) {
@@ -170,7 +169,7 @@ function getNpmFix() {
   return { ...process.env, npm_config_registry: undefined }
 }
 
-async function changelog(monorepoRootDir: string, changelogDir: string, gitTagPrefix: string) {
+async function changelog(monorepoRootDir: string, packageRootDir: string, gitTagPrefix: string) {
   const readable = conventionalChangelog(
     {
       preset: 'angular',
@@ -181,7 +180,7 @@ async function changelog(monorepoRootDir: string, changelogDir: string, gitTagPr
       // Filter commits.
       // - Equivalent to CLI argument `--commit-path`.
       // - https://github.com/conventional-changelog/conventional-changelog/issues/556#issuecomment-555539998
-      path: changelogDir,
+      path: packageRootDir,
     },
     {
       // Skip revert commits.
@@ -190,7 +189,7 @@ async function changelog(monorepoRootDir: string, changelogDir: string, gitTagPr
     },
   )
   const changelog = await streamToString(readable)
-  prerendFile(getChangeLogPath(monorepoRootDir, changelogDir), changelog)
+  prerendFile(getChangeLogPath(monorepoRootDir, packageRootDir), changelog)
   /*
   // Usage examples:
   //  - pnpm exec conventional-changelog --preset angular
@@ -236,13 +235,13 @@ function prerendFile(filePath: string, prerendString: string) {
   writeFileSync(filePath, content)
 }
 
-function getChangeLogPath(monorepoRootDir: string, changelogDir: string) {
-  return path.join(monorepoRootDir, changelogDir, 'CHANGELOG.md')
+function getChangeLogPath(monorepoRootDir: string, packageRootDir: string) {
+  return path.join(monorepoRootDir, packageRootDir, 'CHANGELOG.md')
 }
 
-async function showPreview(pkg: { packageDir: string }, monorepoRootDir: string, changelogDir: string) {
+async function showPreview(pkg: { packageDir: string }, monorepoRootDir: string, packageRootDir: string) {
   await showCmd('git status')
-  await diffAndLog(getChangeLogPath(monorepoRootDir, changelogDir))
+  await diffAndLog(getChangeLogPath(monorepoRootDir, packageRootDir))
   await diffAndLog(path.join(pkg.packageDir, 'package.json'))
   async function diffAndLog(filePath: string) {
     await showCmd(`git diff ${filePath}`, `git --no-pager diff ${filePath}`)
