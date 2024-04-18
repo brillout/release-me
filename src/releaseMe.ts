@@ -38,7 +38,7 @@ async function releaseMe(args: Args) {
     await abortIfNotLatestMainCommit()
   }
 
-  const monorepoRootDir = (await run__return('git rev-parse --show-toplevel', { cwd: process.cwd() })).trim()
+  const monorepoRootDir = (await run__return('git rev-parse --show-toplevel')).trim()
 
   await updateVersionMacro(versionOld, versionNew, monorepoRootDir)
 
@@ -375,8 +375,8 @@ async function bumpPnpmLockFile(projectRootDir: string) {
   }
 }
 
-async function getFilesCwd(cwd: string): Promise<string[]> {
-  const stdout = await run__return('git ls-files', { cwd })
+async function getFilesCwd(dir: string): Promise<string[]> {
+  const stdout = await run__return('git ls-files', dir)
   const files = stdout.split(/\s/)
   return files
 }
@@ -456,9 +456,9 @@ async function run(cmd: string | string[], { cwd = process.cwd(), env = process.
   const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
   await execa(command!, args, { cwd, stdio, env })
 }
-async function run__return(cmd: string | string[], { cwd = process.cwd() } = {}): Promise<string> {
+async function run__return(cmd: string | string[], dir = process.cwd()): Promise<string> {
   const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
-  const { stdout } = await execa(command!, args, { cwd })
+  const { stdout } = await execa(command!, args, { cwd: dir })
   return stdout
 }
 
@@ -517,7 +517,7 @@ nothing to commit, working tree clean`
 }
 
 async function getCommitHash() {
-  const commitHash = (await run__return('git rev-parse HEAD', { cwd: process.cwd() }))
+  const commitHash = (await run__return('git rev-parse HEAD'))
     .trim()
     // Align with GitHub: GitHub (always?) only shows the first 7 characters
     .slice(0, 7)
