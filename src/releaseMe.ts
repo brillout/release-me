@@ -179,14 +179,14 @@ async function changelog(projectRootDir: string, changelogDir: string, gitTagPre
   const readable = conventionalChangelog(
     {
       preset: 'angular',
-      tagPrefix: gitTagPrefix
+      tagPrefix: gitTagPrefix,
     },
     undefined,
     undefined,
     {
       // Skip revert commits. (Modify revertPattern set by node_modules/conventional-changelog-angular/parserOpts.js to skip the default commit message upon `$ git revert`.)
-      revertPattern: /^revert:\s"?([\s\S]+?)"?\s*This reverts commit (\w*)\./i
-    }
+      revertPattern: /^revert:\s"?([\s\S]+?)"?\s*This reverts commit (\w*)\./i,
+    },
   )
   const changelog = await streamToString(readable)
   prerendFile(getChangeLogPath(projectRootDir, changelogDir), changelog)
@@ -258,7 +258,7 @@ async function showPreview(pkg: { packageDir: string }, projectRootDir: string, 
 function askConfirmation(): Promise<void> {
   const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   })
   let resolve: () => void
   const promise = new Promise<void>((r) => (resolve = r))
@@ -286,7 +286,7 @@ async function build() {
 
 async function getVersion(
   pkg: { packageDir: string },
-  releaseTarget: ReleaseTarget
+  releaseTarget: ReleaseTarget,
 ): Promise<{ versionNew: string; versionOld: string; isCommitRelease: boolean }> {
   const packageJson = require(`${pkg.packageDir}/package.json`) as PackageJson
   const versionOld = packageJson.version
@@ -390,7 +390,7 @@ async function updateDependencies(
   versionNew: string,
   versionOld: string,
   projectRootDir: string,
-  devMode: boolean
+  devMode: boolean,
 ) {
   const filesAll = await getFilesAll(projectRootDir)
   filesAll
@@ -463,9 +463,9 @@ async function abortIfUncommitedChanges() {
     throw new Error(
       pc.red(
         pc.bold(
-          `Cannot release: your Git repository has uncommitted changes. Make sure to commit all changes before releasing a new version.`
-        )
-      )
+          `Cannot release: your Git repository has uncommitted changes. Make sure to commit all changes before releasing a new version.`,
+        ),
+      ),
     )
   }
 }
@@ -480,10 +480,10 @@ async function abortIfNotLatestMainCommit() {
         pc.red(
           pc.bold(
             `${errPrefix} the current branch is ${pc.cyan(branch)} but it should be ${pc.cyan(
-              'main'
-            )} (or use ${pc.cyan('--force')})`
-          )
-        )
+              'main',
+            )} (or use ${pc.cyan('--force')})`,
+          ),
+        ),
       )
     }
   }
@@ -500,9 +500,9 @@ nothing to commit, working tree clean`
       throw new Error(
         pc.red(
           pc.bold(
-            `Release aborted, because ${errPrefix} ${pc.cyan('HEAD')} should be 1. ${pc.cyan('main')} and 2. up to date with ${pc.cyan('origin/main')}, or use ${pc.cyan('--force')}.`
-          )
-        )
+            `Release aborted, because ${errPrefix} ${pc.cyan('HEAD')} should be 1. ${pc.cyan('main')} and 2. up to date with ${pc.cyan('origin/main')}, or use ${pc.cyan('--force')}.`,
+          ),
+        ),
       )
     }
   }

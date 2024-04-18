@@ -37,7 +37,7 @@ function parseArgs(): Args {
     force: (program.opts().force as boolean) || false,
     gitPrefix: (program.opts().gitPrefix as string) || null,
     changelogDir: (program.opts().changelogDir as string) || './',
-    releaseTarget
+    releaseTarget,
   }
 }
 
@@ -52,8 +52,8 @@ function showUsage(program: Command) {
       '  $ pnpm exec release-me major                        # bump major semver',
       '  $ pnpm exec release-me commit                       # out-of-band release (as x.y.z-commit-123456 without npm tag)',
       '  $ pnpm exec release-me v${major}.${minor}.${patch}  # release specific version',
-      '  $ pnpm exec release-me --git-prefix my-pkg patch    # git tag prefix -> my-pkg@${major}.${minor}.${patch}'
-    ].join('\n')
+      '  $ pnpm exec release-me --git-prefix my-pkg patch    # git tag prefix -> my-pkg@${major}.${minor}.${patch}',
+    ].join('\n'),
   )
 }
 
