@@ -184,34 +184,35 @@ async function changelog(projectRootDir: string, changelogDir: string, gitTagPre
     undefined,
     undefined,
     {
-      // Skip revert commits. (Modify revertPattern set by node_modules/conventional-changelog-angular/parserOpts.js to skip the default commit message upon `$ git revert`.)
+      // Skip revert commits.
+      // - Modify revertPattern set by node_modules/conventional-changelog-angular/parserOpts.js to skip the default commit message upon `$ git revert`.
       revertPattern: /^revert:\s"?([\s\S]+?)"?\s*This reverts commit (\w*)\./i,
     },
   )
   const changelog = await streamToString(readable)
   prerendFile(getChangeLogPath(projectRootDir, changelogDir), changelog)
   /*
-    const pkgDir = process.cwd()
-    // Usage examples:
-    //  - pnpm exec conventional-changelog --preset angular
-    //  - pnpm exec conventional-changelog --preset angular --infile CHANGELOG.md --same-file
-    //  - pnpm exec conventional-changelog --preset angular --infile CHANGELOG.md --same-file --pkg ./path/to/pkg
-    await run(
-      [
-        'pnpm',
-        'exec',
-        'conventional-changelog',
-        '--preset',
-        'angular',
-        '--infile',
-        getChangeLogPath(),
-        '--same-file',
-        '--pkg',
-        pkgDir
-      ],
-      { cwd: pkgDir }
-    )
-    */
+  const pkgDir = process.cwd()
+  // Usage examples:
+  //  - pnpm exec conventional-changelog --preset angular
+  //  - pnpm exec conventional-changelog --preset angular --infile CHANGELOG.md --same-file
+  //  - pnpm exec conventional-changelog --preset angular --infile CHANGELOG.md --same-file --pkg ./path/to/pkg
+  await run(
+    [
+      'pnpm',
+      'exec',
+      'conventional-changelog',
+      '--preset',
+      'angular',
+      '--infile',
+      getChangeLogPath(),
+      '--same-file',
+      '--pkg',
+      pkgDir
+    ],
+    { cwd: pkgDir }
+  )
+  */
 }
 
 function streamToString(readable: ReturnType<typeof conventionalChangelog>): Promise<string> {
