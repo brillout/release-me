@@ -175,7 +175,7 @@ function getNpmFix() {
   return { ...process.env, npm_config_registry: undefined }
 }
 
-async function changelog(projectRootDir: string, changelogDir: string, gitTagPrefix: string) {
+async function changelog(monorepoRootDir: string, changelogDir: string, gitTagPrefix: string) {
   const readable = conventionalChangelog(
     {
       preset: 'angular',
@@ -195,7 +195,7 @@ async function changelog(projectRootDir: string, changelogDir: string, gitTagPre
     },
   )
   const changelog = await streamToString(readable)
-  prerendFile(getChangeLogPath(projectRootDir, changelogDir), changelog)
+  prerendFile(getChangeLogPath(monorepoRootDir, changelogDir), changelog)
   /*
   const pkgDir = process.cwd()
   // Usage examples:
@@ -242,13 +242,13 @@ function prerendFile(filePath: string, prerendString: string) {
   writeFileSync(filePath, content)
 }
 
-function getChangeLogPath(projectRootDir: string, changelogDir: string) {
-  return path.join(projectRootDir, changelogDir, 'CHANGELOG.md')
+function getChangeLogPath(monorepoRootDir: string, changelogDir: string) {
+  return path.join(monorepoRootDir, changelogDir, 'CHANGELOG.md')
 }
 
-async function showPreview(pkg: { packageDir: string }, projectRootDir: string, changelogDir: string) {
+async function showPreview(pkg: { packageDir: string }, monorepoRootDir: string, changelogDir: string) {
   await showCmd('git status')
-  await diffAndLog(getChangeLogPath(projectRootDir, changelogDir))
+  await diffAndLog(getChangeLogPath(monorepoRootDir, changelogDir))
   await diffAndLog(path.join(pkg.packageDir, 'package.json'))
   async function diffAndLog(filePath: string) {
     await showCmd(`git diff ${filePath}`, `git --no-pager diff ${filePath}`)
@@ -276,9 +276,9 @@ function askConfirmation(): Promise<void> {
   return promise
 }
 
-async function gitCommit(versionNew: string, projectRootDir: string, gitTagPrefix: string) {
+async function gitCommit(versionNew: string, monorepoRootDir: string, gitTagPrefix: string) {
   const tag = `${gitTagPrefix}${versionNew}`
-  await run('git add .', { dir: projectRootDir })
+  await run('git add .', { dir: monorepoRootDir })
   await run(['git', 'commit', '-am', `release: ${tag}`])
   await run(`git tag ${tag}`)
 }
@@ -311,8 +311,8 @@ async function getVersion(
   }
   return { versionNew, versionOld, isCommitRelease }
 }
-async function updateVersionMacro(versionOld: string, versionNew: string, projectRootDir: string) {
-  const filesAll = await getFilesAll(projectRootDir)
+async function updateVersionMacro(versionOld: string, versionNew: string, monorepoRootDir: string) {
+  const filesAll = await getFilesAll(monorepoRootDir)
   filesAll
     .filter((f) => f.endsWith('/projectInfo.ts') || f.endsWith('/projectInfo.tsx'))
     .forEach((filePath) => {
@@ -350,8 +350,8 @@ async function bumpBoilerplateVersion(packageJsonFile: string) {
   writePackageJson(packageJsonFile, packageJson)
 }
 
-async function findBoilerplatePacakge(pkg: { packageName: string }, projectRootDir: string) {
-  const filesAll = await getFilesAll(projectRootDir)
+async function findBoilerplatePacakge(pkg: { packageName: string }, monorepoRootDir: string) {
+  const filesAll = await getFilesAll(monorepoRootDir)
   const packageJsonFiles = filesAll.filter((f) => f.endsWith('package.json'))
   for (const packageJsonFile of packageJsonFiles) {
     const packageJson = require(packageJsonFile) as Record<string, unknown>
@@ -365,9 +365,9 @@ async function findBoilerplatePacakge(pkg: { packageName: string }, projectRootD
   return null
 }
 
-async function bumpPnpmLockFile(projectRootDir: string) {
+async function bumpPnpmLockFile(monorepoRootDir: string) {
   try {
-    await runCommand('pnpm install', { cwd: projectRootDir, timeout: 10 * 60 * 1000 })
+    await runCommand('pnpm install', { cwd: monorepoRootDir, timeout: 10 * 60 * 1000 })
   } catch (err) {
     if (!(err as Error).message.includes('ERR_PNPM_PEER_DEP_ISSUES')) {
       throw err
@@ -385,9 +385,9 @@ async function undoChanges() {
   await run('git reset --hard HEAD')
 }
 
-async function getFilesAll(projectRootDir: string): Promise<string[]> {
-  let filesAll = await getFilesInsideDir(projectRootDir)
-  filesAll = filesAll.map((filePathRelative) => path.join(projectRootDir, filePathRelative))
+async function getFilesAll(monorepoRootDir: string): Promise<string[]> {
+  let filesAll = await getFilesInsideDir(monorepoRootDir)
+  filesAll = filesAll.map((filePathRelative) => path.join(monorepoRootDir, filePathRelative))
   return filesAll
 }
 
@@ -395,10 +395,10 @@ async function updateDependencies(
   pkg: { packageName: string },
   versionNew: string,
   versionOld: string,
-  projectRootDir: string,
+  monorepoRootDir: string,
   devMode: boolean,
 ) {
-  const filesAll = await getFilesAll(projectRootDir)
+  const filesAll = await getFilesAll(monorepoRootDir)
   filesAll
     .filter((f) => f.endsWith('package.json'))
     .forEach((packageJsonFile) => {
