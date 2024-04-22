@@ -6,6 +6,7 @@ export type { ReleaseTarget }
 
 import execa from 'execa'
 import { writeFileSync, readFileSync } from 'fs'
+import * as fs from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
 import { runCommand } from './utils'
@@ -29,7 +30,8 @@ type Args = {
 async function releaseMe(args: Args, packageRootDir: string) {
   await abortIfUncommitedChanges()
 
-  const pkg = await findPackage(packageRootDir)
+  const filesPackage = await getFilesInsideDir(packageRootDir, true)
+  const pkg = await findPackage(packageRootDir, filesPackage)
 
   const { versionOld, versionNew, isCommitRelease } = await getVersion(pkg, args.releaseTarget)
 
@@ -38,10 +40,11 @@ async function releaseMe(args: Args, packageRootDir: string) {
   }
 
   const monorepoRootDir = await getMonorepoRootDir()
+  const filesMonorepo = await getFilesInsideDir(monorepoRootDir)
 
   logAnalysis(monorepoRootDir, packageRootDir)
 
-  await updateVersionMacro(versionOld, versionNew, monorepoRootDir)
+  await updateVersionMacro(versionOld, versionNew, filesMonorepo)
 
   if (isCommitRelease) {
     updatePackageJsonVersion(pkg, versionNew)
@@ -54,8 +57,8 @@ async function releaseMe(args: Args, packageRootDir: string) {
   // Update pacakge.json versions
   updatePackageJsonVersion(pkg, versionNew)
 
-  await updateDependencies(pkg, versionNew, versionOld, monorepoRootDir, args.dev)
-  const boilerplatePackageJson = await findBoilerplatePacakge(pkg, monorepoRootDir)
+  await updateDependencies(pkg, versionNew, versionOld, filesMonorepo, args.dev)
+  const boilerplatePackageJson = await findBoilerplatePacakge(pkg, filesMonorepo)
   if (boilerplatePackageJson) {
     bumpBoilerplateVersion(boilerplatePackageJson)
   }
@@ -83,11 +86,9 @@ async function releaseMe(args: Args, packageRootDir: string) {
   await gitPush()
 }
 
-async function findPackage(packageRootDir: string) {
-  const files = await getFilesInsideDir(packageRootDir)
-
+async function findPackage(packageRootDir: string, filesPackage: string[]) {
   // package.json#name
-  if (files.includes('package.json')) {
+  if (filesPackage.includes('package.json')) {
     const pkg = readPkg(packageRootDir)
     if (pkg) {
       return pkg
@@ -309,9 +310,8 @@ async function getVersion(
   }
   return { versionNew, versionOld, isCommitRelease }
 }
-async function updateVersionMacro(versionOld: string, versionNew: string, monorepoRootDir: string) {
-  const filesAll = await getFilesAll(monorepoRootDir)
-  filesAll
+async function updateVersionMacro(versionOld: string, versionNew: string, filesMonorepo: string[]) {
+  filesMonorepo
     .filter((f) => f.endsWith('/projectInfo.ts') || f.endsWith('/projectInfo.tsx'))
     .forEach((filePath) => {
       assert(path.isAbsolute(filePath))
@@ -348,9 +348,8 @@ async function bumpBoilerplateVersion(packageJsonFile: string) {
   writePackageJson(packageJsonFile, packageJson)
 }
 
-async function findBoilerplatePacakge(pkg: { packageName: string }, monorepoRootDir: string) {
-  const filesAll = await getFilesAll(monorepoRootDir)
-  const packageJsonFiles = filesAll.filter((f) => f.endsWith('package.json'))
+async function findBoilerplatePacakge(pkg: { packageName: string }, filesMonorepo: string[]) {
+  const packageJsonFiles = filesMonorepo.filter((f) => f.endsWith('package.json'))
   for (const packageJsonFile of packageJsonFiles) {
     const packageJson = require(packageJsonFile) as Record<string, unknown>
     const { name } = packageJson
@@ -373,9 +372,10 @@ async function bumpPnpmLockFile(monorepoRootDir: string) {
   }
 }
 
-async function getFilesInsideDir(dir: string): Promise<string[]> {
+async function getFilesInsideDir(dir: string, relative?: true): Promise<string[]> {
   const stdout = await run__return('git ls-files', dir)
-  const files = stdout.split(/\s/)
+  let files = stdout.split(/\s/)
+  if (!relative) files = files.map((filePathRelative) => path.join(dir, filePathRelative))
   return files
 }
 
@@ -383,21 +383,14 @@ async function undoChanges() {
   await run('git reset --hard HEAD')
 }
 
-async function getFilesAll(monorepoRootDir: string): Promise<string[]> {
-  let filesAll = await getFilesInsideDir(monorepoRootDir)
-  filesAll = filesAll.map((filePathRelative) => path.join(monorepoRootDir, filePathRelative))
-  return filesAll
-}
-
 async function updateDependencies(
   pkg: { packageName: string },
   versionNew: string,
   versionOld: string,
-  monorepoRootDir: string,
+  filesMonorepo: string[],
   devMode: boolean,
 ) {
-  const filesAll = await getFilesAll(monorepoRootDir)
-  filesAll
+  filesMonorepo
     .filter((f) => f.endsWith('package.json'))
     .forEach((packageJsonFile) => {
       modifyPackageJson(packageJsonFile, (packageJson) => {
