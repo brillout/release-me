@@ -5,7 +5,6 @@ export type { ReleaseType }
 export type { ReleaseTarget }
 
 import execa from 'execa'
-import { writeFileSync, readFileSync } from 'fs'
 import * as fs from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
@@ -129,7 +128,7 @@ function readPkg(dir: string) {
 
 function readFile(filePathRelative: string, dir: string) {
   const filePathAbsolute = path.join(dir, filePathRelative)
-  const fileContent = readFileSync(filePathAbsolute, 'utf8')
+  const fileContent = fs.readFileSync(filePathAbsolute, 'utf8')
   return { fileContent, filePath: filePathAbsolute }
 }
 
@@ -235,10 +234,10 @@ function streamToString(readable: ReturnType<typeof conventionalChangelog>): Pro
 function prerendFile(filePath: string, prerendString: string) {
   let content = ''
   try {
-    content = readFileSync(filePath, 'utf8')
+    content = fs.readFileSync(filePath, 'utf8')
   } catch {}
   content = prerendString + content
-  writeFileSync(filePath, content)
+  fs.writeFileSync(filePath, content)
 }
 
 function getChangeLogPath(packageRootDir: string) {
@@ -318,7 +317,7 @@ async function updateVersionMacro(versionOld: string, versionNew: string, filesM
       const getCodeSnippet = (version: string) => `const PROJECT_VERSION = '${version}'`
       const codeSnippetOld = getCodeSnippet(versionOld)
       const codeSnippetNew = getCodeSnippet(versionNew)
-      const contentOld = readFileSync(filePath, 'utf8')
+      const contentOld = fs.readFileSync(filePath, 'utf8')
       assert(contentOld.includes(codeSnippetOld))
       /*
       if (!contentOld.includes(codeSnippetOld)) {
@@ -328,7 +327,7 @@ async function updateVersionMacro(versionOld: string, versionNew: string, filesM
       */
       const contentNew = contentOld.replace(codeSnippetOld, codeSnippetNew)
       assert(contentNew !== contentOld)
-      writeFileSync(filePath, contentNew)
+      fs.writeFileSync(filePath, contentNew)
     })
 }
 function updatePackageJsonVersion(pkg: { packageDir: string }, versionNew: string) {
@@ -433,7 +432,7 @@ function modifyPackageJson(pkgPath: string, updater: (pkg: PackageJson) => void 
 }
 
 function writePackageJson(pkgPath: string, pkg: object) {
-  writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
+  fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
 }
 
 type PackageJson = {
