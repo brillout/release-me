@@ -37,7 +37,9 @@ async function releaseMe(args: Args, packageRootDir: string) {
     await abortIfNotLatestMainCommit()
   }
 
-  const monorepoRootDir = (await run__return('git rev-parse --show-toplevel')).trim()
+  const monorepoRootDir = await getMonorepoRootDir()
+
+  logAnalysis(monorepoRootDir, packageRootDir)
 
   await updateVersionMacro(versionOld, versionNew, monorepoRootDir)
 
@@ -243,6 +245,7 @@ function getChangeLogPath(packageRootDir: string) {
 }
 
 async function showPreview(pkg: { packageDir: string }, packageRootDir: string) {
+  logTitle('Confirm changes')
   await showCmd('git status')
   await diffAndLog(getChangeLogPath(packageRootDir))
   await diffAndLog(path.join(pkg.packageDir, 'package.json'))
@@ -251,9 +254,9 @@ async function showPreview(pkg: { packageDir: string }, packageRootDir: string) 
   }
   async function showCmd(cmd: string, cmdReal?: string) {
     cmdReal ??= cmd
-    console.log()
     console.log(pc.bold(pc.blue(`$ ${cmd}`)))
     await run(cmdReal)
+    console.log()
   }
 }
 
@@ -264,7 +267,6 @@ function askConfirmation(): Promise<void> {
   })
   let resolve: () => void
   const promise = new Promise<void>((r) => (resolve = r))
-  console.log()
   rl.question(pc.blue(pc.bold('Press <ENTER> to confirm release.')), () => {
     resolve()
     rl.close()
@@ -530,4 +532,27 @@ function isSamePath(p1: string, p2: string) {
   assert(!p1.endsWith('/'))
   assert(!p2.endsWith('/'))
   return p1 === p2
+}
+
+const gitCmdMonorepoRootDir = 'git rev-parse --show-toplevel'
+async function getMonorepoRootDir() {
+  const monorepoRootDir = (await run__return(gitCmdMonorepoRootDir)).trim()
+  return monorepoRootDir
+}
+
+function logAnalysis(monorepoRootDir: string, packageRootDir: string) {
+  logTitle('Analysis result')
+  const why = (src: string) => `(${pc.dim(src)})`
+  console.log(`Monorepo root directory: ${pc.bold(monorepoRootDir)} ${why(`$ ${gitCmdMonorepoRootDir}`)}`)
+  console.log(`Package root directory: ${pc.bold(packageRootDir)} ${why('process.cwd()')}`)
+}
+
+function logTitle(title: string) {
+  const titleLine = `==== ${title} ====`
+  const borderLine = '='.repeat(titleLine.length)
+  console.log()
+  console.log()
+  console.log(borderLine)
+  console.log(titleLine)
+  console.log(borderLine)
 }
