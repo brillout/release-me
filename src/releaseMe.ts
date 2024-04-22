@@ -115,7 +115,7 @@ async function findPackage(packageRootDir: string, filesPackage: string[]) {
   }
   */
 
-  throw new Error(pc.red(pc.bold("Couldn't find package")))
+  throw new Error(pc.red(pc.bold(`No package.json found at ${packageRootDir}`)))
 }
 
 function readPkg(dir: string) {
