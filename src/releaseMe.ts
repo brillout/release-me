@@ -66,7 +66,7 @@ async function releaseMe(args: Args, packageRootDir: string) {
 
   await changelog(monorepoRootDir, packageRootDir, gitTagPrefix)
 
-  await showPreview(pkg, packageRootDir)
+  await showPreview(pkg, packageRootDir, filesPackage)
   await askConfirmation()
 
   if (!args.dev) {
@@ -240,22 +240,36 @@ function prerendFile(filePath: string, prerendString: string) {
   fs.writeFileSync(filePath, content)
 }
 
+const changlogFileName = 'CHANGELOG.md'
 function getChangeLogPath(packageRootDir: string) {
-  return path.join(packageRootDir, 'CHANGELOG.md')
+  return path.join(packageRootDir, changlogFileName)
 }
 
-async function showPreview(pkg: { packageDir: string }, packageRootDir: string) {
+async function showPreview(pkg: { packageDir: string }, packageRootDir: string, filesPackage: string[]) {
   logTitle('Confirm changes')
   await showCmd('git status')
-  await diffAndLog(getChangeLogPath(packageRootDir))
+  await diffAndLog(getChangeLogPath(packageRootDir), true)
   await diffAndLog(path.join(pkg.packageDir, 'package.json'))
-  async function diffAndLog(filePath: string) {
-    await showCmd(`git diff ${filePath}`, `git --no-pager diff ${filePath}`)
+
+  return
+
+  async function diffAndLog(filePath: string, isChangelog?: true) {
+    const fileAlreadyExists = (() => {
+      if (!isChangelog) return true
+      assert(filePath.endsWith(changlogFileName))
+      return filesPackage.includes(changlogFileName)
+    })()
+    const cmdReal = fileAlreadyExists
+      ? `git --no-pager diff ${filePath}`
+      : // https://stackoverflow.com/questions/855767/can-i-use-git-diff-on-untracked-files#comment35922182_856118
+        `git diff --no-index -- /dev/null ${filePath}`
+    await showCmd(`git diff ${filePath}`, cmdReal, fileAlreadyExists)
   }
-  async function showCmd(cmd: string, cmdReal?: string) {
+
+  async function showCmd(cmd: string, cmdReal?: string, swallowError?: boolean) {
     cmdReal ??= cmd
     console.log(pc.bold(pc.blue(`$ ${cmd}`)))
-    await run(cmdReal)
+    await run(cmdReal, { swallowError })
     console.log()
   }
 }
@@ -441,10 +455,17 @@ type PackageJson = {
   devDependencies: Record<string, string>
 }
 
-async function run(cmd: string | string[], { dir, env = process.env }: { dir?: string; env?: NodeJS.ProcessEnv } = {}) {
+async function run(
+  cmd: string | string[],
+  { dir, env = process.env, swallowError }: { dir?: string; env?: NodeJS.ProcessEnv; swallowError?: boolean } = {},
+) {
   const stdio = 'inherit'
   const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
-  await execa(command!, args, { cwd: dir, stdio, env })
+  try {
+    await execa(command!, args, { cwd: dir, stdio, env })
+  } catch (err) {
+    if (!swallowError) err
+  }
 }
 async function run__return(cmd: string | string[], dir?: string): Promise<string> {
   const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
