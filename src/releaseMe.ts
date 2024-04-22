@@ -30,7 +30,9 @@ type Args = {
   releaseTarget: ReleaseTarget
 }
 async function releaseMe(args: Args, packageRootDir: string) {
-  await abortIfUncommitedChanges()
+  const monorepoRootDir = await getMonorepoRootDir()
+
+  await abortIfUncommitedChanges(monorepoRootDir)
 
   const filesPackage = await getFilesInsideDir(packageRootDir, true)
   const pkg = await getPackage(packageRootDir, filesPackage)
@@ -41,7 +43,6 @@ async function releaseMe(args: Args, packageRootDir: string) {
     await abortIfNotLatestMainCommit()
   }
 
-  const monorepoRootDir = await getMonorepoRootDir()
   const filesMonorepo = await getFilesInsideDir(monorepoRootDir)
 
   logAnalysis(monorepoRootDir, packageRootDir)
@@ -477,14 +478,14 @@ async function run__return(cmd: string | string[], dir?: string): Promise<string
   return stdout
 }
 
-async function abortIfUncommitedChanges() {
+async function abortIfUncommitedChanges(monorepoRootDir: string) {
   const stdout = await run__return(`git status --porcelain`)
   const isDirty = stdout !== ''
   if (isDirty) {
     throw new Error(
       pc.red(
         pc.bold(
-          `Cannot release: your Git repository has uncommitted changes. Make sure to commit all changes before releasing a new version.`,
+          `Release aborted, because the Git repository (${monorepoRootDir}) has uncommitted changes. Commit all changes before releasing a new version.`,
         ),
       ),
     )
@@ -494,17 +495,19 @@ async function abortIfUncommitedChanges() {
 }
 
 async function abortIfNotLatestMainCommit() {
-  const errPrefix = 'Cannot release:'
   {
-    const stdout = await run__return(`git rev-parse --abbrev-ref HEAD`)
+    const stdout = await getBranchName()
     const branch = stdout.trim()
     if ('main' !== branch) {
       throw new Error(
         pc.red(
           pc.bold(
-            `${errPrefix} the current branch is ${pc.cyan(branch)} but it should be ${pc.cyan(
-              'main',
-            )} (or use ${pc.cyan('--force')})`,
+            [
+              `Release aborted, because the current branch is ${pc.cyan(branch)}`,
+              `but it should be ${pc.cyan('main')} instead.`,
+              `Make sure the current branch is ${pc.cyan('main')},`,
+              `or use ${pc.cyan('--force')} to skip this check.`,
+            ].join(' '),
           ),
         ),
       )
@@ -513,19 +516,21 @@ async function abortIfNotLatestMainCommit() {
   {
     await runCommand('git fetch')
     const stdout = await run__return(`git status`)
-    const isDirty =
+    const isNotOriginMain =
       stdout.trim() !==
       `On branch main
 Your branch is up to date with 'origin/main'.
 
 nothing to commit, working tree clean`
-    if (isDirty) {
+    if (isNotOriginMain) {
       throw new Error(
         pc.red(
           pc.bold(
-            `Release aborted, because ${errPrefix} ${pc.cyan('HEAD')} should be 1. ${pc.cyan(
-              'main',
-            )} and 2. up to date with ${pc.cyan('origin/main')}, or use ${pc.cyan('--force')}.`,
+            [
+              `Release aborted, because the current commit (i.e. ${pc.cyan('HEAD')})`,
+              `should be up-to-date with ${pc.cyan('origin/main')}.`,
+              `Make sure to push/pull all changes, or use ${pc.cyan('--force')} to skip this check.`,
+            ].join(' '),
           ),
         ),
       )
@@ -539,6 +544,12 @@ async function getCommitHash() {
     // Align with GitHub: GitHub (always?) only shows the first 7 characters
     .slice(0, 7)
   return commitHash
+}
+
+async function getBranchName() {
+  // https://stackoverflow.com/questions/1417957/show-just-the-current-branch-in-git/1418022#1418022
+  const branchName = (await run__return('git rev-parse --abbrev-ref HEAD')).trim()
+  return branchName
 }
 
 function isSamePath(p1: string, p2: string) {
