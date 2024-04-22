@@ -26,7 +26,6 @@ type ReleaseType = (typeof releaseTypes)[number]
 type ReleaseTarget = ReleaseType | `v${string}`
 
 type Args = {
-  dev: boolean
   force: boolean
   releaseTarget: ReleaseTarget
 }
@@ -63,7 +62,7 @@ async function releaseMe(args: Args, packageRootDir: string) {
   // Update pacakge.json versions
   updatePackageJsonVersion(pkg, versionNew)
 
-  await updateDependencies(pkg, versionNew, versionOld, filesMonorepo, args.dev)
+  await updateDependencies(pkg, versionNew, versionOld, filesMonorepo)
   const boilerplatePackageJson = await findBoilerplatePacakge(pkg, filesMonorepo)
   if (boilerplatePackageJson) {
     bumpBoilerplateVersion(boilerplatePackageJson)
@@ -76,9 +75,7 @@ async function releaseMe(args: Args, packageRootDir: string) {
   await showPreview(pkg, packageRootDir, filesPackage)
   await askConfirmation()
 
-  if (!args.dev) {
-    await bumpPnpmLockFile(monorepoRootDir)
-  }
+  await bumpPnpmLockFile(monorepoRootDir)
 
   await gitCommit(versionNew, monorepoRootDir, gitTagPrefix)
 
@@ -406,7 +403,6 @@ async function updateDependencies(
   versionNew: string,
   versionOld: string,
   filesMonorepo: Files,
-  devMode: boolean,
 ) {
   filesMonorepo
     .filter((f) => f.filePathAbsolute.endsWith('package.json'))
@@ -423,13 +419,11 @@ async function updateDependencies(
           const versionOld_range = !hasRange ? versionOld : `^${versionOld}`
           const versionNew_range = !hasRange ? versionNew : `^${versionNew}`
           if (!version.startsWith('link:') && !version.startsWith('workspace:')) {
-            if (!devMode) {
-              try {
-                assert.strictEqual(version, versionOld_range)
-              } catch (err) {
-                console.log(`Wrong ${pkg.packageName} version in ${filePathAbsolute}`)
-                throw err
-              }
+            try {
+              assert.strictEqual(version, versionOld_range)
+            } catch (err) {
+              console.log(`Wrong ${pkg.packageName} version in ${filePathAbsolute}`)
+              throw err
             }
             packageJson[deps][pkg.packageName] = versionNew_range
           }

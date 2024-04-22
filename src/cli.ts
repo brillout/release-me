@@ -6,11 +6,7 @@ const args = parseArgs()
 releaseMe(args, packageRootDir)
 
 function parseArgs(): Args {
-  program
-    .name('release-me')
-    .option('--dev', 'dev mode')
-    .option('--force')
-    .argument('<release-target>')
+  program.name('release-me').option('--force').argument('<release-target>')
   program.parse()
   // At this point, program.args contains the positional arguments and program.opts() contains the flags.
 
@@ -32,7 +28,6 @@ function parseArgs(): Args {
   }
 
   return {
-    dev: (program.opts().dev as boolean) || false,
     force: (program.opts().force as boolean) || false,
     releaseTarget,
   }
