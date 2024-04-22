@@ -1,3 +1,18 @@
+# [0.3.0](https://github.com/brillout/release-me/compare/v0.2.4...v0.3.0) (2024-04-22)
+
+
+### Bug Fixes
+
+* improve CLI help ([bd50ff8](https://github.com/brillout/release-me/commit/bd50ff8af9ee1466e5ca36654ac8c703bf89110e))
+* remove --dev ([5653ce2](https://github.com/brillout/release-me/commit/5653ce29e51803c685cc12fd495c02ff45858b24))
+
+
+### Features
+
+* remove --git-tag-prefix arg; automatically determine it ([dec181a](https://github.com/brillout/release-me/commit/dec181a2b6cba9c2e63750035975b99dcc59e2a1))
+
+
+
 ## [0.2.4](https://github.com/brillout/release-me/compare/v0.2.3...v0.2.4) (2024-04-22)
 
 
