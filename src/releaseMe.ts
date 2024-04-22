@@ -488,6 +488,8 @@ async function abortIfUncommitedChanges() {
         ),
       ),
     )
+  } else {
+    cleanEnabled = true
   }
 }
 
@@ -576,12 +578,16 @@ function logTitle(title: string) {
 }
 
 let cleanRootDir = process.cwd()
+let cleanEnabled = false
 async function clean(err: unknown) {
   if (err) {
-    logTitle('Bug')
+    logTitle('Error')
     console.error(err)
   }
-  await run('git clean -df')
-  await run(`git checkout ${cleanRootDir}`)
+  if (!err && cleanEnabled) {
+    await run(`git add ${cleanRootDir}`)
+    await run(['git', 'commit', '-am', 'aborted release'])
+    await run(`git reset --hard HEAD~`)
+  }
   process.exit(1)
 }
