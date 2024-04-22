@@ -10,7 +10,6 @@ function parseArgs(): Args {
     .name('release-me')
     .option('--dev', 'dev mode')
     .option('--force')
-    .option('--git-tag-prefix <string>')
     .argument('<release-target>')
   program.parse()
   // At this point, program.args contains the positional arguments and program.opts() contains the flags.
@@ -35,7 +34,6 @@ function parseArgs(): Args {
   return {
     dev: (program.opts().dev as boolean) || false,
     force: (program.opts().force as boolean) || false,
-    gitTagPrefix: (program.opts().gitTagPrefix as string) || null,
     releaseTarget,
   }
 }

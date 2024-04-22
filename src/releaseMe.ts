@@ -10,10 +10,12 @@ import assert from 'assert'
 import * as semver from 'semver'
 import { runCommand } from './utils'
 import * as path from 'path'
-// import yaml from 'js-yaml'
+import yaml from 'js-yaml'
 import readline from 'readline'
 import pc from 'picocolors'
 import conventionalChangelog from 'conventional-changelog'
+
+const thisPackageName = '@brillout/release-me'
 
 process.on('uncaughtException', clean)
 process.on('unhandledRejection', clean)
@@ -26,7 +28,6 @@ type ReleaseTarget = ReleaseType | `v${string}`
 type Args = {
   dev: boolean
   force: boolean
-  gitTagPrefix: string | null
   releaseTarget: ReleaseTarget
 }
 async function releaseMe(args: Args, packageRootDir: string) {
@@ -34,7 +35,7 @@ async function releaseMe(args: Args, packageRootDir: string) {
 
   await abortIfUncommitedChanges(monorepoRootDir)
 
-  const filesPackage = await getFilesInsideDir(packageRootDir, true)
+  const filesPackage = await getFilesInsideDir(packageRootDir)
   const pkg = await getPackage(packageRootDir, filesPackage)
 
   const { versionOld, versionNew, isCommitRelease } = await getVersion(pkg, args.releaseTarget)
@@ -45,7 +46,9 @@ async function releaseMe(args: Args, packageRootDir: string) {
 
   const filesMonorepo = await getFilesInsideDir(monorepoRootDir)
 
-  logAnalysis(monorepoRootDir, packageRootDir)
+  const monorepoInfo = analyzeMonorepo(monorepoRootDir, filesMonorepo, packageRootDir, pkg)
+
+  logAnalysis(monorepoInfo, monorepoRootDir, packageRootDir)
 
   await updateVersionMacro(versionOld, versionNew, filesMonorepo)
 
@@ -66,7 +69,7 @@ async function releaseMe(args: Args, packageRootDir: string) {
     bumpBoilerplateVersion(boilerplatePackageJson)
   }
 
-  const gitTagPrefix = args.gitTagPrefix ? `${args.gitTagPrefix}@` : 'v'
+  const gitTagPrefix = monorepoInfo.isMonorepo ? `${pkg.packageName}@` : 'v'
 
   await changelog(monorepoRootDir, packageRootDir, gitTagPrefix)
 
@@ -89,37 +92,24 @@ async function releaseMe(args: Args, packageRootDir: string) {
   await gitPush()
 }
 
-async function getPackage(packageRootDir: string, filesPackage: string[]) {
+async function getPackage(packageRootDir: string, filesPackage: Files) {
   // package.json#name
-  if (filesPackage.includes('package.json')) {
+  if (filesPackage.find((f) => f.filePathRelative === 'package.json')) {
     const pkg = readPkg(packageRootDir)
     if (pkg) {
       return pkg
     }
   }
 
-  /* Following is commented out because we want to ensure user always runs `pnpm exec release-me` at the package's root directory.
-  // ${packagePath}/package.json#name
-  if (files.includes('pnpm-workspace.yaml')) {
-    const pnpmWorkspaceYaml = readYaml('pnpm-workspace.yaml', { cwd })
-    const { packages } = pnpmWorkspaceYaml
-    if (packages) {
-      assert(Array.isArray(packages))
-      const [packagePath] = packages
-      assert(typeof packagePath === 'string')
-      console.log(cwd)
-      const pkg = readPkg(path.join(cwd, packagePath))
-      if (pkg) {
-        return pkg
-      }
-    }
-  }
-  */
-
   throw new Error(pc.red(pc.bold(`No package.json found at ${packageRootDir}`)))
 }
 
-function readPkg(dir: string) {
+type Pkg = {
+  packageName: string
+  packageDir: string
+  devDependencies: Record<string, string>
+}
+function readPkg(dir: string): null | Pkg {
   const { packageJson, packageJsonFile } = readJson('package.json', dir)
   const { name } = packageJson
   if (!name) {
@@ -127,7 +117,8 @@ function readPkg(dir: string) {
   }
   const packageDir = path.dirname(packageJsonFile)
   assert(typeof name === 'string')
-  return { packageName: name, packageDir }
+  const devDependencies = packageJson.devDependencies as Record<string, string>
+  return { packageName: name, packageDir, devDependencies }
 }
 
 function readFile(filePathRelative: string, dir: string) {
@@ -141,13 +132,11 @@ function readJson(filePathRelative: string, dir: string) {
   const fileParsed: Record<string, unknown> = JSON.parse(fileContent)
   return { packageJson: fileParsed, packageJsonFile: filePath }
 }
-/*
 function readYaml(filePathRelative: string, dir: string): Record<string, unknown> {
   const { fileContent } = readFile(filePathRelative, dir)
   const fileParsed: Record<string, unknown> = yaml.load(fileContent) as any
   return fileParsed
 }
-*/
 
 async function publishCommitRelease(packageRootDir: string, pkg: { packageName: string }) {
   await npmPublish(packageRootDir, 'commit')
@@ -249,7 +238,7 @@ function getChangeLogPath(packageRootDir: string) {
   return path.join(packageRootDir, changlogFileName)
 }
 
-async function showPreview(pkg: { packageDir: string }, packageRootDir: string, filesPackage: string[]) {
+async function showPreview(pkg: { packageDir: string }, packageRootDir: string, filesPackage: Files) {
   logTitle('Confirm changes')
   await showCmd('git status')
   await diffAndLog(getChangeLogPath(packageRootDir), true)
@@ -261,7 +250,7 @@ async function showPreview(pkg: { packageDir: string }, packageRootDir: string, 
     const fileAlreadyExists = (() => {
       if (!isChangelog) return true
       assert(filePath.endsWith(changlogFileName))
-      return filesPackage.includes(changlogFileName)
+      return !!filesPackage.find((f) => f.filePathRelative === changlogFileName)
     })()
     const cmdReal = fileAlreadyExists
       ? `git --no-pager diff ${filePath}`
@@ -328,15 +317,15 @@ async function getVersion(
   }
   return { versionNew, versionOld, isCommitRelease }
 }
-async function updateVersionMacro(versionOld: string, versionNew: string, filesMonorepo: string[]) {
+async function updateVersionMacro(versionOld: string, versionNew: string, filesMonorepo: Files) {
   filesMonorepo
-    .filter((f) => f.endsWith('/projectInfo.ts') || f.endsWith('/projectInfo.tsx'))
-    .forEach((filePath) => {
-      assert(path.isAbsolute(filePath))
+    .filter((f) => f.filePathAbsolute.endsWith('/projectInfo.ts') || f.filePathAbsolute.endsWith('/projectInfo.tsx'))
+    .forEach(({ filePathAbsolute }) => {
+      assert(path.isAbsolute(filePathAbsolute))
       const getCodeSnippet = (version: string) => `const PROJECT_VERSION = '${version}'`
       const codeSnippetOld = getCodeSnippet(versionOld)
       const codeSnippetNew = getCodeSnippet(versionNew)
-      const contentOld = fs.readFileSync(filePath, 'utf8')
+      const contentOld = fs.readFileSync(filePathAbsolute, 'utf8')
       assert(contentOld.includes(codeSnippetOld))
       /*
       if (!contentOld.includes(codeSnippetOld)) {
@@ -346,7 +335,7 @@ async function updateVersionMacro(versionOld: string, versionNew: string, filesM
       */
       const contentNew = contentOld.replace(codeSnippetOld, codeSnippetNew)
       assert(contentNew !== contentOld)
-      fs.writeFileSync(filePath, contentNew)
+      fs.writeFileSync(filePathAbsolute, contentNew)
     })
 }
 function updatePackageJsonVersion(pkg: { packageDir: string }, versionNew: string) {
@@ -366,15 +355,15 @@ async function bumpBoilerplateVersion(packageJsonFile: string) {
   writePackageJson(packageJsonFile, packageJson)
 }
 
-async function findBoilerplatePacakge(pkg: { packageName: string }, filesMonorepo: string[]) {
-  const packageJsonFiles = filesMonorepo.filter((f) => f.endsWith('package.json'))
-  for (const packageJsonFile of packageJsonFiles) {
-    const packageJson = require(packageJsonFile) as Record<string, unknown>
+async function findBoilerplatePacakge(pkg: { packageName: string }, filesMonorepo: Files) {
+  const packageJsonFiles = filesMonorepo.filter((f) => f.filePathAbsolute.endsWith('package.json'))
+  for (const { filePathAbsolute } of packageJsonFiles) {
+    const packageJson = require(filePathAbsolute) as Record<string, unknown>
     const { name } = packageJson
     if (!name) continue
     assert(typeof name === 'string')
     if (name === `create-${pkg.packageName}`) {
-      return packageJsonFile
+      return filePathAbsolute
     }
   }
   return null
@@ -390,10 +379,21 @@ async function bumpPnpmLockFile(monorepoRootDir: string) {
   }
 }
 
-async function getFilesInsideDir(dir: string, relative?: true): Promise<string[]> {
+type Files = {
+  filePathRelative: string
+  filePathAbsolute: string
+}[]
+async function getFilesInsideDir(dir: string): Promise<Files> {
   const stdout = await run__return('git ls-files', dir)
-  let files = stdout.split(/\s/)
-  if (!relative) files = files.map((filePathRelative) => path.join(dir, filePathRelative))
+  let filesPathRelative = stdout.split(/\s/)
+  const files = filesPathRelative.map((filePathRelative) => {
+    assert(!filePathRelative.startsWith('/'))
+    assert(!filePathRelative.includes('\\'))
+    return {
+      filePathRelative,
+      filePathAbsolute: path.join(dir, filePathRelative),
+    }
+  })
   return files
 }
 
@@ -405,13 +405,13 @@ async function updateDependencies(
   pkg: { packageName: string },
   versionNew: string,
   versionOld: string,
-  filesMonorepo: string[],
+  filesMonorepo: Files,
   devMode: boolean,
 ) {
   filesMonorepo
-    .filter((f) => f.endsWith('package.json'))
-    .forEach((packageJsonFile) => {
-      modifyPackageJson(packageJsonFile, (packageJson) => {
+    .filter((f) => f.filePathAbsolute.endsWith('package.json'))
+    .forEach(({ filePathAbsolute }) => {
+      modifyPackageJson(filePathAbsolute, (packageJson) => {
         let hasChanged = false
         ;(['dependencies', 'devDependencies'] as const).forEach((deps) => {
           const version = packageJson[deps]?.[pkg.packageName]
@@ -427,7 +427,7 @@ async function updateDependencies(
               try {
                 assert.strictEqual(version, versionOld_range)
               } catch (err) {
-                console.log(`Wrong ${pkg.packageName} version in ${packageJsonFile}`)
+                console.log(`Wrong ${pkg.packageName} version in ${filePathAbsolute}`)
                 throw err
               }
             }
@@ -571,11 +571,19 @@ async function getMonorepoRootDir() {
   return monorepoRootDir
 }
 
-function logAnalysis(monorepoRootDir: string, packageRootDir: string) {
+function logAnalysis(monorepoInfo: MonorepoInfo, monorepoRootDir: string, packageRootDir: string) {
   logTitle('Analysis result')
-  const why = (src: string) => `(${pc.dim(src)})`
-  console.log(`Monorepo root directory: ${pc.bold(monorepoRootDir)} ${why(`$ ${gitCmdMonorepoRootDir}`)}`)
-  console.log(`Package root directory: ${pc.bold(packageRootDir)} ${why('process.cwd()')}`)
+  console.log(`Package root directory: ${pc.bold(packageRootDir)} ${styleDetail('process.cwd()')}`)
+  console.log(`Monorepo: ${pc.bold(monorepoInfo.isMonorepo ? 'yes' : 'no')}`)
+  if (monorepoInfo.isMonorepo) {
+    console.log(`Monorepo root directory: ${pc.bold(monorepoRootDir)} ${styleDetail(`$ ${gitCmdMonorepoRootDir}`)}`)
+    console.log('Monorepo packages:')
+    monorepoInfo.monorepoPackages.forEach((monorepoPkg) => {
+      let line = `- ${pc.bold(monorepoPkg.packageName)} (${monorepoPkg.packageRootDirRelative})`
+      if (monorepoPkg.isCurrentPackage) line = pc.cyan(line)
+      console.log(line)
+    })
+  }
 }
 
 function logTitle(title: string) {
@@ -601,4 +609,53 @@ async function clean(err: unknown) {
     await run(`git reset --hard HEAD~`)
   }
   process.exit(1)
+}
+
+type MonorepoInfo = ReturnType<typeof analyzeMonorepo>
+function analyzeMonorepo(monorepoRootDir: string, filesMonorepo: Files, packageRootDir: string, pkg: Pkg) {
+  if (!filesMonorepo.find((f) => f.filePathRelative === 'pnpm-workspace.yaml')) {
+    /*
+    if( monorepoRootDir !== packageRootDir) throw new Error(`The current working directory ${styleDetail('process.cwd()')} is expected to be ${monorepoRootDir} because, the Git repository doesn't seem to be a monorepo.`)
+    */
+    return { isMonorepo: false } as const
+  }
+
+  let currentPackageFound = false
+  const monorepoPackages: {
+    packageName: string
+    packageRootDirRelative: string
+    isCurrentPackage: boolean
+  }[] = []
+  const pnpmWorkspaceYaml = readYaml('pnpm-workspace.yaml', monorepoRootDir)
+  if (pnpmWorkspaceYaml.packages) {
+    assert(Array.isArray(pnpmWorkspaceYaml.packages))
+    pnpmWorkspaceYaml.packages.forEach((entry) => {
+      assert(typeof entry === 'string')
+      const monorepoPkg = readPkg(path.join(monorepoRootDir, entry))
+      if (!monorepoPkg?.packageName || !monorepoPkg.devDependencies[thisPackageName]) return
+      const isCurrentPackage = isSamePath(packageRootDir, entry)
+      if (isCurrentPackage) {
+        assert(!currentPackageFound)
+        currentPackageFound = true
+        assert(monorepoPkg.packageName === pkg.packageName)
+      }
+      monorepoPackages.push({
+        packageName: monorepoPkg.packageName,
+        packageRootDirRelative: entry,
+        isCurrentPackage,
+      })
+    })
+  }
+  if (monorepoPackages.length === 0) {
+    return { isMonorepo: false } as const
+  }
+  assert(currentPackageFound)
+  return {
+    isMonorepo: true as const,
+    monorepoPackages,
+  }
+}
+
+function styleDetail(msg: string) {
+  return `(${pc.dim(msg)})`
 }
