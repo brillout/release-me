@@ -15,6 +15,10 @@ import readline from 'readline'
 import pc from 'picocolors'
 import conventionalChangelog from 'conventional-changelog'
 
+process.on('uncaughtException', clean)
+process.on('unhandledRejection', clean)
+process.on('SIGINT', clean) // User hitting Ctrl-C https://stackoverflow.com/questions/20165605/detecting-ctrlc-in-node-js/20165643#20165643
+
 const releaseTypes = ['minor', 'patch', 'major', 'commit'] as const
 type ReleaseType = (typeof releaseTypes)[number]
 type ReleaseTarget = ReleaseType | `v${string}`
@@ -25,7 +29,6 @@ type Args = {
   gitTagPrefix: string | null
   releaseTarget: ReleaseTarget
 }
-
 async function releaseMe(args: Args, packageRootDir: string) {
   await abortIfUncommitedChanges()
 
@@ -281,10 +284,11 @@ function askConfirmation(): Promise<void> {
   })
   let resolve: () => void
   const promise = new Promise<void>((r) => (resolve = r))
-  rl.question(pc.blue(pc.bold('Press <ENTER> to confirm release.')), () => {
+  rl.question(pc.blue(pc.bold('Press <ENTER> to confirm release, or <CTRL-C> to abort.')), () => {
     resolve()
     rl.close()
   })
+  rl.on('SIGINT', clean) // https://github.com/nodejs/node/issues/4758#issuecomment-231155557
   return promise
 }
 
@@ -550,6 +554,7 @@ function isSamePath(p1: string, p2: string) {
 const gitCmdMonorepoRootDir = 'git rev-parse --show-toplevel'
 async function getMonorepoRootDir() {
   const monorepoRootDir = (await run__return(gitCmdMonorepoRootDir)).trim()
+  cleanRootDir = monorepoRootDir
   return monorepoRootDir
 }
 
@@ -568,4 +573,15 @@ function logTitle(title: string) {
   console.log(borderLine)
   console.log(titleLine)
   console.log(borderLine)
+}
+
+let cleanRootDir = process.cwd()
+async function clean(err: unknown) {
+  if (err) {
+    logTitle('Bug')
+    console.error(err)
+  }
+  await run('git clean -df')
+  await run(`git checkout ${cleanRootDir}`)
+  process.exit(1)
 }
