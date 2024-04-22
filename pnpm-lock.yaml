@@ -28,6 +28,9 @@ devDependencies:
   '@biomejs/biome':
     specifier: ^1.5.3
     version: 1.7.0
+  '@brillout/release-me':
+    specifier: link:./
+    version: 'link:'
   '@types/conventional-changelog':
     specifier: ^3.1.3
     version: 3.1.3
