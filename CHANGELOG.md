@@ -1,3 +1,14 @@
+## [0.2.4](https://github.com/brillout/release-me/compare/v0.2.3...v0.2.4) (2024-04-22)
+
+
+### Bug Fixes
+
+* improve err msg ([09af76d](https://github.com/brillout/release-me/commit/09af76dcff05e7990b396c81a3bfbe517e426604))
+* improve err msgs ([00523b6](https://github.com/brillout/release-me/commit/00523b687291a3f5e25418e4a657601fc14c42d4))
+* make clean safe ([ad67e88](https://github.com/brillout/release-me/commit/ad67e88e5e1af450dd20756fdb6a392cf05d893c))
+
+
+
 ## [0.2.3](https://github.com/brillout/release-me/compare/v0.2.2...v0.2.3) (2024-04-22)
 
 
