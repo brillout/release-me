@@ -33,7 +33,7 @@ async function releaseMe(args: Args, packageRootDir: string) {
   await abortIfUncommitedChanges()
 
   const filesPackage = await getFilesInsideDir(packageRootDir, true)
-  const pkg = await findPackage(packageRootDir, filesPackage)
+  const pkg = await getPackage(packageRootDir, filesPackage)
 
   const { versionOld, versionNew, isCommitRelease } = await getVersion(pkg, args.releaseTarget)
 
@@ -88,7 +88,7 @@ async function releaseMe(args: Args, packageRootDir: string) {
   await gitPush()
 }
 
-async function findPackage(packageRootDir: string, filesPackage: string[]) {
+async function getPackage(packageRootDir: string, filesPackage: string[]) {
   // package.json#name
   if (filesPackage.includes('package.json')) {
     const pkg = readPkg(packageRootDir)
