@@ -84,7 +84,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   const { changelogPath, changelogAlreadyExists } = getChangelogPath(
     monorepoInfo.hasMultiplePackages ? packageRootDir : monorepoRootDir,
   )
-  await changelog(changelogPath, monorepoRootDir, packageRootDir, gitTagPrefix)
+  await changelog(changelogPath, monorepoInfo.hasMultiplePackages, packageRootDir, gitTagPrefix)
 
   await showPreview(packageJsonPath, changelogPath, changelogAlreadyExists)
 
@@ -210,7 +210,12 @@ function getNpmFix() {
   return { ...process.env, npm_config_registry: undefined }
 }
 
-async function changelog(changelogPath: string, monorepoRootDir: string, packageRootDir: string, gitTagPrefix: string) {
+async function changelog(
+  changelogPath: string,
+  hasMultiplePackages: boolean,
+  packageRootDir: string,
+  gitTagPrefix: string,
+) {
   const readable = conventionalChangelog(
     {
       preset: 'angular',
@@ -221,7 +226,7 @@ async function changelog(changelogPath: string, monorepoRootDir: string, package
       // Filter commits.
       // - Equivalent to CLI argument `--commit-path`.
       // - https://github.com/conventional-changelog/conventional-changelog/issues/556#issuecomment-555539998
-      path: isSamePath(monorepoRootDir, packageRootDir)
+      path: !hasMultiplePackages
         ? // Set to `undefined` in order to enable empty release commits (e.g. `fix: `).
           undefined
         : packageRootDir,
