@@ -72,7 +72,7 @@ async function releaseMe(args: Args, packageRootDir: string) {
     bumpBoilerplateVersion(boilerplatePackageJson)
   }
 
-  const gitTagPrefix = monorepoInfo.isMonorepo ? `${packageName}@` : 'v'
+  const gitTagPrefix = monorepoInfo.hasMultiplePackages ? `${packageName}@` : 'v'
 
   const changelogPath = getChangeLogPath(monorepoInfo.hasMultiplePackages ? packageRootDir : monorepoRootDir)
   await changelog(changelogPath, monorepoRootDir, packageRootDir, gitTagPrefix)
@@ -593,8 +593,8 @@ async function getMonorepoRootDir() {
 function logAnalysis(monorepoInfo: MonorepoInfo, monorepoRootDir: string, packageRootDir: string) {
   logTitle('Analysis result')
   console.log(`Package root directory: ${pc.bold(packageRootDir)} ${detail('process.cwd()')}`)
-  console.log(`Monorepo: ${pc.bold(monorepoInfo.isMonorepo ? 'yes' : 'no')}`)
-  if (monorepoInfo.isMonorepo) {
+  console.log(`Monorepo: ${pc.bold(monorepoInfo.hasMultiplePackages ? 'yes' : 'no')}`)
+  if (monorepoInfo.hasMultiplePackages) {
     console.log(`Monorepo root directory: ${pc.bold(monorepoRootDir)} ${detail(`$ ${gitCmdMonorepoRootDir}`)}`)
     console.log('Monorepo packages:')
     monorepoInfo.monorepoPackages.forEach((monorepoPkg) => {
@@ -655,12 +655,8 @@ function analyzeMonorepo(filesMonorepoPackageJson: Files, packageRootDir: string
     })
   })
 
-  if (monorepoPackages.length === 0) {
-    return { isMonorepo: false } as const
-  }
   assert(currentPackageFound)
   return {
-    isMonorepo: true as const,
     hasMultiplePackages: monorepoPackages.length > 1,
     monorepoPackages,
   }
