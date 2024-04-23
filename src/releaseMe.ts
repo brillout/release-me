@@ -108,7 +108,9 @@ async function getPackage(packageRootDir: string, filesPackage: Files) {
 type Pkg = {
   packageName: string
   packageDir: string
-  devDependencies: Record<string, string>
+  packageJson: {
+    devDependencies?: Record<string, string>
+  }
 }
 function readPkg(dir: string): null | Pkg {
   const { fileJson, filePath } = readJson('package.json', dir)
@@ -120,8 +122,7 @@ function readPkg(dir: string): null | Pkg {
   }
   const packageDir = path.dirname(packageJsonPath)
   assert(typeof name === 'string')
-  const devDependencies = packageJson.devDependencies as Record<string, string>
-  return { packageName: name, packageDir, devDependencies }
+  return { packageName: name, packageDir, packageJson }
 }
 
 function readFile(filePathRelative: string, dir: string) {
@@ -642,7 +643,7 @@ function analyzeMonorepo(filesMonorepoPackageJson: Files, packageRootDir: string
   }[] = []
   filesMonorepoPackageJson.forEach((packageJsonFile) => {
     const monorepoPkg = readPkg(packageJsonFile.filePathAbsolute)
-    if (!monorepoPkg?.packageName || !monorepoPkg.devDependencies[thisPackageName]) return
+    if (!monorepoPkg?.packageName || !monorepoPkg.packageJson.devDependencies?.[thisPackageName]) return
     const isCurrentPackage = isSamePath(packageRootDir, path.dirname(packageJsonFile.filePathAbsolute))
     if (isCurrentPackage) {
       assert(!currentPackageFound)
