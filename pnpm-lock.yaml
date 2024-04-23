@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@brillout/picocolors':
+    specifier: ^1.0.11
+    version: 1.0.11
   commander:
     specifier: ^11.1.0
     version: 11.1.0
@@ -14,9 +17,6 @@ dependencies:
   execa:
     specifier: ^5.1.1
     version: 5.1.1
-  picocolors:
-    specifier: ^1.0.0
-    version: 1.0.0
   semver:
     specifier: ^7.5.4
     version: 7.5.4
@@ -155,6 +155,10 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@brillout/picocolors@1.0.11:
+    resolution: {integrity: sha512-ZDIx2xNRjCKm9c6n+zNDXa3qxXniaVlGKXK1F5OKPCYbDt7EfkH2q5ppzowMITt1lxPyVplxy/b3GpTWwJF+Og==}
+    dev: false
 
   /@hutson/parse-repository-url@5.0.0:
     resolution: {integrity: sha512-e5+YUKENATs1JgYHMzTr2MW/NDcXGfYFAuOQU8gJgF/kEh4EqKgfGrfLI67bMD4tbhZVlkigz/9YYwWcbOFthg==}
@@ -665,10 +669,6 @@ packages:
   /path-key@3.1.1:
     resolution: {integrity: sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==}
     engines: {node: '>=8'}
-    dev: false
-
-  /picocolors@1.0.0:
-    resolution: {integrity: sha512-1fygroTLlHu66zi26VoTDv8yRgm0Fccecssto+MhsZ0D/DGW2sm8E8AjW7NU5VVTRt5GxbeZ5qBuJr+HyLYkjQ==}
     dev: false
 
   /prettier@2.8.8:

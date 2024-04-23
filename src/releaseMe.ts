@@ -15,7 +15,7 @@ import * as path from 'path'
 //  "@types/js-yaml": "4.0.7",
 import yaml from 'js-yaml' */
 import readline from 'readline'
-import pc from 'picocolors'
+import pc from '@brillout/picocolors'
 import conventionalChangelog from 'conventional-changelog'
 
 const thisPackageName = '@brillout/release-me'
@@ -34,6 +34,10 @@ type Args = {
   releaseTarget: ReleaseTarget
 }
 async function releaseMe(args: Args, packageRootDir: string) {
+  // =======
+  // Analyse
+  // =======
+
   const monorepoRootDir = await getMonorepoRootDir()
 
   await abortIfUncommitedChanges(monorepoRootDir)
@@ -42,16 +46,19 @@ async function releaseMe(args: Args, packageRootDir: string) {
 
   const { versionOld, versionNew, isCommitRelease } = await getVersion(packageRootDir, args.releaseTarget)
 
-  if (!isCommitRelease && !args.force) {
-    await abortIfNotLatestMainCommit()
-  }
-
   const filesMonorepo = await getFilesInsideDir(monorepoRootDir)
   const filesMonorepoPackageJson = getFilesMonorepoPackageJson(filesMonorepo)
 
   const monorepoInfo = analyzeMonorepo(filesMonorepoPackageJson, packageRootDir, packageName)
 
   logAnalysis(monorepoInfo, monorepoRootDir, packageRootDir)
+
+
+  // =============
+  // Apply changes
+  // =============
+
+  if (!isCommitRelease && !args.force) await abortIfNotLatestMainCommit()
 
   await updateVersionMacro(versionOld, versionNew, filesMonorepo)
 
@@ -79,9 +86,25 @@ async function releaseMe(args: Args, packageRootDir: string) {
 
   const filesPackage = await getFilesInsideDir(packageRootDir)
   await showPreview(packageRootDir, filesPackage, changelogPath)
+
+
+  // =================
+  // Askc confirmation
+  // =================
+
   await askConfirmation()
 
+
+  // ===================
+  // Bump pnpm-lock.yaml
+  // ===================
+
   await bumpPnpmLockFile(monorepoRootDir)
+
+
+  // =============================
+  // Commit, npm publish, git push
+  // =============================
 
   await gitCommit(versionNew, monorepoRootDir, gitTagPrefix)
 
@@ -103,7 +126,7 @@ function getPackageName(packageRootDir: string): string {
     throw new Error(
       [
         //
-        `No ${pc.bold('package.json')} found at ${packageRootDir} ${detail('process.cwd()')}.`,
+        `No ${pc.bold('package.json')} found at ${packageRootDir} ${logDetail('process.cwd()')}.`,
         hint,
       ].join(' '),
     )
@@ -592,11 +615,13 @@ async function getMonorepoRootDir() {
 
 function logAnalysis(monorepoInfo: MonorepoInfo, monorepoRootDir: string, packageRootDir: string) {
   logTitle('Analysis result')
-  console.log(`Package root directory: ${pc.bold(packageRootDir)} ${detail('process.cwd()')}`)
-  console.log(`Monorepo: ${pc.bold(monorepoInfo.hasMultiplePackages ? 'yes' : 'no')}`)
-  if (monorepoInfo.hasMultiplePackages) {
-    console.log(`Monorepo root directory: ${pc.bold(monorepoRootDir)} ${detail(`$ ${gitCmdMonorepoRootDir}`)}`)
-    console.log('Monorepo packages:')
+  console.log(`Package root directory: ${pc.bold(packageRootDir)} ${logDetail('process.cwd()')}`)
+  const isMonorepo = !isSamePath(packageRootDir, monorepoRootDir) || monorepoInfo.hasMultiplePackages
+  console.log(`Monorepo: ${logBoolean(isMonorepo)}`)
+  if (isMonorepo) {
+    console.log(`Monorepo root directory: ${pc.bold(monorepoRootDir)} ${logDetail(`$ ${gitCmdMonorepoRootDir}`)}`)
+    console.log(`Has multiple packges: ${logBoolean(monorepoInfo.hasMultiplePackages)}`)
+    console.log('Packages:')
     monorepoInfo.monorepoPackages.forEach((monorepoPkg) => {
       let line = `- ${pc.bold(monorepoPkg.packageName)} (${monorepoPkg.packageRootDirRelative})`
       if (monorepoPkg.isCurrentPackage) line = pc.cyan(line)
@@ -662,6 +687,9 @@ function analyzeMonorepo(filesMonorepoPackageJson: Files, packageRootDir: string
   }
 }
 
-function detail(msg: string) {
+function logDetail(msg: string): string {
   return `(${pc.dim(msg)})`
+}
+function logBoolean(bool: boolean): 'yes' | 'no' {
+  return pc.bold(bool ? 'yes' : 'no')
 }
