@@ -42,11 +42,12 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   await abortIfUncommitedChanges(monorepoRootDir)
 
-  const packageName = getPackageName(packageRootDir)
+  const { packageName, packageJsonPath } = getPackageName(packageRootDir)
 
   const { versionOld, versionNew, isCommitRelease } = await getVersion(packageRootDir, args.releaseTarget)
 
   const filesMonorepo = await getFilesInsideDir(monorepoRootDir)
+  // const filesPackage = await getFilesInsideDir(packageRootDir)
   const filesMonorepoPackageJson = getFilesMonorepoPackageJson(filesMonorepo)
 
   const monorepoInfo = analyzeMonorepo(filesMonorepoPackageJson, packageRootDir, packageName)
@@ -80,11 +81,12 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   const gitTagPrefix = monorepoInfo.hasMultiplePackages ? `${packageName}@` : 'v'
 
-  const changelogPath = getChangeLogPath(monorepoInfo.hasMultiplePackages ? packageRootDir : monorepoRootDir)
+  const { changelogPath, changelogAlreadyExists } = getChangelogPath(
+    monorepoInfo.hasMultiplePackages ? packageRootDir : monorepoRootDir,
+  )
   await changelog(changelogPath, monorepoRootDir, packageRootDir, gitTagPrefix)
 
-  const filesPackage = await getFilesInsideDir(packageRootDir)
-  await showPreview(packageRootDir, filesPackage, changelogPath)
+  await showPreview(packageJsonPath, changelogPath, changelogAlreadyExists)
 
   // =================
   // Askc confirmation
@@ -114,7 +116,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   await gitPush()
 }
 
-function getPackageName(packageRootDir: string): string {
+function getPackageName(packageRootDir: string): { packageName: string; packageJsonPath: string } {
   const hint = `Make sure to run ${pc.bold(
     thisCommand,
   )} at the root directory of the package you want to publish (the directory where its package.json file lives).`
@@ -136,7 +138,7 @@ function getPackageName(packageRootDir: string): string {
         hint,
       ].join(' '),
     )
-  return packageName
+  return { packageName, packageJsonPath }
 }
 
 type PackageJson = {
@@ -278,32 +280,29 @@ function prerendFile(filePath: string, prerendString: string) {
 }
 
 const changlogFileName = 'CHANGELOG.md'
-function getChangeLogPath(packageRootDir: string) {
-  return path.join(packageRootDir, changlogFileName)
+function getChangelogPath(packageRootDir: string) {
+  const changelogPath = path.join(packageRootDir, changlogFileName)
+  const changelogAlreadyExists = fs.existsSync(changelogPath)
+  return { changelogPath, changelogAlreadyExists }
 }
 
-async function showPreview(packageRootDir: string, filesPackage: Files, changelogPath: string) {
+async function showPreview(packageJsonPath: string, changelogPath: string, changelogAlreadyExists: boolean) {
   logTitle('Confirm changes')
-  await showCmd('git status')
-  await diffAndLog(changelogPath, true)
-  await diffAndLog(path.join(packageRootDir, 'package.json'))
+  await logCmd('git status')
+  await logDiff(changelogPath, changelogAlreadyExists)
+  await logDiff(packageJsonPath, true)
 
   return
 
-  async function diffAndLog(filePath: string, isChangelog?: true) {
-    const fileAlreadyExists = (() => {
-      if (!isChangelog) return true
-      assert(filePath.endsWith(changlogFileName))
-      return !!filesPackage.find((f) => f.filePathRelative === changlogFileName)
-    })()
+  async function logDiff(filePath: string, fileAlreadyExists: boolean) {
     const cmdReal = fileAlreadyExists
       ? `git --no-pager diff ${filePath}`
       : // https://stackoverflow.com/questions/855767/can-i-use-git-diff-on-untracked-files#comment35922182_856118
         `git --no-pager diff --no-index -- /dev/null ${filePath}`
-    await showCmd(`git diff ${filePath}`, cmdReal, fileAlreadyExists)
+    await logCmd(`git diff ${filePath}`, cmdReal, fileAlreadyExists)
   }
 
-  async function showCmd(cmd: string, cmdReal?: string, swallowError?: boolean) {
+  async function logCmd(cmd: string, cmdReal?: string, swallowError?: boolean) {
     cmdReal ??= cmd
     console.log(pc.bold(pc.blue(`$ ${cmd}`)))
     await run(cmdReal, { swallowError })
