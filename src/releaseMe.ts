@@ -74,7 +74,7 @@ async function releaseMe(args: Args, packageRootDir: string) {
 
   const gitTagPrefix = monorepoInfo.isMonorepo ? `${packageName}@` : 'v'
 
-  const changelogPath = getChangeLogPath(packageRootDir)
+  const changelogPath = getChangeLogPath(monorepoInfo.hasMultiplePackages ? packageRootDir : monorepoRootDir)
   await changelog(changelogPath, monorepoRootDir, packageRootDir, gitTagPrefix)
 
   const filesPackage = await getFilesInsideDir(packageRootDir)
@@ -661,6 +661,7 @@ function analyzeMonorepo(filesMonorepoPackageJson: Files, packageRootDir: string
   assert(currentPackageFound)
   return {
     isMonorepo: true as const,
+    hasMultiplePackages: monorepoPackages.length > 1,
     monorepoPackages,
   }
 }
