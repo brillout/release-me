@@ -19,6 +19,7 @@ import pc from 'picocolors'
 import conventionalChangelog from 'conventional-changelog'
 
 const thisPackageName = '@brillout/release-me'
+const thisCommand = '$ pnpm exec release-me'
 
 process.on('uncaughtException', clean)
 process.on('unhandledRejection', clean)
@@ -37,10 +38,7 @@ async function releaseMe(args: Args, packageRootDir: string) {
 
   await abortIfUncommitedChanges(monorepoRootDir)
 
-  const filesPackage = await getFilesInsideDir(packageRootDir)
-  const packageJson = getPackageJson(packageRootDir)
-  const packageName = packageJson.name
-  assert(packageName)
+  const packageName = getPackageName(packageRootDir)
 
   const { versionOld, versionNew, isCommitRelease } = await getVersion(packageRootDir, args.releaseTarget)
 
@@ -78,6 +76,7 @@ async function releaseMe(args: Args, packageRootDir: string) {
 
   await changelog(monorepoRootDir, packageRootDir, gitTagPrefix)
 
+  const filesPackage = await getFilesInsideDir(packageRootDir)
   await showPreview(packageRootDir, filesPackage)
   await askConfirmation()
 
@@ -95,16 +94,42 @@ async function releaseMe(args: Args, packageRootDir: string) {
   await gitPush()
 }
 
+function getPackageName(packageRootDir: string): string {
+  const hint = `Make sure to run ${pc.bold(
+    thisCommand,
+  )} at the root directory of the package you want to publish (the directory where its package.json file lives).`
+  if (!fs.existsSync(path.join(packageRootDir, 'package.json')))
+    throw new Error(
+      [
+        //
+        `No ${pc.bold('package.json')} found at ${packageRootDir} ${detail('process.cwd()')}.`,
+        hint,
+      ].join(' '),
+    )
+  const { packageJson, packageJsonPath } = getPackageJson(packageRootDir)
+  const packageName = packageJson.name
+  if (!packageName)
+    throw new Error(
+      [
+        //
+        `${packageJsonPath} is missing package.json#${pc.cyan('name')}.`,
+        hint,
+      ].join(' '),
+    )
+  return packageName
+}
+
 type PackageJson = {
   name?: string
   version?: string
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
 }
-function getPackageJson(dir: string): PackageJson {
-  const { fileJson } = readJson('package.json', dir)
+function getPackageJson(dir: string): { packageJson: PackageJson; packageJsonPath: string } {
+  const { fileJson, filePath } = readJson('package.json', dir)
   const packageJson = fileJson
-  return packageJson
+  const packageJsonPath = filePath
+  return { packageJson, packageJsonPath }
 }
 
 function readFile(filePathRelative: string, dir: string) {
@@ -566,10 +591,10 @@ async function getMonorepoRootDir() {
 
 function logAnalysis(monorepoInfo: MonorepoInfo, monorepoRootDir: string, packageRootDir: string) {
   logTitle('Analysis result')
-  console.log(`Package root directory: ${pc.bold(packageRootDir)} ${styleDetail('process.cwd()')}`)
+  console.log(`Package root directory: ${pc.bold(packageRootDir)} ${detail('process.cwd()')}`)
   console.log(`Monorepo: ${pc.bold(monorepoInfo.isMonorepo ? 'yes' : 'no')}`)
   if (monorepoInfo.isMonorepo) {
-    console.log(`Monorepo root directory: ${pc.bold(monorepoRootDir)} ${styleDetail(`$ ${gitCmdMonorepoRootDir}`)}`)
+    console.log(`Monorepo root directory: ${pc.bold(monorepoRootDir)} ${detail(`$ ${gitCmdMonorepoRootDir}`)}`)
     console.log('Monorepo packages:')
     monorepoInfo.monorepoPackages.forEach((monorepoPkg) => {
       let line = `- ${pc.bold(monorepoPkg.packageName)} (${monorepoPkg.packageRootDirRelative})`
@@ -614,7 +639,7 @@ function analyzeMonorepo(filesMonorepoPackageJson: Files, packageRootDir: string
   }[] = []
   filesMonorepoPackageJson.forEach((packageJsonFile) => {
     const packageJsonDir = path.dirname(packageJsonFile.filePathAbsolute)
-    const packageJson = getPackageJson(packageJsonDir)
+    const { packageJson } = getPackageJson(packageJsonDir)
     if (!packageJson?.name || !packageJson.devDependencies?.[thisPackageName]) return
     const isCurrentPackage = isSamePath(packageRootDir, packageJsonDir)
     if (isCurrentPackage) {
@@ -639,6 +664,6 @@ function analyzeMonorepo(filesMonorepoPackageJson: Files, packageRootDir: string
   }
 }
 
-function styleDetail(msg: string) {
+function detail(msg: string) {
   return `(${pc.dim(msg)})`
 }
