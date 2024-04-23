@@ -38,9 +38,9 @@ async function releaseMe(args: Args, packageRootDir: string) {
   await abortIfUncommitedChanges(monorepoRootDir)
 
   const filesPackage = await getFilesInsideDir(packageRootDir)
-  const pkg = await getPackage(packageRootDir, filesPackage)
-  assert(pkg.packageRootDir === packageRootDir)
-  const { packageName } = pkg
+  const packageJson = getPackageJson(packageRootDir)
+  const packageName = packageJson.name
+  assert(packageName)
 
   const { versionOld, versionNew, isCommitRelease } = await getVersion(packageRootDir, args.releaseTarget)
 
@@ -95,36 +95,14 @@ async function releaseMe(args: Args, packageRootDir: string) {
   await gitPush()
 }
 
-async function getPackage(packageRootDir: string, filesPackage: Files) {
-  // package.json#name
-  if (filesPackage.find((f) => f.filePathRelative === 'package.json')) {
-    const pkg = readPkg(packageRootDir)
-    if (pkg) {
-      return pkg
-    }
-  }
-
-  throw new Error(pc.red(pc.bold(`No package.json found at ${packageRootDir}`)))
+type PackageJson2 = {
+  name?: string
+  devDependencies?: Record<string, string>
 }
-
-type Pkg = {
-  packageName: string
-  packageRootDir: string
-  packageJson: {
-    devDependencies?: Record<string, string>
-  }
-}
-function readPkg(dir: string): null | Pkg {
-  const { fileJson, filePath } = readJson('package.json', dir)
+function getPackageJson(dir: string): PackageJson2 {
+  const { fileJson } = readJson('package.json', dir)
   const packageJson = fileJson
-  const packageJsonPath = filePath
-  const { name } = packageJson
-  if (!name) {
-    return null
-  }
-  const packageRootDir = path.dirname(packageJsonPath)
-  assert(typeof name === 'string')
-  return { packageName: name, packageRootDir, packageJson }
+  return packageJson
 }
 
 function readFile(filePathRelative: string, dir: string) {
@@ -639,16 +617,17 @@ function analyzeMonorepo(filesMonorepoPackageJson: Files, packageRootDir: string
     isCurrentPackage: boolean
   }[] = []
   filesMonorepoPackageJson.forEach((packageJsonFile) => {
-    const monorepoPkg = readPkg(packageJsonFile.filePathAbsolute)
-    if (!monorepoPkg?.packageName || !monorepoPkg.packageJson.devDependencies?.[thisPackageName]) return
-    const isCurrentPackage = isSamePath(packageRootDir, path.dirname(packageJsonFile.filePathAbsolute))
+    const packageJsonDir = path.dirname(packageJsonFile.filePathAbsolute)
+    const packageJson = getPackageJson(packageJsonDir)
+    if (!packageJson?.name || !packageJson.devDependencies?.[thisPackageName]) return
+    const isCurrentPackage = isSamePath(packageRootDir, packageJsonDir)
     if (isCurrentPackage) {
       assert(!currentPackageFound)
       currentPackageFound = true
-      assert(monorepoPkg.packageName === packageName)
+      assert(packageJson.name === packageName)
     }
     monorepoPackages.push({
-      packageName: monorepoPkg.packageName,
+      packageName: packageJson.name,
       packageRootDirRelative: path.dirname(packageJsonFile.filePathRelative),
       isCurrentPackage,
     })
