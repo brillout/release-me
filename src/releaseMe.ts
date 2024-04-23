@@ -74,10 +74,11 @@ async function releaseMe(args: Args, packageRootDir: string) {
 
   const gitTagPrefix = monorepoInfo.isMonorepo ? `${packageName}@` : 'v'
 
-  await changelog(monorepoRootDir, packageRootDir, gitTagPrefix)
+  const changelogPath = getChangeLogPath(packageRootDir)
+  await changelog(changelogPath, monorepoRootDir, packageRootDir, gitTagPrefix)
 
   const filesPackage = await getFilesInsideDir(packageRootDir)
-  await showPreview(packageRootDir, filesPackage)
+  await showPreview(packageRootDir, filesPackage, changelogPath)
   await askConfirmation()
 
   await bumpPnpmLockFile(monorepoRootDir)
@@ -188,7 +189,7 @@ function getNpmFix() {
   return { ...process.env, npm_config_registry: undefined }
 }
 
-async function changelog(monorepoRootDir: string, packageRootDir: string, gitTagPrefix: string) {
+async function changelog(changelogPath: string, monorepoRootDir: string, packageRootDir: string, gitTagPrefix: string) {
   const readable = conventionalChangelog(
     {
       preset: 'angular',
@@ -211,7 +212,7 @@ async function changelog(monorepoRootDir: string, packageRootDir: string, gitTag
     },
   )
   const changelog = await streamToString(readable)
-  prerendFile(getChangeLogPath(packageRootDir), changelog)
+  prerendFile(changelogPath, changelog)
   /*
   // Usage examples:
   //  - pnpm exec conventional-changelog --preset angular
@@ -225,7 +226,7 @@ async function changelog(monorepoRootDir: string, packageRootDir: string, gitTag
       '--preset',
       'angular',
       '--infile',
-      getChangeLogPath(),
+      changelogPath,
       '--same-file',
       '--pkg',
       packageRootDir
@@ -262,10 +263,10 @@ function getChangeLogPath(packageRootDir: string) {
   return path.join(packageRootDir, changlogFileName)
 }
 
-async function showPreview(packageRootDir: string, filesPackage: Files) {
+async function showPreview(packageRootDir: string, filesPackage: Files, changelogPath: string) {
   logTitle('Confirm changes')
   await showCmd('git status')
-  await diffAndLog(getChangeLogPath(packageRootDir), true)
+  await diffAndLog(changelogPath, true)
   await diffAndLog(path.join(packageRootDir, 'package.json'))
 
   return
