@@ -550,7 +550,7 @@ async function abortIfNotLatestMainCommit() {
     }
   }
   {
-    await runCommand('git fetch')
+    await runCommand('git fetch', { swallowError: true })
     const stdout = await run__return(`git status`)
     const isNotOriginMain =
       stdout.trim() !==
