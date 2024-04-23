@@ -1,3 +1,12 @@
+## [0.3.4](https://github.com/brillout/release-me/compare/v0.3.3...v0.3.4) (2024-04-23)
+
+
+### Bug Fixes
+
+* re-enable empty release commits ([872f979](https://github.com/brillout/release-me/commit/872f979c4c3ca942f941bd3dca2e35fd5e4a665b))
+
+
+
 ## [0.3.3](https://github.com/brillout/release-me/compare/v0.3.2...v0.3.3) (2024-04-23)
 
 
