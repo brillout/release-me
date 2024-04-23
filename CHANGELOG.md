@@ -1,3 +1,13 @@
+## [0.3.3](https://github.com/brillout/release-me/compare/v0.3.2...v0.3.3) (2024-04-23)
+
+
+### Bug Fixes
+
+* always use --no-pager ([b8e8d0d](https://github.com/brillout/release-me/commit/b8e8d0d701293fdc210a3d2fd67d9da55dc33939))
+* fix changelog preview ([169853b](https://github.com/brillout/release-me/commit/169853b9fee5354881228ae80454a2d934b4d92b))
+
+
+
 ## [0.3.2](https://github.com/brillout/release-me/compare/v0.3.1...v0.3.2) (2024-04-23)
 
 
