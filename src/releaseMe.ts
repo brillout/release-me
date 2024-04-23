@@ -550,7 +550,12 @@ async function abortIfNotLatestMainCommit() {
     }
   }
   {
-    await runCommand('git fetch', { swallowError: true })
+    await runCommand('git fetch', {
+      // When `$ git fetch` fetches something, it prints information to stderr instead of stdout (I don't know why).
+      // An alternative would to use the --quiet argument.
+      // https://stackoverflow.com/questions/57016157/how-to-stop-git-from-writing-non-errors-to-stderr
+      swallowError: true,
+    })
     const stdout = await run__return(`git status`)
     const isNotOriginMain =
       stdout.trim() !==
