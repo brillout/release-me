@@ -649,6 +649,8 @@ async function clean(err: unknown) {
     console.error(err)
   }
   if (!err && cleanEnabled) {
+    // No guarentee that Node.js awaits this async function.
+    // https://stackoverflow.com/questions/40574218/how-to-perform-an-async-operation-on-exit
     await run(`git add ${cleanRootDir}`)
     await run(['git', 'commit', '-am', 'aborted release'])
     await run(`git reset --hard HEAD~`)
