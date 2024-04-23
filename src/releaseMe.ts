@@ -44,6 +44,7 @@ async function releaseMe(args: Args, packageRootDir: string) {
   }
 
   const filesMonorepo = await getFilesInsideDir(monorepoRootDir)
+  const filesMonorepoPackageJson = getFilesMonorepoPackageJson(filesMonorepo)
 
   const monorepoInfo = analyzeMonorepo(monorepoRootDir, filesMonorepo, packageRootDir, pkg)
 
@@ -63,7 +64,7 @@ async function releaseMe(args: Args, packageRootDir: string) {
   updatePackageJsonVersion(pkg, versionNew)
 
   await updateDependencies(pkg, versionNew, versionOld, filesMonorepo)
-  const boilerplatePackageJson = await findBoilerplatePacakge(pkg, filesMonorepo)
+  const boilerplatePackageJson = await findBoilerplatePacakge(pkg, filesMonorepoPackageJson)
   if (boilerplatePackageJson) {
     bumpBoilerplateVersion(boilerplatePackageJson)
   }
@@ -352,9 +353,13 @@ async function bumpBoilerplateVersion(packageJsonFile: string) {
   writePackageJson(packageJsonFile, packageJson)
 }
 
-async function findBoilerplatePacakge(pkg: { packageName: string }, filesMonorepo: Files) {
-  const packageJsonFiles = filesMonorepo.filter((f) => f.filePathAbsolute.endsWith('package.json'))
-  for (const { filePathAbsolute } of packageJsonFiles) {
+function getFilesMonorepoPackageJson(filesMonorepo: Files): Files {
+  const filesMonorepoPackageJson = filesMonorepo.filter((f) => f.filePathAbsolute.endsWith('/package.json'))
+  return filesMonorepoPackageJson
+}
+
+async function findBoilerplatePacakge(pkg: { packageName: string }, filesMonorepoPackageJson: Files) {
+  for (const { filePathAbsolute } of filesMonorepoPackageJson) {
     const packageJson = require(filePathAbsolute) as Record<string, unknown>
     const { name } = packageJson
     if (!name) continue
@@ -386,9 +391,11 @@ async function getFilesInsideDir(dir: string): Promise<Files> {
   const files = filesPathRelative.map((filePathRelative) => {
     assert(!filePathRelative.startsWith('/'))
     assert(!filePathRelative.includes('\\'))
+    const filePathAbsolute = path.posix.join(dir, filePathRelative)
+    assert(!filePathAbsolute.includes('\\'))
     return {
       filePathRelative,
-      filePathAbsolute: path.join(dir, filePathRelative),
+      filePathAbsolute,
     }
   })
   return files
