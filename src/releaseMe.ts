@@ -111,12 +111,14 @@ type Pkg = {
   devDependencies: Record<string, string>
 }
 function readPkg(dir: string): null | Pkg {
-  const { packageJson, packageJsonFile } = readJson('package.json', dir)
+  const { fileJson, filePath } = readJson('package.json', dir)
+  const packageJson = fileJson
+  const packageJsonPath = filePath
   const { name } = packageJson
   if (!name) {
     return null
   }
-  const packageDir = path.dirname(packageJsonFile)
+  const packageDir = path.dirname(packageJsonPath)
   assert(typeof name === 'string')
   const devDependencies = packageJson.devDependencies as Record<string, string>
   return { packageName: name, packageDir, devDependencies }
@@ -130,8 +132,8 @@ function readFile(filePathRelative: string, dir: string) {
 
 function readJson(filePathRelative: string, dir: string) {
   const { fileContent, filePath } = readFile(filePathRelative, dir)
-  const fileParsed: Record<string, unknown> = JSON.parse(fileContent)
-  return { packageJson: fileParsed, packageJsonFile: filePath }
+  const fileJson: Record<string, unknown> = JSON.parse(fileContent)
+  return { fileJson, filePath }
 }
 /*
 function getPnpmPackages() {
