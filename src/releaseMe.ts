@@ -299,7 +299,7 @@ async function showPreview(packageRootDir: string, filesPackage: Files, changelo
     const cmdReal = fileAlreadyExists
       ? `git --no-pager diff ${filePath}`
       : // https://stackoverflow.com/questions/855767/can-i-use-git-diff-on-untracked-files#comment35922182_856118
-        `git diff --no-index -- /dev/null ${filePath}`
+        `git --no-pager diff --no-index -- /dev/null ${filePath}`
     await showCmd(`git diff ${filePath}`, cmdReal, fileAlreadyExists)
   }
 
