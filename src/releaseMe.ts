@@ -95,11 +95,13 @@ async function releaseMe(args: Args, packageRootDir: string) {
   await gitPush()
 }
 
-type PackageJson2 = {
+type PackageJson = {
   name?: string
+  version?: string
+  dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
 }
-function getPackageJson(dir: string): PackageJson2 {
+function getPackageJson(dir: string): PackageJson {
   const { fileJson } = readJson('package.json', dir)
   const packageJson = fileJson
   return packageJson
@@ -426,7 +428,7 @@ async function updateDependencies(packageName: string, versionNew: string, versi
               console.log(`Wrong ${packageName} version in ${filePathAbsolute}`)
               throw err
             }
-            packageJson[deps][packageName] = versionNew_range
+            packageJson[deps]![packageName] = versionNew_range
           }
         })
         if (!hasChanged) {
@@ -447,12 +449,6 @@ function modifyPackageJson(pkgPath: string, updater: (pkg: PackageJson) => void 
 
 function writePackageJson(pkgPath: string, pkg: object) {
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
-}
-
-type PackageJson = {
-  version: string
-  dependencies: Record<string, string>
-  devDependencies: Record<string, string>
 }
 
 async function run(
