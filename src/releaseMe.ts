@@ -522,7 +522,7 @@ nothing to commit, working tree clean`
           pc.bold(
             [
               `Release aborted, because the current commit (i.e. ${pc.cyan('HEAD')})`,
-              `should be up-to-date with ${pc.cyan('origin/main')}.`,
+              `isn't up-to-date with ${pc.cyan('origin/main')}.`,
               `Make sure to push/pull all changes, or use ${pc.cyan('--force')} to skip this check.`,
             ].join(' '),
           ),
