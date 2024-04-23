@@ -10,7 +10,10 @@ import assert from 'assert'
 import * as semver from 'semver'
 import { runCommand } from './utils'
 import * as path from 'path'
-import yaml from 'js-yaml'
+/*
+//  "js-yaml": "4.1.0",
+//  "@types/js-yaml": "4.0.7",
+import yaml from 'js-yaml' */
 import readline from 'readline'
 import pc from 'picocolors'
 import conventionalChangelog from 'conventional-changelog'
@@ -46,7 +49,7 @@ async function releaseMe(args: Args, packageRootDir: string) {
   const filesMonorepo = await getFilesInsideDir(monorepoRootDir)
   const filesMonorepoPackageJson = getFilesMonorepoPackageJson(filesMonorepo)
 
-  const monorepoInfo = analyzeMonorepo(monorepoRootDir, filesMonorepo, packageRootDir, pkg)
+  const monorepoInfo = analyzeMonorepo(filesMonorepoPackageJson, packageRootDir, pkg)
 
   logAnalysis(monorepoInfo, monorepoRootDir, packageRootDir)
 
@@ -130,11 +133,24 @@ function readJson(filePathRelative: string, dir: string) {
   const fileParsed: Record<string, unknown> = JSON.parse(fileContent)
   return { packageJson: fileParsed, packageJsonFile: filePath }
 }
+/*
+function getPnpmPackages() {
+  const pnpmWorkspaceYaml = readYaml('pnpm-workspace.yaml', monorepoRootDir)
+  const pnpmPackages = pnpmWorkspaceYaml.packages
+  // TODO: resolve globbing:
+  // ```yaml
+  // packages:
+  //   - 'packages/*'
+  //   - 'examples/*'
+  // ```
+  return pnpmPackages
+}
 function readYaml(filePathRelative: string, dir: string): Record<string, unknown> {
   const { fileContent } = readFile(filePathRelative, dir)
   const fileParsed: Record<string, unknown> = yaml.load(fileContent) as any
   return fileParsed
 }
+*/
 
 async function publishCommitRelease(packageRootDir: string, pkg: { packageName: string }) {
   await npmPublish(packageRootDir, 'commit')
@@ -554,6 +570,8 @@ async function getBranchName() {
 }
 
 function isSamePath(p1: string, p2: string) {
+  assert(path.isAbsolute(p1))
+  assert(path.isAbsolute(p2))
   p1 = path.normalize(p1)
   p2 = path.normalize(p2)
   assert(!p1.includes('\\'))
@@ -613,40 +631,29 @@ async function clean(err: unknown) {
 }
 
 type MonorepoInfo = ReturnType<typeof analyzeMonorepo>
-function analyzeMonorepo(monorepoRootDir: string, filesMonorepo: Files, packageRootDir: string, pkg: Pkg) {
-  if (!filesMonorepo.find((f) => f.filePathRelative === 'pnpm-workspace.yaml')) {
-    /*
-    if( monorepoRootDir !== packageRootDir) throw new Error(`The current working directory ${styleDetail('process.cwd()')} is expected to be ${monorepoRootDir} because, the Git repository doesn't seem to be a monorepo.`)
-    */
-    return { isMonorepo: false } as const
-  }
-
+function analyzeMonorepo(filesMonorepoPackageJson: Files, packageRootDir: string, pkg: Pkg) {
   let currentPackageFound = false
   const monorepoPackages: {
     packageName: string
     packageRootDirRelative: string
     isCurrentPackage: boolean
   }[] = []
-  const pnpmWorkspaceYaml = readYaml('pnpm-workspace.yaml', monorepoRootDir)
-  if (pnpmWorkspaceYaml.packages) {
-    assert(Array.isArray(pnpmWorkspaceYaml.packages))
-    pnpmWorkspaceYaml.packages.forEach((entry) => {
-      assert(typeof entry === 'string')
-      const monorepoPkg = readPkg(path.join(monorepoRootDir, entry))
-      if (!monorepoPkg?.packageName || !monorepoPkg.devDependencies[thisPackageName]) return
-      const isCurrentPackage = isSamePath(packageRootDir, entry)
-      if (isCurrentPackage) {
-        assert(!currentPackageFound)
-        currentPackageFound = true
-        assert(monorepoPkg.packageName === pkg.packageName)
-      }
-      monorepoPackages.push({
-        packageName: monorepoPkg.packageName,
-        packageRootDirRelative: entry,
-        isCurrentPackage,
-      })
+  filesMonorepoPackageJson.forEach((packageJsonFile) => {
+    const monorepoPkg = readPkg(packageJsonFile.filePathAbsolute)
+    if (!monorepoPkg?.packageName || !monorepoPkg.devDependencies[thisPackageName]) return
+    const isCurrentPackage = isSamePath(packageRootDir, path.dirname(packageJsonFile.filePathAbsolute))
+    if (isCurrentPackage) {
+      assert(!currentPackageFound)
+      currentPackageFound = true
+      assert(monorepoPkg.packageName === pkg.packageName)
+    }
+    monorepoPackages.push({
+      packageName: monorepoPkg.packageName,
+      packageRootDirRelative: path.dirname(packageJsonFile.filePathRelative),
+      isCurrentPackage,
     })
-  }
+  })
+
   if (monorepoPackages.length === 0) {
     return { isMonorepo: false } as const
   }
