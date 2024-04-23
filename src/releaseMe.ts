@@ -39,8 +39,10 @@ async function releaseMe(args: Args, packageRootDir: string) {
 
   const filesPackage = await getFilesInsideDir(packageRootDir)
   const pkg = await getPackage(packageRootDir, filesPackage)
+  assert(pkg.packageRootDir === packageRootDir)
+  const { packageName } = pkg
 
-  const { versionOld, versionNew, isCommitRelease } = await getVersion(pkg, args.releaseTarget)
+  const { versionOld, versionNew, isCommitRelease } = await getVersion(packageRootDir, args.releaseTarget)
 
   if (!isCommitRelease && !args.force) {
     await abortIfNotLatestMainCommit()
@@ -49,34 +51,34 @@ async function releaseMe(args: Args, packageRootDir: string) {
   const filesMonorepo = await getFilesInsideDir(monorepoRootDir)
   const filesMonorepoPackageJson = getFilesMonorepoPackageJson(filesMonorepo)
 
-  const monorepoInfo = analyzeMonorepo(filesMonorepoPackageJson, packageRootDir, pkg)
+  const monorepoInfo = analyzeMonorepo(filesMonorepoPackageJson, packageRootDir, packageName)
 
   logAnalysis(monorepoInfo, monorepoRootDir, packageRootDir)
 
   await updateVersionMacro(versionOld, versionNew, filesMonorepo)
 
   if (isCommitRelease) {
-    updatePackageJsonVersion(pkg, versionNew)
+    updatePackageJsonVersion(packageRootDir, versionNew)
     await build()
-    await publishCommitRelease(packageRootDir, pkg)
+    await publishCommitRelease(packageRootDir, packageName)
     await undoChanges()
     return
   }
 
   // Update pacakge.json versions
-  updatePackageJsonVersion(pkg, versionNew)
+  updatePackageJsonVersion(packageRootDir, versionNew)
 
-  await updateDependencies(pkg, versionNew, versionOld, filesMonorepo)
-  const boilerplatePackageJson = await findBoilerplatePacakge(pkg, filesMonorepoPackageJson)
+  await updateDependencies(packageName, versionNew, versionOld, filesMonorepo)
+  const boilerplatePackageJson = await findBoilerplatePacakge(packageName, filesMonorepoPackageJson)
   if (boilerplatePackageJson) {
     bumpBoilerplateVersion(boilerplatePackageJson)
   }
 
-  const gitTagPrefix = monorepoInfo.isMonorepo ? `${pkg.packageName}@` : 'v'
+  const gitTagPrefix = monorepoInfo.isMonorepo ? `${packageName}@` : 'v'
 
   await changelog(monorepoRootDir, packageRootDir, gitTagPrefix)
 
-  await showPreview(pkg, packageRootDir, filesPackage)
+  await showPreview(packageRootDir, filesPackage)
   await askConfirmation()
 
   await bumpPnpmLockFile(monorepoRootDir)
@@ -107,7 +109,7 @@ async function getPackage(packageRootDir: string, filesPackage: Files) {
 
 type Pkg = {
   packageName: string
-  packageDir: string
+  packageRootDir: string
   packageJson: {
     devDependencies?: Record<string, string>
   }
@@ -120,9 +122,9 @@ function readPkg(dir: string): null | Pkg {
   if (!name) {
     return null
   }
-  const packageDir = path.dirname(packageJsonPath)
+  const packageRootDir = path.dirname(packageJsonPath)
   assert(typeof name === 'string')
-  return { packageName: name, packageDir, packageJson }
+  return { packageName: name, packageRootDir, packageJson }
 }
 
 function readFile(filePathRelative: string, dir: string) {
@@ -155,9 +157,9 @@ function readYaml(filePathRelative: string, dir: string): Record<string, unknown
 }
 */
 
-async function publishCommitRelease(packageRootDir: string, pkg: { packageName: string }) {
+async function publishCommitRelease(packageRootDir: string, packageName: string) {
   await npmPublish(packageRootDir, 'commit')
-  await removeNpmTag(packageRootDir, 'commit', pkg.packageName)
+  await removeNpmTag(packageRootDir, 'commit', packageName)
 }
 async function publishBoilerplates(boilerplatePackageJson: string) {
   await npmPublish(path.dirname(boilerplatePackageJson))
@@ -255,11 +257,11 @@ function getChangeLogPath(packageRootDir: string) {
   return path.join(packageRootDir, changlogFileName)
 }
 
-async function showPreview(pkg: { packageDir: string }, packageRootDir: string, filesPackage: Files) {
+async function showPreview(packageRootDir: string, filesPackage: Files) {
   logTitle('Confirm changes')
   await showCmd('git status')
   await diffAndLog(getChangeLogPath(packageRootDir), true)
-  await diffAndLog(path.join(pkg.packageDir, 'package.json'))
+  await diffAndLog(path.join(packageRootDir, 'package.json'))
 
   return
 
@@ -314,10 +316,10 @@ async function build() {
 }
 
 async function getVersion(
-  pkg: { packageDir: string },
+  packageRootDir: string,
   releaseTarget: ReleaseTarget,
 ): Promise<{ versionNew: string; versionOld: string; isCommitRelease: boolean }> {
-  const packageJson = require(`${pkg.packageDir}/package.json`) as PackageJson
+  const packageJson = require(`${packageRootDir}/package.json`) as PackageJson
   const versionOld = packageJson.version
   assert(versionOld)
   let isCommitRelease = false
@@ -355,8 +357,8 @@ async function updateVersionMacro(versionOld: string, versionNew: string, filesM
       fs.writeFileSync(filePathAbsolute, contentNew)
     })
 }
-function updatePackageJsonVersion(pkg: { packageDir: string }, versionNew: string) {
-  modifyPackageJson(`${pkg.packageDir}/package.json`, (pkg) => {
+function updatePackageJsonVersion(packageRootDir: string, versionNew: string) {
+  modifyPackageJson(`${packageRootDir}/package.json`, (pkg) => {
     pkg.version = versionNew
   })
 }
@@ -377,13 +379,13 @@ function getFilesMonorepoPackageJson(filesMonorepo: Files): Files {
   return filesMonorepoPackageJson
 }
 
-async function findBoilerplatePacakge(pkg: { packageName: string }, filesMonorepoPackageJson: Files) {
+async function findBoilerplatePacakge(packageName: string, filesMonorepoPackageJson: Files) {
   for (const { filePathAbsolute } of filesMonorepoPackageJson) {
     const packageJson = require(filePathAbsolute) as Record<string, unknown>
     const { name } = packageJson
     if (!name) continue
     assert(typeof name === 'string')
-    if (name === `create-${pkg.packageName}`) {
+    if (name === `create-${packageName}`) {
       return filePathAbsolute
     }
   }
@@ -424,19 +426,14 @@ async function undoChanges() {
   await run('git reset --hard HEAD')
 }
 
-async function updateDependencies(
-  pkg: { packageName: string },
-  versionNew: string,
-  versionOld: string,
-  filesMonorepo: Files,
-) {
+async function updateDependencies(packageName: string, versionNew: string, versionOld: string, filesMonorepo: Files) {
   filesMonorepo
     .filter((f) => f.filePathAbsolute.endsWith('package.json'))
     .forEach(({ filePathAbsolute }) => {
       modifyPackageJson(filePathAbsolute, (packageJson) => {
         let hasChanged = false
         ;(['dependencies', 'devDependencies'] as const).forEach((deps) => {
-          const version = packageJson[deps]?.[pkg.packageName]
+          const version = packageJson[deps]?.[packageName]
           if (!version) {
             return
           }
@@ -448,10 +445,10 @@ async function updateDependencies(
             try {
               assert.strictEqual(version, versionOld_range)
             } catch (err) {
-              console.log(`Wrong ${pkg.packageName} version in ${filePathAbsolute}`)
+              console.log(`Wrong ${packageName} version in ${filePathAbsolute}`)
               throw err
             }
-            packageJson[deps][pkg.packageName] = versionNew_range
+            packageJson[deps][packageName] = versionNew_range
           }
         })
         if (!hasChanged) {
@@ -634,7 +631,7 @@ async function clean(err: unknown) {
 }
 
 type MonorepoInfo = ReturnType<typeof analyzeMonorepo>
-function analyzeMonorepo(filesMonorepoPackageJson: Files, packageRootDir: string, pkg: Pkg) {
+function analyzeMonorepo(filesMonorepoPackageJson: Files, packageRootDir: string, packageName: string) {
   let currentPackageFound = false
   const monorepoPackages: {
     packageName: string
@@ -648,7 +645,7 @@ function analyzeMonorepo(filesMonorepoPackageJson: Files, packageRootDir: string
     if (isCurrentPackage) {
       assert(!currentPackageFound)
       currentPackageFound = true
-      assert(monorepoPkg.packageName === pkg.packageName)
+      assert(monorepoPkg.packageName === packageName)
     }
     monorepoPackages.push({
       packageName: monorepoPkg.packageName,
