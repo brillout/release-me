@@ -1,6 +1,6 @@
 export { releaseMe }
 export { releaseTypes }
-export type { Args }
+export type { CliArgs }
 export type { ReleaseType }
 export type { ReleaseTarget }
 
@@ -29,11 +29,11 @@ const releaseTypes = ['minor', 'patch', 'major', 'commit'] as const
 type ReleaseType = (typeof releaseTypes)[number]
 type ReleaseTarget = ReleaseType | `v${string}`
 
-type Args = {
+type CliArgs = {
   force: boolean
   releaseTarget: ReleaseTarget
 }
-async function releaseMe(args: Args, packageRootDir: string) {
+async function releaseMe(args: CliArgs, packageRootDir: string) {
   // =======
   // Analyse
   // =======
@@ -52,7 +52,6 @@ async function releaseMe(args: Args, packageRootDir: string) {
   const monorepoInfo = analyzeMonorepo(filesMonorepoPackageJson, packageRootDir, packageName)
 
   logAnalysis(monorepoInfo, monorepoRootDir, packageRootDir)
-
 
   // =============
   // Apply changes
@@ -87,20 +86,17 @@ async function releaseMe(args: Args, packageRootDir: string) {
   const filesPackage = await getFilesInsideDir(packageRootDir)
   await showPreview(packageRootDir, filesPackage, changelogPath)
 
-
   // =================
   // Askc confirmation
   // =================
 
   await askConfirmation()
 
-
   // ===================
   // Bump pnpm-lock.yaml
   // ===================
 
   await bumpPnpmLockFile(monorepoRootDir)
-
 
   // =============================
   // Commit, npm publish, git push

@@ -1,5 +1,5 @@
 import { program } from 'commander'
-import { type Args, releaseMe, type ReleaseType, releaseTypes, type ReleaseTarget } from './releaseMe'
+import { type CliArgs, releaseMe, type ReleaseType, releaseTypes, type ReleaseTarget } from './releaseMe'
 
 const helpText = [
   '',
@@ -19,7 +19,7 @@ function cli() {
   releaseMe(args, packageRootDir)
 }
 
-function parseArgs(): Args {
+function parseArgs(): CliArgs {
   program
     .name('release-me')
     .option('--force', "Release even if the current commit (i.e. HEAD) isn't up-to-date with origin/main")
