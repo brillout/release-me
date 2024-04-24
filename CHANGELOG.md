@@ -1,3 +1,12 @@
+## [0.3.6](https://github.com/brillout/release-me/compare/v0.3.5...v0.3.6) (2024-04-24)
+
+
+### Bug Fixes
+
+* minor logging fix ([9adf4aa](https://github.com/brillout/release-me/commit/9adf4aa6c15f80c305cb1a385fcdefc471085294))
+
+
+
 ## [0.3.5](https://github.com/brillout/release-me/compare/v0.3.4...v0.3.5) (2024-04-24)
 
 
