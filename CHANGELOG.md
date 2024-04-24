@@ -1,3 +1,13 @@
+## [0.3.7](https://github.com/brillout/release-me/compare/v0.3.6...v0.3.7) (2024-04-24)
+
+
+### Bug Fixes
+
+* improve logging ([45281ff](https://github.com/brillout/release-me/commit/45281ffe1bc23549a6bbb4679e7485ee7ae4a972))
+* re-use undo logic ([26288b3](https://github.com/brillout/release-me/commit/26288b314cda5f45cfe7903bfc4ad8f53b901ede))
+
+
+
 ## [0.3.6](https://github.com/brillout/release-me/compare/v0.3.5...v0.3.6) (2024-04-24)
 
 
