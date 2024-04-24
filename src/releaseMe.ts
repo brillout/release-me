@@ -641,7 +641,8 @@ function logAnalysis(monorepoInfo: MonorepoInfo, monorepoRootDir: string, packag
 
 function logTitle(title: string, noMargin?: true) {
   const titleLine = `==== ${title} ====`
-  const borderLine = '='.repeat(titleLine.length)
+  const titleLength = pc.rm(titleLine).length
+  const borderLine = '='.repeat(titleLength)
   let lines = [borderLine, titleLine, borderLine]
   if (!noMargin) lines = ['', '', ...lines]
   console.log(lines.join('\n'))

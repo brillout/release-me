@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@brillout/picocolors':
-    specifier: ^1.0.11
-    version: 1.0.11
+    specifier: ^1.0.12
+    version: 1.0.12
   commander:
     specifier: ^11.1.0
     version: 11.1.0
@@ -156,8 +156,8 @@ packages:
     dev: true
     optional: true
 
-  /@brillout/picocolors@1.0.11:
-    resolution: {integrity: sha512-ZDIx2xNRjCKm9c6n+zNDXa3qxXniaVlGKXK1F5OKPCYbDt7EfkH2q5ppzowMITt1lxPyVplxy/b3GpTWwJF+Og==}
+  /@brillout/picocolors@1.0.12:
+    resolution: {integrity: sha512-2gowgbpAqEQz4U1D/dh3tU2fKcRm+yt724d8YTbCsVHxnLTHWP2J5RMO1iTWcoViX7rTmLvPkHHlYtEiKP4gLA==}
     dev: false
 
   /@hutson/parse-repository-url@5.0.0:
