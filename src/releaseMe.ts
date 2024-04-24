@@ -456,7 +456,9 @@ async function getFilesInsideDir(dir: string): Promise<Files> {
 }
 
 async function undoChanges() {
-  await run('git reset --hard HEAD')
+  await run(`git add ${cleanRootDir}`)
+  await run(['git', 'commit', '-am', 'aborted release'])
+  await run(`git reset --hard HEAD~`)
 }
 
 async function updateDependencies(packageName: string, versionNew: string, versionOld: string, filesMonorepo: Files) {
@@ -658,9 +660,7 @@ async function clean(err: unknown) {
   if (!err && cleanEnabled) {
     // No guarentee that Node.js awaits this async function.
     // https://stackoverflow.com/questions/40574218/how-to-perform-an-async-operation-on-exit
-    await run(`git add ${cleanRootDir}`)
-    await run(['git', 'commit', '-am', 'aborted release'])
-    await run(`git reset --hard HEAD~`)
+    await undoChanges()
   }
   process.exit(1)
 }
