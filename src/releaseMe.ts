@@ -192,6 +192,7 @@ async function publishBoilerplates(boilerplatePackageJson: string) {
   await npmPublish(path.dirname(boilerplatePackageJson))
 }
 async function npmPublish(dir: string, tag?: string) {
+  logTitle('Npm publish')
   const env = getNpmFix()
   let cmd = 'npm publish'
   if (tag) {
@@ -331,16 +332,19 @@ function askConfirmation(): Promise<void> {
 }
 
 async function gitCommit(versionNew: string, monorepoRootDir: string, gitTagPrefix: string) {
+  logTitle('Git commit')
   const tag = `${gitTagPrefix}${versionNew}`
   await run('git add .', { dir: monorepoRootDir })
   await run(['git', 'commit', '-am', `release: ${tag}`])
   await run(`git tag ${tag}`)
 }
 async function gitPush() {
+  logTitle('Git push')
   await run('git push')
   await run('git push --tags')
 }
 async function build() {
+  logTitle(`Build ${logDetail('$ pnpm run build')}`)
   await run('pnpm run build')
 }
 
@@ -619,7 +623,7 @@ async function getMonorepoRootDir() {
 }
 
 function logAnalysis(monorepoInfo: MonorepoInfo, monorepoRootDir: string, packageRootDir: string) {
-  logTitle('Analysis result')
+  logTitle('Analysis result', true)
   console.log(`Package root directory: ${pc.bold(packageRootDir)} ${logDetail('process.cwd()')}`)
   const isMonorepo = !isSamePath(packageRootDir, monorepoRootDir) || monorepoInfo.hasMultiplePackages
   console.log(`Monorepo: ${logBoolean(isMonorepo)}`)
@@ -635,14 +639,12 @@ function logAnalysis(monorepoInfo: MonorepoInfo, monorepoRootDir: string, packag
   }
 }
 
-function logTitle(title: string) {
+function logTitle(title: string, noMargin?: true) {
   const titleLine = `==== ${title} ====`
   const borderLine = '='.repeat(titleLine.length)
-  console.log()
-  console.log()
-  console.log(borderLine)
-  console.log(titleLine)
-  console.log(borderLine)
+  let lines = [borderLine, titleLine, borderLine]
+  if (!noMargin) lines = ['', '', ...lines]
+  console.log(lines.join('\n'))
 }
 
 let cleanRootDir = process.cwd()
