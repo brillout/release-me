@@ -456,8 +456,9 @@ async function getFilesInsideDir(dir: string): Promise<Files> {
 }
 
 async function undoChanges() {
+  logTitle('Revert changes')
   await run(`git add ${cleanRootDir}`)
-  await run(['git', 'commit', '-am', 'aborted release'])
+  await run(['git', 'commit', '-am', 'reverted release commit'])
   await run(`git reset --hard HEAD~`)
 }
 
