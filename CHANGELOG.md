@@ -1,3 +1,19 @@
+## [0.3.8](https://github.com/brillout/release-me/compare/v0.3.7...v0.3.8) (2024-05-27)
+
+
+### Bug Fixes
+
+* also clean git tag ([04094fc](https://github.com/brillout/release-me/commit/04094fcdfe3e0bdcb02cf96287d97967820a0be0))
+* also clean upon error ([734c75a](https://github.com/brillout/release-me/commit/734c75afa46dbccfd66d8671ba30b15b430e75c5))
+* avoid infinite clean loop ([230db97](https://github.com/brillout/release-me/commit/230db97d6179e31085b2073a57dfebe9bcf2dc19))
+* fix error catch ([db16061](https://github.com/brillout/release-me/commit/db160616fc92d694ca3327c00cd982c29c14f7e5))
+* fix release reverting ([0786cb2](https://github.com/brillout/release-me/commit/0786cb29e546fdc243d4adf8fa554b6054d6149c))
+* improve err msg ([29c987e](https://github.com/brillout/release-me/commit/29c987e032654ae187a4d07db77fd9c47be27196))
+* only revert if there are uncommitted changes ([062c285](https://github.com/brillout/release-me/commit/062c285303eed1c52617c04afc7ef7ea99d5314a))
+* use more reliable origin/main check ([3fa1829](https://github.com/brillout/release-me/commit/3fa1829a51fa72dd79838bb58457759385b39125))
+
+
+
 ## [0.3.7](https://github.com/brillout/release-me/compare/v0.3.6...v0.3.7) (2024-04-24)
 
 
