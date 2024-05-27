@@ -653,12 +653,14 @@ function logTitle(title: string, noMargin?: true) {
 
 let cleanRootDir = process.cwd()
 let cleanEnabled = false
+let isCleaning = false
 async function clean(err: unknown) {
   if (err) {
     logTitle('Error')
     console.error(err)
   }
-  if (!err && cleanEnabled) {
+  if (!err && cleanEnabled && !isCleaning) {
+    isCleaning = true
     // No guarentee that Node.js awaits this async function.
     // https://stackoverflow.com/questions/40574218/how-to-perform-an-async-operation-on-exit
     await undoChanges()
