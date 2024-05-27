@@ -565,6 +565,7 @@ async function repoHasUncommittedChanges() {
 }
 
 async function abortIfNotLatestMainCommit() {
+  // Branch is main
   {
     const stdout = await getBranchName()
     const branch = stdout.trim()
@@ -583,6 +584,8 @@ async function abortIfNotLatestMainCommit() {
       )
     }
   }
+
+  // HEAD is origin/main
   {
     await runCommand('git fetch', {
       // When `$ git fetch` fetches something, it prints information to stderr instead of stdout (I don't know why).
@@ -590,7 +593,10 @@ async function abortIfNotLatestMainCommit() {
       // https://stackoverflow.com/questions/57016157/how-to-stop-git-from-writing-non-errors-to-stderr
       swallowError: true,
     })
-    if (await headIsNotOriginMain()) {
+
+    const commitHash = await getCommitHash('HEAD')
+    const commitHashOriginMain = await getCommitHash('origin/main')
+    if (commitHashOriginMain !== commitHash) {
       throw new Error(
         pc.red(
           pc.bold(
@@ -602,18 +608,18 @@ async function abortIfNotLatestMainCommit() {
           ),
         ),
       )
-    }
-  }
-}
-async function headIsNotOriginMain() {
-  const stdout = await run__return(`git status`)
-  const isNotOriginMain =
-    stdout.trim() !==
-    `On branch main
+    } else {
+      const stdout = await run__return(`git status`)
+      // Is this assert() too sensitive? Do we really need it? Should we remove it?
+      assert(
+        stdout.trim() ===
+          `On branch main
 Your branch is up to date with 'origin/main'.
 
-nothing to commit, working tree clean`
-  return isNotOriginMain
+nothing to commit, working tree clean`,
+      )
+    }
+  }
 }
 
 async function getCommitHash(commit: 'HEAD' | 'origin/main') {
