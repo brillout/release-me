@@ -54,11 +54,11 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   logAnalysis(monorepoInfo, monorepoRootDir, packageRootDir)
 
+  if (!isCommitRelease && !args.force) await abortIfNotLatestMainCommit()
+
   // =============
   // Apply changes
   // =============
-
-  if (!isCommitRelease && !args.force) await abortIfNotLatestMainCommit()
 
   await updateVersionMacro(versionOld, versionNew, filesMonorepo)
 
