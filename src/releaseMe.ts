@@ -44,7 +44,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   const { packageName, packageJsonPath } = getPackageName(packageRootDir)
 
-  const commitHash = await getCommitHash()
+  const commitHash = await getCommitHash('HEAD')
 
   const { versionOld, versionNew, isCommitRelease } = await getVersion(packageRootDir, args.releaseTarget, commitHash)
 
@@ -361,7 +361,9 @@ async function getVersion(
   let isCommitRelease = false
   let versionNew: string
   if (releaseTarget === 'commit') {
-    versionNew = `${versionOld}-commit-${commitHash}`
+    // Align with GitHub: GitHub (always?) picks the first 7 characters.
+    const hash = commitHash.slice(0, 7)
+    versionNew = `${versionOld}-commit-${hash}`
     isCommitRelease = true
   } else if (releaseTarget === 'patch' || releaseTarget === 'minor' || releaseTarget === 'major') {
     versionNew = semver.inc(versionOld, releaseTarget) as string
@@ -599,11 +601,9 @@ nothing to commit, working tree clean`
   return isNotOriginMain
 }
 
-async function getCommitHash() {
-  const commitHash = (await run__return('git rev-parse HEAD'))
-    .trim()
-    // Align with GitHub: GitHub (always?) only shows the first 7 characters
-    .slice(0, 7)
+async function getCommitHash(commit: 'HEAD') {
+  const commitHash = (await run__return(`git rev-parse ${commit}`)).trim()
+  assert(commitHash)
   return commitHash
 }
 
