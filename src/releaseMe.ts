@@ -33,6 +33,8 @@ type CliArgs = {
   force: boolean
   releaseTarget: ReleaseTarget
 }
+type GitTagPrefix = `v` | `${string}@`
+type GitTag = `${GitTagPrefix}${string}`
 async function releaseMe(args: CliArgs, packageRootDir: string) {
   // =======
   // Analyse
@@ -88,7 +90,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
     bumpBoilerplateVersion(boilerplatePackageJson)
   }
 
-  const gitTagPrefix = monorepoInfo.hasMultiplePackages ? `${packageName}@` : 'v'
+  const gitTagPrefix: GitTagPrefix = monorepoInfo.hasMultiplePackages ? `${packageName}@` : 'v'
 
   const { changelogPath, changelogAlreadyExists } = getChangelogPath(
     monorepoInfo.hasMultiplePackages ? packageRootDir : monorepoRootDir,
@@ -113,7 +115,9 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   // Commit, npm publish, git push
   // =============================
 
-  await gitCommit(versionNew, monorepoRootDir, gitTagPrefix)
+  const gitTag = getGitTag(versionNew, gitTagPrefix)
+  await makeGitCommit(monorepoRootDir, gitTag)
+  await makeGitTag(gitTag)
 
   await build()
 
@@ -224,7 +228,7 @@ async function changelog(
   changelogPath: string,
   hasMultiplePackages: boolean,
   packageRootDir: string,
-  gitTagPrefix: string,
+  gitTagPrefix: GitTagPrefix,
 ) {
   const readable = conventionalChangelog(
     {
@@ -340,12 +344,17 @@ function askConfirmation(): Promise<void> {
   return promise
 }
 
-async function gitCommit(versionNew: string, monorepoRootDir: string, gitTagPrefix: string) {
+async function makeGitCommit(monorepoRootDir: string, gitTag: GitTag) {
   logTitle('Git commit')
-  const tag = `${gitTagPrefix}${versionNew}`
   await run('git add .', { dir: monorepoRootDir })
-  await run(['git', 'commit', '-am', `release: ${tag}`])
-  await run(`git tag ${tag}`)
+  await run(['git', 'commit', '-am', `release: ${gitTag}`])
+}
+async function makeGitTag(gitTag: GitTag) {
+  await run(`git tag ${gitTag}`)
+}
+function getGitTag(versionNew: string, gitTagPrefix: GitTagPrefix): GitTag {
+  const gitTag = `${gitTagPrefix}${versionNew}` as const
+  return gitTag
 }
 async function gitPush() {
   logTitle('Git push')
