@@ -351,6 +351,7 @@ async function makeGitCommit(monorepoRootDir: string, gitTag: GitTag) {
 }
 async function makeGitTag(gitTag: GitTag) {
   await run(`git tag ${gitTag}`)
+  cleanTag = gitTag
 }
 function getGitTag(versionNew: string, gitTagPrefix: GitTagPrefix): GitTag {
   const gitTag = `${gitTagPrefix}${versionNew}` as const
@@ -488,6 +489,12 @@ async function undoChanges() {
   if (hasUncommittedChanges) {
     await run(`git add ${cleanRootDir}`)
     await run(['git', 'commit', '-am', 'reverted release commit'])
+  }
+
+  if (cleanTag) {
+    assert(typeof cleanTag === 'string')
+    const gitTag: GitTag = cleanTag
+    await run(`git tag -d ${gitTag}`)
   }
 
   await run(`git reset --hard ${commitHashBegin}`)
@@ -693,6 +700,7 @@ function logTitle(title: string, noMargin?: true) {
 let cleanRootDir = process.cwd()
 let cleanEnabled: false | string = false
 let isCleaning = false
+let cleanTag: false | GitTag = false
 async function clean(err: unknown) {
   if (err) {
     logTitle('Error')
