@@ -62,7 +62,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   if (!isCommitRelease && !args.force) await abortIfNotLatestMainCommit()
 
-  // No uncommitted changes => we can safely use `$ git reset` => we can enable cleaning (i.e. release reverting)
+  // No uncommitted changes => we can safely use `$ git reset` => we can enable cleaning (i.e. reverting the release).
   cleanEnabled = commitHashBegin
 
   // =============
