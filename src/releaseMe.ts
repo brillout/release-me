@@ -539,7 +539,6 @@ async function abortIfUncommitedChanges(monorepoRootDir: string) {
     cleanEnabled = true
   }
 }
-
 async function hasUncommittedChanges() {
   const stdout = await run__return(`git status --porcelain`)
   const isDirty = stdout !== ''
@@ -572,14 +571,7 @@ async function abortIfNotLatestMainCommit() {
       // https://stackoverflow.com/questions/57016157/how-to-stop-git-from-writing-non-errors-to-stderr
       swallowError: true,
     })
-    const stdout = await run__return(`git status`)
-    const isNotOriginMain =
-      stdout.trim() !==
-      `On branch main
-Your branch is up to date with 'origin/main'.
-
-nothing to commit, working tree clean`
-    if (isNotOriginMain) {
+    if (await headIsNotOriginMain()) {
       throw new Error(
         pc.red(
           pc.bold(
@@ -593,6 +585,16 @@ nothing to commit, working tree clean`
       )
     }
   }
+}
+async function headIsNotOriginMain() {
+  const stdout = await run__return(`git status`)
+  const isNotOriginMain =
+    stdout.trim() !==
+    `On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean`
+  return isNotOriginMain
 }
 
 async function getCommitHash() {
