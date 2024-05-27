@@ -98,6 +98,10 @@
 * remove --git-tag-prefix arg; automatically determine it ([dec181a](https://github.com/brillout/release-me/commit/dec181a2b6cba9c2e63750035975b99dcc59e2a1))
 
 
+### BREAKING CHANGES
+
+* remove superfluous/unused CLI arguments
+
 
 ## [0.2.4](https://github.com/brillout/release-me/compare/v0.2.3...v0.2.4) (2024-04-22)
 
