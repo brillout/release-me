@@ -456,7 +456,7 @@ async function getFilesInsideDir(dir: string): Promise<Files> {
 }
 
 async function undoChanges() {
-  if (!(await hasUncommittedChanges())) return
+  if (!(await repoHasUncommittedChanges())) return
   logTitle('Revert changes')
   await run(`git add ${cleanRootDir}`)
   await run(['git', 'commit', '-am', 'reverted release commit'])
@@ -527,7 +527,7 @@ async function run__return(cmd: string | string[], dir?: string): Promise<string
 }
 
 async function abortIfUncommitedChanges(monorepoRootDir: string) {
-  if (await hasUncommittedChanges()) {
+  if (await repoHasUncommittedChanges()) {
     throw new Error(
       pc.red(
         pc.bold(
@@ -539,10 +539,10 @@ async function abortIfUncommitedChanges(monorepoRootDir: string) {
     cleanEnabled = true
   }
 }
-async function hasUncommittedChanges() {
+async function repoHasUncommittedChanges() {
   const stdout = await run__return(`git status --porcelain`)
-  const isDirty = stdout !== ''
-  return isDirty
+  const hasUncommittedChanges = stdout !== ''
+  return hasUncommittedChanges
 }
 
 async function abortIfNotLatestMainCommit() {
