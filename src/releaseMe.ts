@@ -526,9 +526,7 @@ async function run__return(cmd: string | string[], dir?: string): Promise<string
 }
 
 async function abortIfUncommitedChanges(monorepoRootDir: string) {
-  const stdout = await run__return(`git status --porcelain`)
-  const isDirty = stdout !== ''
-  if (isDirty) {
+  if (await hasUncommittedChanges()) {
     throw new Error(
       pc.red(
         pc.bold(
@@ -539,6 +537,12 @@ async function abortIfUncommitedChanges(monorepoRootDir: string) {
   } else {
     cleanEnabled = true
   }
+}
+
+async function hasUncommittedChanges() {
+  const stdout = await run__return(`git status --porcelain`)
+  const isDirty = stdout !== ''
+  return isDirty
 }
 
 async function abortIfNotLatestMainCommit() {
