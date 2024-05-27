@@ -44,9 +44,13 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   const { packageName, packageJsonPath } = getPackageName(packageRootDir)
 
-  const commitHash = await getCommitHash('HEAD')
+  const commitHashBegin = await getCommitHash('HEAD')
 
-  const { versionOld, versionNew, isCommitRelease } = await getVersion(packageRootDir, args.releaseTarget, commitHash)
+  const { versionOld, versionNew, isCommitRelease } = await getVersion(
+    packageRootDir,
+    args.releaseTarget,
+    commitHashBegin,
+  )
 
   const filesMonorepo = await getFilesInsideDir(monorepoRootDir)
   // const filesPackage = await getFilesInsideDir(packageRootDir)
@@ -59,7 +63,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   if (!isCommitRelease && !args.force) await abortIfNotLatestMainCommit()
 
   // No uncommitted changes => we can safely use `$ git reset` => we can enable cleaning (i.e. release reverting)
-  cleanEnabled = commitHash
+  cleanEnabled = commitHashBegin
 
   // =============
   // Apply changes
@@ -356,7 +360,7 @@ async function build() {
 async function getVersion(
   packageRootDir: string,
   releaseTarget: ReleaseTarget,
-  commitHash: string,
+  commitHashBegin: string,
 ): Promise<{ versionNew: string; versionOld: string; isCommitRelease: boolean }> {
   const packageJson = require(`${packageRootDir}/package.json`) as PackageJson
   const versionOld = packageJson.version
@@ -365,7 +369,7 @@ async function getVersion(
   let versionNew: string
   if (releaseTarget === 'commit') {
     // Align with GitHub: GitHub (always?) picks the first 7 characters.
-    const hash = commitHash.slice(0, 7)
+    const hash = commitHashBegin.slice(0, 7)
     versionNew = `${versionOld}-commit-${hash}`
     isCommitRelease = true
   } else if (releaseTarget === 'patch' || releaseTarget === 'minor' || releaseTarget === 'major') {
