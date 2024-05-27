@@ -516,7 +516,7 @@ async function run(
   try {
     await execa(command!, args, { cwd: dir, stdio, env })
   } catch (err) {
-    if (!swallowError) err
+    if (!swallowError) throw err
   }
 }
 async function run__return(cmd: string | string[], dir?: string): Promise<string> {
