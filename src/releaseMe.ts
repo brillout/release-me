@@ -659,7 +659,7 @@ async function clean(err: unknown) {
     logTitle('Error')
     console.error(err)
   }
-  if (!err && cleanEnabled && !isCleaning) {
+  if (cleanEnabled && !isCleaning) {
     isCleaning = true
     // No guarentee that Node.js awaits this async function.
     // https://stackoverflow.com/questions/40574218/how-to-perform-an-async-operation-on-exit
