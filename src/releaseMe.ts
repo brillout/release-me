@@ -44,7 +44,9 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   const { packageName, packageJsonPath } = getPackageName(packageRootDir)
 
-  const { versionOld, versionNew, isCommitRelease } = await getVersion(packageRootDir, args.releaseTarget)
+  const commitHash = await getCommitHash()
+
+  const { versionOld, versionNew, isCommitRelease } = await getVersion(packageRootDir, args.releaseTarget, commitHash)
 
   const filesMonorepo = await getFilesInsideDir(monorepoRootDir)
   // const filesPackage = await getFilesInsideDir(packageRootDir)
@@ -351,6 +353,7 @@ async function build() {
 async function getVersion(
   packageRootDir: string,
   releaseTarget: ReleaseTarget,
+  commitHash: string,
 ): Promise<{ versionNew: string; versionOld: string; isCommitRelease: boolean }> {
   const packageJson = require(`${packageRootDir}/package.json`) as PackageJson
   const versionOld = packageJson.version
@@ -358,7 +361,6 @@ async function getVersion(
   let isCommitRelease = false
   let versionNew: string
   if (releaseTarget === 'commit') {
-    const commitHash = await getCommitHash()
     versionNew = `${versionOld}-commit-${commitHash}`
     isCommitRelease = true
   } else if (releaseTarget === 'patch' || releaseTarget === 'minor' || releaseTarget === 'major') {
