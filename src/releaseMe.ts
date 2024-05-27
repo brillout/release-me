@@ -58,6 +58,9 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   if (!isCommitRelease && !args.force) await abortIfNotLatestMainCommit()
 
+  // No uncommitted changes => we can safely use `$ git reset` => we can enable cleaning (i.e. release reverting)
+  cleanEnabled = commitHash
+
   // =============
   // Apply changes
   // =============
@@ -460,11 +463,21 @@ async function getFilesInsideDir(dir: string): Promise<Files> {
 }
 
 async function undoChanges() {
-  if (!(await repoHasUncommittedChanges())) return
+  // The value of `cleanEnabled` is the commit hash before we applied changes.
+  assert(typeof cleanEnabled === 'string')
+  const commitHashBegin = cleanEnabled
+  const commitHashNow = await getCommitHash('HEAD')
+
+  const hasUncommittedChanges = await repoHasUncommittedChanges()
+  if (!hasUncommittedChanges && commitHashBegin === commitHashNow) return
   logTitle('Revert changes')
-  await run(`git add ${cleanRootDir}`)
-  await run(['git', 'commit', '-am', 'reverted release commit'])
-  await run(`git reset --hard HEAD~`)
+
+  if (hasUncommittedChanges) {
+    await run(`git add ${cleanRootDir}`)
+    await run(['git', 'commit', '-am', 'reverted release commit'])
+  }
+
+  await run(`git reset --hard ${commitHashBegin}`)
 }
 
 async function updateDependencies(packageName: string, versionNew: string, versionOld: string, filesMonorepo: Files) {
@@ -539,8 +552,6 @@ async function abortIfUncommitedChanges(monorepoRootDir: string) {
         ),
       ),
     )
-  } else {
-    cleanEnabled = true
   }
 }
 async function repoHasUncommittedChanges() {
@@ -601,7 +612,7 @@ nothing to commit, working tree clean`
   return isNotOriginMain
 }
 
-async function getCommitHash(commit: 'HEAD') {
+async function getCommitHash(commit: 'HEAD' | 'origin/main') {
   const commitHash = (await run__return(`git rev-parse ${commit}`)).trim()
   assert(commitHash)
   return commitHash
@@ -661,7 +672,7 @@ function logTitle(title: string, noMargin?: true) {
 }
 
 let cleanRootDir = process.cwd()
-let cleanEnabled = false
+let cleanEnabled: false | string = false
 let isCleaning = false
 async function clean(err: unknown) {
   if (err) {
