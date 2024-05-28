@@ -318,7 +318,7 @@ async function showPreview(packageJsonPath: string, changelogPath: string, chang
       ? `git --no-pager diff ${filePath}`
       : // https://stackoverflow.com/questions/855767/can-i-use-git-diff-on-untracked-files#comment35922182_856118
         `git --no-pager diff --no-index -- /dev/null ${filePath}`
-    await logCmd(`git diff ${filePath}`, cmdReal, fileAlreadyExists)
+    await logCmd(`git diff ${filePath}`, cmdReal, true)
   }
 
   async function logCmd(cmd: string, cmdReal?: string, swallowError?: boolean) {
