@@ -77,7 +77,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
     updatePackageJsonVersion(packageRootDir, versionNew)
     await build()
     await publishCommitRelease(packageRootDir, packageName)
-    await undoChanges()
+    await revertChanges()
     return
   }
 
@@ -476,7 +476,7 @@ async function getFilesInsideDir(dir: string): Promise<Files> {
   return files
 }
 
-async function undoChanges() {
+async function revertChanges() {
   // The value of `cleanEnabled` is the commit hash before we applied changes.
   assert(typeof cleanEnabled === 'string')
   const commitHashBegin = cleanEnabled
@@ -710,7 +710,7 @@ async function clean(err: unknown) {
     isCleaning = true
     // No guarentee that Node.js awaits this async function.
     // https://stackoverflow.com/questions/40574218/how-to-perform-an-async-operation-on-exit
-    await undoChanges()
+    await revertChanges()
   }
   process.exit(1)
 }
