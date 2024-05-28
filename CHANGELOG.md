@@ -1,3 +1,12 @@
+## [0.3.9](https://github.com/brillout/release-me/compare/v0.3.8...v0.3.9) (2024-05-28)
+
+
+### Bug Fixes
+
+* fix first usage ([43906a0](https://github.com/brillout/release-me/commit/43906a05dd6ba4ae0826be63c0eff4ff7dccd1ce))
+
+
+
 ## [0.3.8](https://github.com/brillout/release-me/compare/v0.3.7...v0.3.8) (2024-05-27)
 
 
