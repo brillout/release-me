@@ -8,7 +8,7 @@ import execa from 'execa'
 import * as fs from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
-import { runCommand } from './utils'
+import { runCommand, assertUsage } from './utils'
 import * as path from 'path'
 /*
 //  "js-yaml": "4.1.0",
@@ -391,15 +391,27 @@ async function getVersion(
   return { versionNew, versionOld, isCommitRelease }
 }
 async function updateVersionMacro(versionOld: string, versionNew: string, filesMonorepo: Files) {
+  const projectInfoFile = 'projectInfo.ts'
+  const PROJECT_VERSION = 'PROJECT_VERSION'
   filesMonorepo
-    .filter((f) => f.filePathAbsolute.endsWith('/projectInfo.ts') || f.filePathAbsolute.endsWith('/projectInfo.tsx'))
+    .filter(
+      (f) => f.filePathAbsolute.endsWith(`/${projectInfoFile}`) || f.filePathAbsolute.endsWith(`/${projectInfoFile}x`),
+    )
     .forEach(({ filePathAbsolute }) => {
       assert(path.isAbsolute(filePathAbsolute))
-      const getCodeSnippet = (version: string) => `const PROJECT_VERSION = '${version}'`
+      const getCodeSnippet = (version: string) => `const ${PROJECT_VERSION} = '${version}'`
       const codeSnippetOld = getCodeSnippet(versionOld)
       const codeSnippetNew = getCodeSnippet(versionNew)
       const contentOld = fs.readFileSync(filePathAbsolute, 'utf8')
-      assert(contentOld.includes(codeSnippetOld))
+      if (!contentOld.includes(PROJECT_VERSION)) return
+      assertUsage(
+        contentOld.includes(codeSnippetOld),
+        [
+          `${filePathAbsolute} is expected to contain ${pc.code(codeSnippetOld)}`,
+          `because file name is ${pc.code(projectInfoFile)} —`,
+          'either rename the file or make sure it contains this string.',
+        ].join(' '),
+      )
       /*
       if (!contentOld.includes(codeSnippetOld)) {
         assert(DEV_MODE)
