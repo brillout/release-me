@@ -1,3 +1,18 @@
+# [0.4.0](https://github.com/brillout/release-me/compare/v0.3.10...v0.4.0) (2024-07-25)
+
+
+### Bug Fixes
+
+* only replace PROJECT_VERSION inside package files ([5a3721a](https://github.com/brillout/release-me/commit/5a3721a5c63263b087c37b3f869e3a343cd0a7d5))
+* update PROJECT_VERSION inside PROJECT_VERSION.ts instead of ([6f59842](https://github.com/brillout/release-me/commit/6f59842042da4a9526c0598a5a303732d2944ae3))
+
+
+### BREAKING CHANGES
+
+* rename projectInfo.ts to PROJECT_VERSION.ts
+
+
+
 ## [0.3.10](https://github.com/brillout/release-me/compare/v0.3.9...v0.3.10) (2024-07-25)
 
 
