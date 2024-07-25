@@ -391,25 +391,19 @@ async function getVersion(
   return { versionNew, versionOld, isCommitRelease }
 }
 async function updateVersionMacro(versionOld: string, versionNew: string, filesPackage: Files) {
-  const projectInfoFile = 'projectInfo.ts'
-  const PROJECT_VERSION = 'PROJECT_VERSION'
   filesPackage
-    .filter(
-      (f) => f.filePathAbsolute.endsWith(`/${projectInfoFile}`) || f.filePathAbsolute.endsWith(`/${projectInfoFile}x`),
-    )
+    .filter((f) => f.filePathAbsolute.endsWith(`/PROJECT_VERSION.ts`))
     .forEach(({ filePathAbsolute }) => {
       assert(path.isAbsolute(filePathAbsolute))
-      const getCodeSnippet = (version: string) => `const ${PROJECT_VERSION} = '${version}'`
+      const getCodeSnippet = (version: string) => `const PROJECT_VERSION = '${version}'`
       const codeSnippetOld = getCodeSnippet(versionOld)
       const codeSnippetNew = getCodeSnippet(versionNew)
       const contentOld = fs.readFileSync(filePathAbsolute, 'utf8')
-      if (!contentOld.includes(PROJECT_VERSION)) return
       assertUsage(
         contentOld.includes(codeSnippetOld),
         [
-          `${filePathAbsolute} is expected to contain ${pc.code(codeSnippetOld)}`,
-          `because file name is ${pc.code(projectInfoFile)} —`,
-          'either rename the file or make sure it contains this string.',
+          `${filePathAbsolute} is expected to contain ${pc.code(codeSnippetOld)} —`,
+          `make sure it contains this string, or rename the file.`,
         ].join(' '),
       )
       /*
