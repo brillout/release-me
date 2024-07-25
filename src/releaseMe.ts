@@ -407,6 +407,7 @@ async function updateVersionMacro(versionOld: string, versionNew: string, filesM
       }
       */
       const contentNew = contentOld.replace(codeSnippetOld, codeSnippetNew)
+      assert(versionOld !== versionNew)
       assert(contentNew !== contentOld)
       fs.writeFileSync(filePathAbsolute, contentNew)
     })
