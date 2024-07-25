@@ -55,7 +55,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   )
 
   const filesMonorepo = await getFilesInsideDir(monorepoRootDir)
-  // const filesPackage = await getFilesInsideDir(packageRootDir)
+  const filesPackage = await getFilesInsideDir(packageRootDir)
   const filesMonorepoPackageJson = getFilesMonorepoPackageJson(filesMonorepo)
 
   const monorepoInfo = analyzeMonorepo(filesMonorepoPackageJson, packageRootDir, packageName)
@@ -71,7 +71,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   // Apply changes
   // =============
 
-  await updateVersionMacro(versionOld, versionNew, filesMonorepo)
+  await updateVersionMacro(versionOld, versionNew, filesPackage)
 
   if (isCommitRelease) {
     updatePackageJsonVersion(packageRootDir, versionNew)
@@ -390,10 +390,10 @@ async function getVersion(
   }
   return { versionNew, versionOld, isCommitRelease }
 }
-async function updateVersionMacro(versionOld: string, versionNew: string, filesMonorepo: Files) {
+async function updateVersionMacro(versionOld: string, versionNew: string, filesPackage: Files) {
   const projectInfoFile = 'projectInfo.ts'
   const PROJECT_VERSION = 'PROJECT_VERSION'
-  filesMonorepo
+  filesPackage
     .filter(
       (f) => f.filePathAbsolute.endsWith(`/${projectInfoFile}`) || f.filePathAbsolute.endsWith(`/${projectInfoFile}x`),
     )
