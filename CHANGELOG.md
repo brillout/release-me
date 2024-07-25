@@ -1,3 +1,12 @@
+## [0.3.10](https://github.com/brillout/release-me/compare/v0.3.9...v0.3.10) (2024-07-25)
+
+
+### Bug Fixes
+
+* improve PROJECT_VERSION handling ([4bd7dd2](https://github.com/brillout/release-me/commit/4bd7dd2160a11d7e328e428c25e3d244784ee268))
+
+
+
 ## [0.3.9](https://github.com/brillout/release-me/compare/v0.3.8...v0.3.9) (2024-05-28)
 
 
