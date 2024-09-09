@@ -1,3 +1,13 @@
+## [0.4.1](https://github.com/brillout/release-me/compare/v0.4.0...v0.4.1) (2024-09-09)
+
+
+### Bug Fixes
+
+* increase timeout ([9464e09](https://github.com/brillout/release-me/commit/9464e09b167d801183f3a32aa78e038ba7bf1b86))
+* publish with pnpm instead of npm ([#3](https://github.com/brillout/release-me/issues/3)) ([3b77a89](https://github.com/brillout/release-me/commit/3b77a89ad68da1bf72005ade9394633c5bfc1390))
+
+
+
 # [0.4.0](https://github.com/brillout/release-me/compare/v0.3.10...v0.4.0) (2024-07-25)
 
 
