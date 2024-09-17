@@ -1,3 +1,12 @@
+## [0.4.2](https://github.com/brillout/release-me/compare/v0.4.1...v0.4.2) (2024-09-17)
+
+
+### Bug Fixes
+
+* add flag pnpm publish --no-git-checks ([197902c](https://github.com/brillout/release-me/commit/197902cf8e2b092698f32d6178a9bd1c0b561cb6))
+
+
+
 ## [0.4.1](https://github.com/brillout/release-me/compare/v0.4.0...v0.4.1) (2024-09-09)
 
 
