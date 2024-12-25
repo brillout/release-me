@@ -733,6 +733,12 @@ function analyzeMonorepo(filesMonorepoPackageJson: Files, packageRootDir: string
   filesMonorepoPackageJson.forEach((packageJsonFile) => {
     const packageJsonDir = path.dirname(packageJsonFile.filePathAbsolute)
     const { packageJson } = getPackageJson(packageJsonDir)
+    assertUsage(
+      !packageJson.dependencies?.[thisPackageName],
+      `${pc.cyan('@brillout/release-me')} shouldn't be inside ${pc.gray(packageJsonDir)}/package.json#${pc.bold(
+        'dependencies',
+      )} as it should be only in package.json#${pc.bold('devDependencies')} instead.`,
+    )
     if (!packageJson?.name || !packageJson.devDependencies?.[thisPackageName]) return
     const isCurrentPackage = isSamePath(packageRootDir, packageJsonDir)
     if (isCurrentPackage) {
