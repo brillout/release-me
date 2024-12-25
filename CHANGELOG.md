@@ -1,3 +1,12 @@
+## [0.4.3](https://github.com/brillout/release-me/compare/v0.4.2...v0.4.3) (2024-12-25)
+
+
+### Bug Fixes
+
+* add wrong usage error ([4c024d1](https://github.com/brillout/release-me/commit/4c024d1ccf355681470793fefda2ca0d8d4b9889))
+
+
+
 ## [0.4.2](https://github.com/brillout/release-me/compare/v0.4.1...v0.4.2) (2024-09-17)
 
 
