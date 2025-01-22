@@ -31,7 +31,7 @@ Used by:
 
 ## Installation
 
-### Basics
+### Get started
 
 Run `$ pnpm -D @brillout/release-me` and make sure you have the following:
 
@@ -74,6 +74,8 @@ We recommend adding the following scripts:
 It's a convenient way to communicate how new versions are released to anyone who's discovering your project.
 
 Installation example: [`8ff59fe`](https://github.com/brillout/test-e2e/commit/8ff59fea41c4956aeaf18b048a34faeaf98a47c5).
+
+A `CHANGELOG.md` file will be automatically generated and updated, see the following section.
 
 ### Conventional Commits
 
