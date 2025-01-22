@@ -33,6 +33,8 @@ Used by:
 
 ### Basics
 
+Run `$ pnpm -D @brillout/release-me` and make sure you have the following:
+
 ```json5
 // package.json
 {
@@ -47,11 +49,9 @@ Used by:
 }
 ```
 
-That's all `@brillout/release-me` needs: you can now use `pnpm exec release-me patch` to release a new patch version.
+That's it: you can now use `pnpm exec release-me patch` to release a new patch version.
 
-### Scripts
-
-It's optional but we recommend adding `package.json#scripts`:
+We recommend adding the following scripts:
 
 ```diff
  // package.json
@@ -71,7 +71,9 @@ It's optional but we recommend adding `package.json#scripts`:
  }
 ```
 
-It's a ubiquitous convention: it communicates how new versions are released to anyone who's discovering your project.
+It's a convenient way to communicate how new versions are released to anyone who's discovering your project.
+
+Installation example: https://github.com/brillout/test-e2e/commit/8ff59fea41c4956aeaf18b048a34faeaf98a47c5
 
 ### Conventional Commits
 
