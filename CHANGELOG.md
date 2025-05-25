@@ -1,3 +1,13 @@
+## [0.4.5](https://github.com/brillout/release-me/compare/v0.4.4...v0.4.5) (2025-05-25)
+
+
+### Bug Fixes
+
+* @brillout/picocolors@^1.0.26 ([c291a77](https://github.com/brillout/release-me/commit/c291a77c6e687f65527ff0223b882ab15fb41449))
+* @brillout/picocolors@^1.0.28 ([5c19baf](https://github.com/brillout/release-me/commit/5c19baf0d40153e6bb08f83bfc813443cf66133f))
+
+
+
 ## [0.4.4](https://github.com/brillout/release-me/compare/v0.4.3...v0.4.4) (2025-05-25)
 
 
