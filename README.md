@@ -9,7 +9,7 @@ Used by:
 - Packages made by [`magne4000`](https://github.com/magne4000)
 
 [Features](#features)  
-[Installation](#installation)  
+[Get Started](#get-started)  
 [Usage](#usage)  
 
 > [!WARNING]
@@ -29,9 +29,9 @@ Used by:
 <br/>
 
 
-## Installation
+## Get started
 
-### Get started
+### Installation
 
 Run `$ pnpm -D @brillout/release-me` and make sure you have the following:
 
