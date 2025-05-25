@@ -17,7 +17,6 @@ Used by:
 
 <br/>
 
-
 ## Features
 
 - Generates `CHANGELOG.md`.
@@ -27,7 +26,6 @@ Used by:
 - Asks for confirmation before publishing and shows a preview of the changes made to `package.json` and `CHANGELOG.md`, enabling you to double check before publishing.
 
 <br/>
-
 
 ## Get started
 
@@ -98,7 +96,6 @@ BREAKING CHANGE: Replace `someFunction(someArg)` with `someFunction({ someArg })
 > When introducing a breaking change, in order to respect the [semver](https://semver.org/) convention, don't `pnpm exec release-me patch` but do `pnpm exec release-me major` instead (or `pnpm exec release-me minor` if your package's version is `0.y.z`).
 
 <br/>
-
 
 ## Usage
 
