@@ -17,7 +17,7 @@
     "release:commit": "release-me commit"
   },
   "dependencies": {
-    "@brillout/picocolors": "^1.0.12",
+    "@brillout/picocolors": "^1.0.26",
     "commander": "^11.1.0",
     "conventional-changelog": "7.0.2",
     "conventional-changelog-angular": "8.0.0",
