@@ -9,7 +9,7 @@ Used by:
 - Packages made by [`magne4000`](https://github.com/magne4000)
 
 [Features](#features)  
-[Get Started](#get-started)  
+[Get started](#get-started)  
 [Usage](#usage)  
 [Monorepo](#monorepo)  
 
