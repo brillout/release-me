@@ -97,7 +97,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   const { changelogPath, changelogAlreadyExists } = getChangelogPath(
     monorepoInfo.hasMultiplePackages ? packageRootDir : monorepoRootDir,
   )
-  await changelog(changelogPath, monorepoInfo.hasMultiplePackages, packageRootDir, gitTagPrefix)
+  await changelog(changelogPath, monorepoInfo.hasMultiplePackages, packageRootDir, gitTagPrefix, packageName)
 
   await showPreview(packageJsonPath, changelogPath, changelogAlreadyExists)
 
@@ -231,6 +231,7 @@ async function changelog(
   hasMultiplePackages: boolean,
   packageRootDir: string,
   gitTagPrefix: GitTagPrefix,
+  packageName: string,
 ) {
   const generator = new ConventionalChangelog()
     //
@@ -256,6 +257,18 @@ async function changelog(
       revertPattern: /^revert:\s"?([\s\S]+?)"?\s*This reverts commit (\w*)\./i,
     },
   )
+
+  generator.options({
+    transformCommit(commit, params) {
+      assert(params!.package!.name === packageName)
+      const { scope } = commit
+      assert(scope === null || scope === undefined || typeof scope === 'string')
+      if (scope) {
+        if (scope !== packageName) return null
+      }
+      return { ...commit, scope: null } as any as typeof commit
+    },
+  })
 
   let changelog = ''
   for await (const chunk of generator.write()) {
