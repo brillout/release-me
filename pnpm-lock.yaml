@@ -15,10 +15,10 @@ importers:
         specifier: ^11.1.0
         version: 11.1.0
       conventional-changelog:
-        specifier: ^7.0.2
+        specifier: 7.0.2
         version: 7.0.2(conventional-commits-filter@5.0.0)
       conventional-changelog-angular:
-        specifier: ^8.0.0
+        specifier: 8.0.0
         version: 8.0.0
       execa:
         specifier: ^5.1.1

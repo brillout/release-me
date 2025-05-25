@@ -19,8 +19,8 @@
   "dependencies": {
     "@brillout/picocolors": "^1.0.12",
     "commander": "^11.1.0",
-    "conventional-changelog": "^7.0.2",
-    "conventional-changelog-angular": "^8.0.0",
+    "conventional-changelog": "7.0.2",
+    "conventional-changelog-angular": "8.0.0",
     "execa": "^5.1.1",
     "semver": "^7.5.4"
   },
