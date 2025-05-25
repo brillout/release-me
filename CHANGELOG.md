@@ -1,3 +1,17 @@
+## [0.4.4](https://github.com/brillout/release-me/compare/v0.4.3...v0.4.4) (2025-05-25)
+
+
+### Bug Fixes
+
+* conventional-changelog@^7.0.2 ([8802b4a](https://github.com/brillout/release-me/commit/8802b4a2f3941a78986d2ce61513622661973f98))
+
+
+### Features
+
+* scope ([f2e8564](https://github.com/brillout/release-me/commit/f2e8564f8ddd43b9b4cc985767eab8ed1dd2622d))
+
+
+
 ## [0.4.3](https://github.com/brillout/release-me/compare/v0.4.2...v0.4.3) (2024-12-25)
 
 
