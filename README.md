@@ -20,10 +20,10 @@ Used by:
 ## Features
 
 - Generates `CHANGELOG.md`.
-- Supports monorepos.
+- Monorepo support.
 - Generates Git release tags.
 - Pre-release support. (For example [`0.4.177-commit-ff3d6cd`](https://www.npmjs.com/package/vike/v/0.4.177-commit-ff3d6cd).)
-- Asks for confirmation before publishing and shows a preview of the changes made to `package.json` and `CHANGELOG.md`, enabling you to double check before publishing.
+- Asks for confirmation before publishing, and shows a preview of the changes made to `package.json` and `CHANGELOG.md`, enabling you to double check before publishing.
 
 <br/>
 
