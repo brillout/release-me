@@ -100,7 +100,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   await showPreview(packageJsonPath, changelogPath, changelogAlreadyExists)
 
   // =================
-  // Askc confirmation
+  // Ask confirmation
   // =================
 
   await askConfirmation()
