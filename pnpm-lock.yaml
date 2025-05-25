@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@brillout/picocolors':
-        specifier: ^1.0.26
-        version: 1.0.26
+        specifier: ^1.0.27
+        version: 1.0.27
       commander:
         specifier: ^11.1.0
         version: 11.1.0
@@ -101,8 +101,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@brillout/picocolors@1.0.26':
-    resolution: {integrity: sha512-oJF92OEpzunaJyaEWXuS4PWY0k8JsqNO18kMf5hIwvsh+tyhbv+UwAnPPauSlO2eyvMSciui+YFKV9DEzTpmGA==}
+  '@brillout/picocolors@1.0.27':
+    resolution: {integrity: sha512-KXsq3OkYTdJ/34nOa4EboIRQ1CRUO++wcRcwUVZtq8I+13FZelLNzmvc7n0l1+A6jCYYmqHOntVzLjRv7tV6RQ==}
 
   '@conventional-changelog/git-client@2.3.0':
     resolution: {integrity: sha512-QMDUPg9jMnclFoQL/YwLhdvDK+El3SPBiB6B9gqXQk283lWLw9qb4y4DPNZWMHaIeB6Xkx4CD7AEgnCxihWgng==}
@@ -354,7 +354,7 @@ snapshots:
   '@biomejs/cli-win32-x64@1.7.0':
     optional: true
 
-  '@brillout/picocolors@1.0.26': {}
+  '@brillout/picocolors@1.0.27': {}
 
   '@conventional-changelog/git-client@2.3.0(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.1.0)':
     dependencies:
