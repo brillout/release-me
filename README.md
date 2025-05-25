@@ -11,6 +11,7 @@ Used by:
 [Features](#features)  
 [Get Started](#get-started)  
 [Usage](#usage)  
+[Monorepo](#monorepo)  
 
 > [!WARNING]
 > Don't use this: it's only meant for Vike's team & friends. That said, feel free to fork this project.
@@ -125,3 +126,12 @@ You can also publish pre-releases such as [`0.4.177-commit-ff3d6cd`](https://www
 ```shell
 pnpm exec release-me commit
 ```
+
+<br/>
+
+## Monorepo
+
+When releasing a package from a monorepo, the following commits are added to the `CHANGELOG.md` of the package:
+
+- If the commit has a scope (e.g. `fix(some-package): some commit`), it is included only if the scope matches the package's `package.json#name`.
+- If the commit has no scope (e.g. `fix: some commit`), it is included only if it modifies a file within the package's root directory (i.e. the directory where the package's `package.json` lives).
