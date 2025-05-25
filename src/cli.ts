@@ -1,5 +1,5 @@
 import { program } from 'commander'
-import { type CliArgs, releaseMe, type ReleaseType, releaseTypes, type ReleaseTarget } from './releaseMe'
+import { type CliArgs, releaseMe, type ReleaseType, releaseTypes, type ReleaseTarget } from './releaseMe.js'
 
 const helpText = [
   '',

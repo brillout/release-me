@@ -2,7 +2,8 @@
   "compilerOptions": {
     "outDir": "./dist/",
     "target": "ES2017",
-    "module": "CommonJS",
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
     "skipLibCheck": true,
     "esModuleInterop": true,
     "declaration": true,

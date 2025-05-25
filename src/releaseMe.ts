@@ -8,7 +8,7 @@ import execa from 'execa'
 import * as fs from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
-import { runCommand, assertUsage } from './utils'
+import { runCommand, assertUsage } from './utils.js'
 import * as path from 'path'
 /*
 //  "js-yaml": "4.1.0",
@@ -16,7 +16,9 @@ import * as path from 'path'
 import yaml from 'js-yaml' */
 import readline from 'readline'
 import pc from '@brillout/picocolors'
-import conventionalChangelog from 'conventional-changelog'
+import { ConventionalChangelog } from 'conventional-changelog'
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
 
 const thisPackageName = '@brillout/release-me'
 const thisCommand = '$ pnpm exec release-me'
@@ -230,12 +232,15 @@ async function changelog(
   packageRootDir: string,
   gitTagPrefix: GitTagPrefix,
 ) {
-  const readable = conventionalChangelog(
-    {
-      preset: 'angular',
-      tagPrefix: gitTagPrefix,
-    },
-    undefined,
+  const generator = new ConventionalChangelog()
+    //
+    .readPackage()
+    .loadPreset('angular')
+    .tags({
+      prefix: gitTagPrefix,
+    })
+
+  generator.commits(
     {
       // Filter commits.
       // - Equivalent to CLI argument `--commit-path`.
@@ -251,7 +256,11 @@ async function changelog(
       revertPattern: /^revert:\s"?([\s\S]+?)"?\s*This reverts commit (\w*)\./i,
     },
   )
-  const changelog = await streamToString(readable)
+
+  let changelog = ''
+  for await (const chunk of generator.write()) {
+    changelog += chunk
+  }
   prerendFile(changelogPath, changelog)
   /*
   // Usage examples:
@@ -274,19 +283,6 @@ async function changelog(
     { dir: packageRootDir
   )
   */
-}
-
-function streamToString(readable: ReturnType<typeof conventionalChangelog>): Promise<string> {
-  let data = ''
-  readable.on('data', (chunk) => (data += chunk))
-
-  let resolve: (data: string) => void
-  const promise = new Promise<string>((r) => (resolve = r))
-  readable.on('end', () => {
-    resolve(data)
-  })
-
-  return promise
 }
 
 function prerendFile(filePath: string, prerendString: string) {
