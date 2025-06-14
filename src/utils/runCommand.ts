@@ -1,5 +1,7 @@
 export { runCommand }
 
+// TO-DO/eventually: use @brillout/shell
+
 import { exec } from 'child_process'
 import assert from 'assert'
 
