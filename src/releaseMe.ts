@@ -33,6 +33,7 @@ type ReleaseTarget = ReleaseType | `v${string}`
 
 type CliArgs = {
   force: boolean
+  yes: boolean
   releaseTarget: ReleaseTarget
 }
 type GitTagPrefix = `v` | `${string}@`
@@ -97,15 +98,33 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   const { changelogPath, changelogAlreadyExists } = getChangelogPath(
     monorepoInfo.hasMultiplePackages ? packageRootDir : monorepoRootDir,
   )
-  await changelog(changelogPath, monorepoInfo.hasMultiplePackages, packageRootDir, gitTagPrefix, packageName)
+  const { changeLogIsEmpty } = await changelog(
+    changelogPath,
+    monorepoInfo.hasMultiplePackages,
+    packageRootDir,
+    gitTagPrefix,
+    packageName,
+  )
 
   await showPreview(packageJsonPath, changelogPath, changelogAlreadyExists)
+
+  if (changeLogIsEmpty && !args.force) {
+    console.log(
+      pc.red(
+        `Release aborted — release doesn't have any CHANGELOG.md entry (use ${pc.bold(
+          '--force',
+        )} to release nevertheless).`,
+      ),
+    )
+    await revertChanges()
+    return
+  }
 
   // =================
   // Ask confirmation
   // =================
 
-  await askConfirmation()
+  if (!args.yes) await askConfirmation()
 
   // ===================
   // Bump pnpm-lock.yaml
@@ -296,6 +315,9 @@ async function changelog(
     { dir: packageRootDir
   )
   */
+
+  const changeLogIsEmpty = !changelog.includes('*')
+  return { changeLogIsEmpty }
 }
 
 function prerendFile(filePath: string, prerendString: string) {

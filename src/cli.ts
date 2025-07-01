@@ -22,7 +22,11 @@ function cli() {
 function parseArgs(): CliArgs {
   program
     .name('release-me')
-    .option('--force', "Release even if the current commit (i.e. HEAD) isn't up-to-date with origin/main")
+    .option(
+      '--force',
+      "skip validation — release even in unexpected situations (e.g. if the release contains no CHANGELOG.md entry, or if HEAD isn't up-to-date with origin/main)",
+    )
+    .option('--yes', 'skip confirmation — release without prompting the user to confirm the release')
     .argument('<release-target>')
   program.addHelpText('afterAll', helpText)
   program.showHelpAfterError()
@@ -48,6 +52,7 @@ function parseArgs(): CliArgs {
 
   return {
     force: (program.opts().force as boolean) || false,
+    yes: (program.opts().yes as boolean) || false,
     releaseTarget,
   }
 }
