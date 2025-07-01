@@ -1,3 +1,17 @@
+## [0.4.7](https://github.com/brillout/release-me/compare/v0.4.5...v0.4.7) (2025-07-01)
+
+
+### Bug Fixes
+
+* re-release ([dfc9a78](https://github.com/brillout/release-me/commit/dfc9a781dfa022fc43202d5e1ec34ee810c7caa0))
+
+
+### Features
+
+* new CLI option --yes and improve --force ([f7ca5aa](https://github.com/brillout/release-me/commit/f7ca5aad253e3d593f214c8699d29557d823bec2))
+
+
+
 ## [0.4.5](https://github.com/brillout/release-me/compare/v0.4.4...v0.4.5) (2025-05-25)
 
 
