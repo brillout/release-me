@@ -293,7 +293,7 @@ async function changelog(
   for await (const chunk of generator.write()) {
     changelog += chunk
   }
-  prerendFile(changelogPath, changelog)
+  prependFile(changelogPath, changelog)
   /*
   // Usage examples:
   //  - pnpm exec conventional-changelog --preset angular
@@ -320,7 +320,7 @@ async function changelog(
   return { changeLogIsEmpty }
 }
 
-function prerendFile(filePath: string, prerendString: string) {
+function prependFile(filePath: string, prerendString: string) {
   let content = ''
   try {
     content = fs.readFileSync(filePath, 'utf8')
