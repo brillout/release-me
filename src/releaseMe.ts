@@ -98,7 +98,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   const { changelogPath, changelogAlreadyExists } = getChangelogPath(
     monorepoInfo.hasMultiplePackages ? packageRootDir : monorepoRootDir,
   )
-  const { changeLogIsEmpty } = await changelog(
+  const { isMissingChangeLog } = await changelog(
     changelogPath,
     monorepoInfo.hasMultiplePackages,
     packageRootDir,
@@ -108,7 +108,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   await showPreview(packageJsonPath, changelogPath, changelogAlreadyExists)
 
-  if (changeLogIsEmpty && !args.force) {
+  if (isMissingChangeLog && !args.force) {
     console.log(
       pc.red(
         `Release aborted — release doesn't have any CHANGELOG.md entry (use ${pc.bold(
@@ -316,8 +316,8 @@ async function changelog(
   )
   */
 
-  const changeLogIsEmpty = !changelog.includes('*')
-  return { changeLogIsEmpty }
+  const isMissingChangeLog = !changelog.includes('*')
+  return { isMissingChangeLog }
 }
 
 function prependFile(filePath: string, prerendString: string) {
