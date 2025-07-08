@@ -109,6 +109,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   await showPreview(packageJsonPath, changeLogFilePath, changeLogFileAlreadyExisted)
 
   if (isMissingChangeLog && !args.force) {
+    assert(changeLogFileAlreadyExisted)
     console.log(
       pc.red(
         `Release aborted — release doesn't have any CHANGELOG.md entry (use ${pc.bold(
