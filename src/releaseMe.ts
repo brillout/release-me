@@ -98,7 +98,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   const { changelogPath, changelogAlreadyExists } = getChangelogPath(
     monorepoInfo.hasMultiplePackages ? packageRootDir : monorepoRootDir,
   )
-  const { isMissingChangeLog } = await changelog(
+  const { isMissingChangeLog } = await writeChangeLog(
     changelogPath,
     monorepoInfo.hasMultiplePackages,
     packageRootDir,
@@ -245,7 +245,7 @@ function getNpmFix() {
   return { ...process.env, npm_config_registry: undefined }
 }
 
-async function changelog(
+async function writeChangeLog(
   changelogPath: string,
   hasMultiplePackages: boolean,
   packageRootDir: string,
