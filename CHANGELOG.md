@@ -1,3 +1,12 @@
+## [0.4.8](https://github.com/brillout/release-me/compare/v0.4.7...v0.4.8) (2025-07-08)
+
+
+### Bug Fixes
+
+* don't abort upon empty changelog for first release ([c8df077](https://github.com/brillout/release-me/commit/c8df077a99f5334de7a3266dd505626f6f918b3e))
+
+
+
 ## [0.4.7](https://github.com/brillout/release-me/compare/v0.4.5...v0.4.7) (2025-07-01)
 
 
