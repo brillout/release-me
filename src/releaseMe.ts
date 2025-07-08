@@ -289,11 +289,11 @@ async function changelog(
     },
   })
 
-  let changelog = ''
+  let changeLogNewContent = ''
   for await (const chunk of generator.write()) {
-    changelog += chunk
+    changeLogNewContent += chunk
   }
-  const { fileWasEmtpy } = prependFile(changelogPath, changelog)
+  const changeLogWasEmpty = prependFile(changelogPath, changeLogNewContent)
   /*
   // Usage examples:
   //  - pnpm exec conventional-changelog --preset angular
@@ -316,19 +316,19 @@ async function changelog(
   )
   */
 
-  const isMissingChangeLog = !changelog.includes('*') && !fileWasEmtpy
+  const isMissingChangeLog = !changeLogNewContent.includes('*') && !changeLogWasEmpty
   return { isMissingChangeLog }
 }
 
-function prependFile(filePath: string, prerendString: string) {
+function prependFile(filePath: string, str: string) {
   let content = ''
   try {
     content = fs.readFileSync(filePath, 'utf8')
   } catch {}
   const fileWasEmtpy = content === ''
-  content = prerendString + content
+  content = str + content
   fs.writeFileSync(filePath, content)
-  return { fileWasEmtpy }
+  return fileWasEmtpy
 }
 
 const changlogFileName = 'CHANGELOG.md'
