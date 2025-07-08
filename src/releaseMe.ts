@@ -325,7 +325,7 @@ function prependFile(filePath: string, str: string) {
   try {
     content = fs.readFileSync(filePath, 'utf8')
   } catch {}
-  const fileWasEmtpy = content === ''
+  const fileWasEmtpy = content.trim() === ''
   content = str + content
   fs.writeFileSync(filePath, content)
   return fileWasEmtpy
