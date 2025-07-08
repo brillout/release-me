@@ -293,7 +293,7 @@ async function writeChangeLog(
   for await (const chunk of generator.write()) {
     changeLogNewContent += chunk
   }
-  const changeLogWasEmpty = prependFile(changeLogFilePath, changeLogNewContent)
+  const changeLogFileWasEmpty = prependFile(changeLogFilePath, changeLogNewContent)
   /*
   // Usage examples:
   //  - pnpm exec conventional-changelog --preset angular
@@ -316,7 +316,7 @@ async function writeChangeLog(
   )
   */
 
-  const isMissingChangeLog = !changeLogNewContent.includes('*') && !changeLogWasEmpty
+  const isMissingChangeLog = !changeLogNewContent.includes('*') && !changeLogFileWasEmpty
   return { isMissingChangeLog }
 }
 
