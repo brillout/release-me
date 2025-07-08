@@ -95,18 +95,18 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   const gitTagPrefix: GitTagPrefix = monorepoInfo.hasMultiplePackages ? `${packageName}@` : 'v'
 
-  const { changelogPath, changeLogFileAlreadyExisted } = getChangelogPath(
+  const { changeLogFilePath, changeLogFileAlreadyExisted } = getChangelogPath(
     monorepoInfo.hasMultiplePackages ? packageRootDir : monorepoRootDir,
   )
   const { isMissingChangeLog } = await writeChangeLog(
-    changelogPath,
+    changeLogFilePath,
     monorepoInfo.hasMultiplePackages,
     packageRootDir,
     gitTagPrefix,
     packageName,
   )
 
-  await showPreview(packageJsonPath, changelogPath, changeLogFileAlreadyExisted)
+  await showPreview(packageJsonPath, changeLogFilePath, changeLogFileAlreadyExisted)
 
   if (isMissingChangeLog && !args.force) {
     console.log(
@@ -246,7 +246,7 @@ function getNpmFix() {
 }
 
 async function writeChangeLog(
-  changelogPath: string,
+  changeLogFilePath: string,
   hasMultiplePackages: boolean,
   packageRootDir: string,
   gitTagPrefix: GitTagPrefix,
@@ -293,7 +293,7 @@ async function writeChangeLog(
   for await (const chunk of generator.write()) {
     changeLogNewContent += chunk
   }
-  const changeLogWasEmpty = prependFile(changelogPath, changeLogNewContent)
+  const changeLogWasEmpty = prependFile(changeLogFilePath, changeLogNewContent)
   /*
   // Usage examples:
   //  - pnpm exec conventional-changelog --preset angular
@@ -307,7 +307,7 @@ async function writeChangeLog(
       '--preset',
       'angular',
       '--infile',
-      changelogPath,
+      changeLogFilePath,
       '--same-file',
       '--pkg',
       packageRootDir
@@ -333,15 +333,15 @@ function prependFile(filePath: string, str: string) {
 
 const changlogFileName = 'CHANGELOG.md'
 function getChangelogPath(packageRootDir: string) {
-  const changelogPath = path.join(packageRootDir, changlogFileName)
-  const changeLogFileAlreadyExisted = fs.existsSync(changelogPath)
-  return { changelogPath, changeLogFileAlreadyExisted }
+  const changeLogFilePath = path.join(packageRootDir, changlogFileName)
+  const changeLogFileAlreadyExisted = fs.existsSync(changeLogFilePath)
+  return { changeLogFilePath, changeLogFileAlreadyExisted }
 }
 
-async function showPreview(packageJsonPath: string, changelogPath: string, changeLogFileAlreadyExisted: boolean) {
+async function showPreview(packageJsonPath: string, changeLogFilePath: string, changeLogFileAlreadyExisted: boolean) {
   logTitle('Confirm changes')
   await logCmd('git status')
-  await logDiff(changelogPath, changeLogFileAlreadyExisted)
+  await logDiff(changeLogFilePath, changeLogFileAlreadyExisted)
   await logDiff(packageJsonPath, true)
 
   return
