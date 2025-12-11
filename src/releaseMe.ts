@@ -145,7 +145,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   await npmPublish(packageRootDir)
   if (boilerplatePackageJson) {
-    await publishBoilerplates(boilerplatePackageJson)
+    await npmPublishBoilerplates(boilerplatePackageJson)
   }
 
   await gitPush()
@@ -223,7 +223,7 @@ async function publishCommitRelease(packageRootDir: string, packageName: string)
   await npmPublish(packageRootDir, 'commit')
   await removeNpmTag(packageRootDir, 'commit', packageName)
 }
-async function publishBoilerplates(boilerplatePackageJson: string) {
+async function npmPublishBoilerplates(boilerplatePackageJson: string) {
   await npmPublish(path.dirname(boilerplatePackageJson))
 }
 async function npmPublish(dir: string, tag?: string) {
