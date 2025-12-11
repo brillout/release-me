@@ -1,3 +1,12 @@
+## [0.4.9](https://github.com/brillout/release-me/compare/v0.4.8...v0.4.9) (2025-12-11)
+
+
+### Bug Fixes
+
+* publish first, the bump & commit ([206d425](https://github.com/brillout/release-me/commit/206d425246b00068cfee86d5e8c3f1895d277f6b))
+
+
+
 ## [0.4.8](https://github.com/brillout/release-me/compare/v0.4.7...v0.4.8) (2025-07-08)
 
 
