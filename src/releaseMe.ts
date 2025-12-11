@@ -127,6 +127,15 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   if (!args.yes) await askConfirmation()
 
+  // =============================
+  // npm publish
+  // =============================
+
+  await npmPublish(packageRootDir)
+  if (boilerplatePackageJson) {
+    await npmPublishBoilerplates(boilerplatePackageJson)
+  }
+
   // ===================
   // Bump pnpm-lock.yaml
   // ===================
@@ -142,11 +151,6 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   await makeGitTag(gitTag)
 
   await build()
-
-  await npmPublish(packageRootDir)
-  if (boilerplatePackageJson) {
-    await npmPublishBoilerplates(boilerplatePackageJson)
-  }
 
   await gitPush()
 }
