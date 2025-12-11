@@ -231,9 +231,9 @@ async function npmPublishBoilerplates(boilerplatePackageJson: string) {
   await npmPublish(path.dirname(boilerplatePackageJson))
 }
 async function npmPublish(dir: string, tag?: string) {
-  logTitle('Pnpm publish')
+  logTitle('npm publish')
   const env = getNpmFix()
-  let cmd = 'pnpm publish --no-git-checks'
+  let cmd = 'npm publish --no-git-checks'
   if (tag) {
     cmd = `${cmd} --tag ${tag}`
   }
