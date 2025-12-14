@@ -1,3 +1,12 @@
+## [0.4.10](https://github.com/brillout/release-me/compare/v0.4.9...v0.4.10) (2025-12-14)
+
+
+### Bug Fixes
+
+* build before publish ([a085057](https://github.com/brillout/release-me/commit/a0850574f4c36251f25e006aa959d51516b69dd7))
+
+
+
 ## [0.4.9](https://github.com/brillout/release-me/compare/v0.4.8...v0.4.9) (2025-12-11)
 
 
