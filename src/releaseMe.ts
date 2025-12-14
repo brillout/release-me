@@ -128,6 +128,12 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   if (!args.yes) await askConfirmation()
 
   // =============================
+  // Build
+  // =============================
+
+  await build()
+
+  // =============================
   // npm publish
   // =============================
 
@@ -143,15 +149,12 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   await bumpPnpmLockFile(monorepoRootDir)
 
   // =============================
-  // Commit, npm publish, git push
+  // Git commit & push
   // =============================
 
   const gitTag = getGitTag(versionNew, gitTagPrefix)
   await makeGitCommit(monorepoRootDir, gitTag)
   await makeGitTag(gitTag)
-
-  await build()
-
   await gitPush()
 }
 
