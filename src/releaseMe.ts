@@ -70,6 +70,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   // No uncommitted changes => we can safely use `$ git reset` => we can enable cleaning (i.e. reverting the release).
   cleanEnabled = commitHashBegin
 
+
   // =============
   // Apply changes
   // =============
@@ -121,17 +122,20 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
     return
   }
 
+
   // =================
   // Ask confirmation
   // =================
 
   if (!args.yes) await askConfirmation()
 
+
   // =============================
   // Build
   // =============================
 
   await build()
+
 
   // =============================
   // npm publish
@@ -147,6 +151,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   // ===================
 
   await bumpPnpmLockFile(monorepoRootDir)
+
 
   // =============================
   // Git commit & push
