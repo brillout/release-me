@@ -495,8 +495,9 @@ async function findBoilerplatePacakge(packageName: string, filesMonorepoPackageJ
 }
 
 async function bumpPnpmLockFile(monorepoRootDir: string) {
+  logTitle('Bump pnpm-lock.yaml')
   try {
-    await runCommand('pnpm install', { cwd: monorepoRootDir, timeout: 10 * 60 * 1000 })
+    await run('pnpm install', { dir: monorepoRootDir, timeout: 10 * 60 * 1000 })
   } catch (err) {
     if (!(err as Error).message.includes('ERR_PNPM_PEER_DEP_ISSUES')) {
       throw err
@@ -595,12 +596,17 @@ function writePackageJson(pkgPath: string, pkg: object) {
 
 async function run(
   cmd: string | string[],
-  { dir, env = process.env, swallowError }: { dir?: string; env?: NodeJS.ProcessEnv; swallowError?: boolean } = {},
+  {
+    dir,
+    env = process.env,
+    swallowError,
+    timeout,
+  }: { dir?: string; env?: NodeJS.ProcessEnv; swallowError?: boolean; timeout?: number } = {},
 ) {
   const stdio = 'inherit'
   const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
   try {
-    await execa(command!, args, { cwd: dir, stdio, env })
+    await execa(command!, args, { cwd: dir, stdio, env, timeout })
   } catch (err) {
     if (!swallowError) throw err
   }
