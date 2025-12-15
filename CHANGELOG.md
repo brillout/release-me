@@ -1,3 +1,12 @@
+## [0.4.12](https://github.com/brillout/release-me/compare/v0.4.11...v0.4.12) (2025-12-15)
+
+
+### Bug Fixes
+
+* log bump pnpm lock ([92bd0b9](https://github.com/brillout/release-me/commit/92bd0b9381f681fd4ecf04b07ce8b3eeba38d575))
+
+
+
 ## [0.4.11](https://github.com/brillout/release-me/compare/v0.4.10...v0.4.11) (2025-12-14)
 
 
