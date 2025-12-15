@@ -240,11 +240,11 @@ async function npmPublish(dir: string, tag?: string) {
   if (tag) {
     cmd = `${cmd} --tag ${tag}`
   }
-  await run(cmd, { dir, env })
+  await run(cmd, { cwd: dir, env })
 }
 async function removeNpmTag(dir: string, tag: string, packageName: string) {
   const env = getNpmFix()
-  await run(`npm dist-tag rm ${packageName} ${tag}`, { dir, env })
+  await run(`npm dist-tag rm ${packageName} ${tag}`, { cwd: dir, env })
 }
 
 // Fix for: (see https://github.com/yarnpkg/yarn/issues/2935#issuecomment-487020430)
@@ -387,7 +387,7 @@ function askConfirmation(): Promise<void> {
 
 async function makeGitCommit(monorepoRootDir: string, gitTag: GitTag) {
   logTitle('Git commit')
-  await run('git add .', { dir: monorepoRootDir })
+  await run('git add .', { cwd: monorepoRootDir })
   await run(['git', 'commit', '-am', `release: ${gitTag}`])
 }
 async function makeGitTag(gitTag: GitTag) {
@@ -497,7 +497,7 @@ async function findBoilerplatePacakge(packageName: string, filesMonorepoPackageJ
 async function bumpPnpmLockFile(monorepoRootDir: string) {
   logTitle('Bump pnpm-lock.yaml')
   try {
-    await run('pnpm install', { dir: monorepoRootDir, timeout: 10 * 60 * 1000 })
+    await run('pnpm install', { cwd: monorepoRootDir, timeout: 10 * 60 * 1000 })
   } catch (err) {
     if (!(err as Error).message.includes('ERR_PNPM_PEER_DEP_ISSUES')) {
       throw err
@@ -597,23 +597,23 @@ function writePackageJson(pkgPath: string, pkg: object) {
 async function run(
   cmd: string | string[],
   {
-    dir,
+    cwd,
     env = process.env,
     swallowError,
     timeout,
-  }: { dir?: string; env?: NodeJS.ProcessEnv; swallowError?: boolean; timeout?: number } = {},
+  }: { cwd?: string; env?: NodeJS.ProcessEnv; swallowError?: boolean; timeout?: number } = {},
 ) {
   const stdio = 'inherit'
   const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
   try {
-    await execa(command!, args, { cwd: dir, stdio, env, timeout })
+    await execa(command!, args, { cwd, stdio, env, timeout })
   } catch (err) {
     if (!swallowError) throw err
   }
 }
-async function run__return(cmd: string | string[], dir?: string): Promise<string> {
+async function run__return(cmd: string | string[], cwd?: string): Promise<string> {
   const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
-  const { stdout } = await execa(command!, args, { cwd: dir })
+  const { stdout } = await execa(command!, args, { cwd })
   return stdout
 }
 
