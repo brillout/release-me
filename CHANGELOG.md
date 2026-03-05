@@ -1,3 +1,12 @@
+## [0.4.13](https://github.com/brillout/release-me/compare/v0.4.12...v0.4.13) (2026-03-05)
+
+
+### Bug Fixes
+
+* improve error message ([b028a83](https://github.com/brillout/release-me/commit/b028a839ce5070e6e1fcf55e4ac32cc7bda6c286))
+
+
+
 ## [0.4.12](https://github.com/brillout/release-me/compare/v0.4.11...v0.4.12) (2025-12-15)
 
 
