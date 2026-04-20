@@ -1,3 +1,12 @@
+## [0.4.15](https://github.com/brillout/release-me/compare/v0.4.14...v0.4.15) (2026-04-20)
+
+
+### Bug Fixes
+
+* fix new line regression (2) ([63aebfc](https://github.com/brillout/release-me/commit/63aebfc151e7de11b5f2962636eec6e7f552d338))
+
+
+
 ## [0.4.14](https://github.com/brillout/release-me/compare/v0.4.13...v0.4.14) (2026-04-20)
 
 
