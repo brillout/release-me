@@ -324,6 +324,8 @@ async function writeChangeLog(
   )
   */
 
+  if(changeLogNewContent) changeLogNewContent += '\n\n\n'
+
   const isMissingChangeLog = !changeLogNewContent.includes('*') && !changeLogFileWasEmpty
   return { isMissingChangeLog }
 }
