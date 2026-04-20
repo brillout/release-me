@@ -301,6 +301,8 @@ async function writeChangeLog(
   for await (const chunk of generator.write()) {
     changeLogNewContent += chunk
   }
+  if (changeLogNewContent) changeLogNewContent = changeLogNewContent.trim() + '\n\n\n\n'
+
   const changeLogFileWasEmpty = prependFile(changeLogFilePath, changeLogNewContent)
   /*
   // Usage examples:
@@ -324,8 +326,6 @@ async function writeChangeLog(
   )
   */
 
-  if(changeLogNewContent) changeLogNewContent += '\n\n\n'
-
   const isMissingChangeLog = !changeLogNewContent.includes('*') && !changeLogFileWasEmpty
   return { isMissingChangeLog }
 }
@@ -337,6 +337,7 @@ function prependFile(filePath: string, str: string) {
   } catch {}
   const fileWasEmtpy = content.trim() === ''
   content = str + content
+  content = content.trim() + '\n'
   fs.writeFileSync(filePath, content)
   return fileWasEmtpy
 }
