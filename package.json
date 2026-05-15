@@ -1,6 +1,7 @@
 {
   "name": "@brillout/release-me",
   "version": "0.4.15",
+  "repository": "https://github.com/brillout/release-me",
   "scripts": {
     "// === Dev ===": "",
     "dev": "tsc --watch",
@@ -36,7 +37,6 @@
   "files": [
     "dist/"
   ],
-  "repository": "github:brillout/release-me",
   "license": "MIT",
   "type": "module",
   "publishConfig": {
