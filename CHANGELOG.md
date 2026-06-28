@@ -1,3 +1,12 @@
+## [0.4.16](https://github.com/brillout/release-me/compare/v0.4.15...v0.4.16) (2026-06-28)
+
+
+### Bug Fixes
+
+* anchor CHANGELOG.md ([50243dc](https://github.com/brillout/release-me/commit/50243dca31a36a9d88e7c8456902545b6fb0e5cd))
+
+
+
 ## [0.4.15](https://github.com/brillout/release-me/compare/v0.4.14...v0.4.15) (2026-04-20)
 
 
