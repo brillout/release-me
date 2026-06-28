@@ -96,7 +96,9 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   const gitTagPrefix: GitTagPrefix = monorepoInfo.hasMultiplePackages ? `${packageName}@` : 'v'
 
   const { changeLogFilePath, changeLogFileAlreadyExisted } = getChangelogPath(
-    monorepoInfo.hasMultiplePackages ? packageRootDir : monorepoRootDir,
+    packageRootDir,
+    monorepoRootDir,
+    monorepoInfo.hasMultiplePackages,
   )
   const { isMissingChangeLog } = await writeChangeLog(
     changeLogFilePath,
@@ -343,8 +345,15 @@ function prependFile(filePath: string, str: string) {
 }
 
 const changlogFileName = 'CHANGELOG.md'
-function getChangelogPath(packageRootDir: string) {
-  const changeLogFilePath = path.join(packageRootDir, changlogFileName)
+function getChangelogPath(packageRootDir: string, monorepoRootDir: string, hasMultiplePackages: boolean) {
+  assert(path.isAbsolute(packageRootDir))
+  assert(path.isAbsolute(monorepoRootDir))
+  const packageChangelogPath = path.join(packageRootDir, changlogFileName)
+  const monorepoChangelogPath = path.join(monorepoRootDir, changlogFileName)
+  const changeLogFilePath =
+    hasMultiplePackages || fs.existsSync(packageChangelogPath) || !fs.existsSync(monorepoChangelogPath)
+      ? packageChangelogPath
+      : monorepoChangelogPath
   const changeLogFileAlreadyExisted = fs.existsSync(changeLogFilePath)
   return { changeLogFilePath, changeLogFileAlreadyExisted }
 }

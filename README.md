@@ -135,3 +135,6 @@ When releasing a package from a monorepo, the following commits are added to the
 
 - If the commit has a scope (e.g. `fix(some-package): some commit`), it is included only if the scope matches the package's `package.json#name`.
 - If the commit has no scope (e.g. `fix: some commit`), it is included only if it modifies a file within the package's root directory (i.e. the directory where the package's `package.json` lives).
+
+> [!NOTE]
+> By default, `CHANGELOG.md` lives at the package's directory (`$packageRootDir/CHANGELOG.md`), except if the repository has only one package and `CHANGELOG.md` already exists at `$monorepoRootDir/CHANGELOG.md`.
