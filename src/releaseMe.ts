@@ -260,7 +260,7 @@ async function removeNpmTag(dir: string, tag: string, packageName: string) {
         [
           `Couldn't remove the npm tag ${pc.bold(tag)} —`,
           `the version was published nevertheless and the tag ${pc.bold(tag)} merely points to it.`,
-          `(If it's a 403 error: since August 2026, npm doesn't allow removing tags with an access token that bypasses 2FA.)`,
+          `(It's likely a 403 error: since August 2026, npm doesn't allow removing tags with an access token that bypasses 2FA.)`,
         ].join(' '),
       ),
     )
