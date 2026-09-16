@@ -515,14 +515,19 @@ async function findBoilerplatePacakge(packageName: string, filesMonorepoPackageJ
 }
 
 async function bumpPnpmLockFile(monorepoRootDir: string) {
-  const cmd = 'pnpm install --lockfile-only'
-  logTitle(`Bump pnpm-lock.yaml ${logDetail(`$ ${cmd}`)}`)
+  logTitle(`Bump pnpm-lock.yaml ${logDetail('$ pnpm install --lockfile-only')}`)
   try {
-    // We only update pnpm-lock.yaml and leave node_modules untouched:
-    // - A full `$ pnpm install` may show an interactive prompt (e.g. `The modules directory at "..." will be removed and reinstalled from scratch. Proceed?`) which stalls the release right after the npm package was published.
-    // - There is no pnpm setting to skip that prompt (`--force` skips it but it also forces a full reinstall).
-    // - `--lockfile-only` skips the node_modules validation altogether, and it's also faster (nothing is downloaded, no lifecycle script is run).
-    await run(cmd, { cwd: monorepoRootDir, timeout: 10 * 60 * 1000 })
+    await run(
+      [
+        'pnpm install',
+        // Only update pnpm-lock.yaml (which is what we commit) and leave node_modules untouched:
+        // - A full `$ pnpm install` may show an interactive prompt (e.g. `The modules directory at "..." will be removed and reinstalled from scratch. Proceed?`) which stalls the release right after the npm package was published.
+        // - There is no pnpm setting to skip that prompt (`--force` skips it but it also forces a full reinstall).
+        // - `--lockfile-only` skips the node_modules validation altogether, and it's also faster (nothing is downloaded, no lifecycle script is run).
+        '--lockfile-only',
+      ].join(' '),
+      { cwd: monorepoRootDir, timeout: 10 * 60 * 1000 },
+    )
   } catch (err) {
     if (!(err as Error).message.includes('ERR_PNPM_PEER_DEP_ISSUES')) {
       throw err
