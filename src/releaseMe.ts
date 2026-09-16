@@ -515,7 +515,7 @@ async function findBoilerplatePacakge(packageName: string, filesMonorepoPackageJ
 }
 
 async function bumpPnpmLockFile(monorepoRootDir: string) {
-  logTitle(`Bump pnpm-lock.yaml ${logDetail('$ pnpm install --lockfile-only')}`)
+  logTitle('Bump pnpm-lock.yaml')
   try {
     await run(
       [
