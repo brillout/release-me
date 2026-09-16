@@ -246,7 +246,15 @@ async function npmPublish(dir: string, tag?: string) {
 }
 async function removeNpmTag(dir: string, tag: string, packageName: string) {
   const env = getNpmFix()
-  await run(`npm dist-tag rm ${packageName} ${tag}`, { cwd: dir, env })
+  try {
+    await run(`npm dist-tag rm ${packageName} ${tag}`, { cwd: dir, env })
+  } catch {
+    // Best-effort: the version is already published — a lingering tag is harmless (it merely points to the latest commit release).
+    // Since August 2026, npm rejects `$ npm dist-tag rm` with `403 Forbidden` when using an access token that bypasses 2FA:
+    // - https://github.blog/changelog/2026-07-31-restricting-npm-bypass-2fa-granular-access-tokens/
+    // - Removing a tag then requires an interactive 2FA session (e.g. `$ npm login`).
+    // - There is no `$ npm publish` option to publish without a tag, hence why we publish with a tag and remove the tag afterwards.
+  }
 }
 
 // Fix for: (see https://github.com/yarnpkg/yarn/issues/2935#issuecomment-487020430)
