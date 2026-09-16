@@ -1,3 +1,12 @@
+## [0.4.18](https://github.com/brillout/release-me/compare/v0.4.17...v0.4.18) (2026-09-16)
+
+
+### Bug Fixes
+
+* don't hang on pnpm's node_modules purge prompt when bumping pnpm-lock.yaml ([#5](https://github.com/brillout/release-me/issues/5)) ([672a9e7](https://github.com/brillout/release-me/commit/672a9e7e92756ba51ff7642f71ab77e0c1dafee9))
+
+
+
 ## [0.4.17](https://github.com/brillout/release-me/compare/v0.4.16...v0.4.17) (2026-09-16)
 
 
