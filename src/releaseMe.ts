@@ -258,7 +258,7 @@ async function removeNpmTag(dir: string, tag: string, packageName: string) {
     console.log(
       pc.yellow(
         [
-          `Couldn't remove the npm tag ${pc.bold(tag)} —`,
+          `Couldn't remove the npm tag ${pc.bold(tag)} (${pc.bold(`$ ${cmd}`)} threw an error) —`,
           `the version was published nevertheless and the tag ${pc.bold(tag)} merely points to it.`,
           `(It's likely a 403 error: since August 2026, npm doesn't allow removing tags with an access token that bypasses 2FA.)`,
         ].join(' '),
