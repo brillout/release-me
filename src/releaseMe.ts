@@ -256,11 +256,10 @@ async function removeNpmTag(dir: string, tag: string, packageName: string) {
     // - https://github.blog/changelog/2026-07-31-restricting-npm-bypass-2fa-granular-access-tokens/
     // - Removing a tag then requires an interactive 2FA session (e.g. `$ npm login`).
     // - There is no `$ npm publish` option to publish without a tag, hence why we publish with a tag and remove the tag afterwards.
-    console.log(pc.dim((err as Error).message))
     console.log(
       pc.yellow(
         [
-          `Couldn't remove the npm tag ${pc.bold(tag)} (see error above) —`,
+          `Couldn't remove the npm tag ${pc.bold(tag)} —`,
           `the version was published nevertheless and the tag ${pc.bold(tag)} merely points to it.`,
           `(If it's a 403 error: since August 2026, npm doesn't allow removing tags with an access token that bypasses 2FA —`,
           `remove the tag by running ${pc.bold(`$ ${cmd}`)} in an interactive 2FA session, or just ignore the tag.)`,
