@@ -246,7 +246,6 @@ async function npmPublish(dir: string, tag?: string) {
 }
 async function removeNpmTag(dir: string, tag: string, packageName: string) {
   const cmd = `npm dist-tag rm ${packageName} ${tag}`
-  logTitle(`Remove npm tag ${logDetail(`$ ${cmd}`)}`)
   const env = getNpmFix()
   try {
     await run(cmd, { cwd: dir, env })
