@@ -1,3 +1,12 @@
+## [0.4.17](https://github.com/brillout/release-me/compare/v0.4.16...v0.4.17) (2026-09-16)
+
+
+### Bug Fixes
+
+* don't fail commit release when the npm tag can't be removed ([#4](https://github.com/brillout/release-me/issues/4)) ([8644adf](https://github.com/brillout/release-me/commit/8644adf6d84084a68d8c46a4ffc418f31796a934))
+
+
+
 ## [0.4.16](https://github.com/brillout/release-me/compare/v0.4.15...v0.4.16) (2026-06-28)
 
 
