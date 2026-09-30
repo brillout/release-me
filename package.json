@@ -31,7 +31,7 @@
     "@types/node": "^20.8.5",
     "@types/semver": "^7.5.3",
     "prettier": "^2.8.7",
-    "typescript": "^5.4.5"
+    "typescript": "^7.0.2"
   },
   "bin": "./bin.js",
   "files": [
