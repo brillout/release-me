@@ -1,3 +1,12 @@
+## [0.4.19](https://github.com/brillout/release-me/compare/v0.4.18...v0.4.19) (2026-10-04)
+
+
+### Bug Fixes
+
+* log info instead of error when lacking permission to remove npm tag ([#6](https://github.com/brillout/release-me/issues/6)) ([b163612](https://github.com/brillout/release-me/commit/b163612440c8ff1032505e29ca4a2e3e935d3617))
+
+
+
 ## [0.4.18](https://github.com/brillout/release-me/compare/v0.4.17...v0.4.18) (2026-09-16)
 
 
