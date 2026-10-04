@@ -247,20 +247,23 @@ async function npmPublish(dir: string, tag?: string) {
 async function removeNpmTag(dir: string, tag: string, packageName: string) {
   const env = getNpmFix()
   const cmd = `npm dist-tag rm ${packageName} ${tag}`
-  console.log(pc.bold(pc.blue(`$ ${cmd}`)))
   const [command, ...args] = cmd.split(' ')
   try {
     // Pipe output (instead of inheriting it) so that a 403 error isn't shown
     await execa(command!, args, { cwd: dir, env, all: true })
   } catch (err) {
-    // Since August 2026, npm rejects `$ npm dist-tag rm` with `403 Forbidden` when using an access token that bypasses 2FA:
-    // - https://github.blog/changelog/2026-07-31-restricting-npm-bypass-2fa-granular-access-tokens/
-    // - Removing a tag then requires an interactive 2FA session (e.g. `$ npm login`).
-    // - There is no `$ npm publish` option to publish without a tag, hence why we publish with a tag and remove the tag afterwards.
-    // The version is already published — a lingering tag is harmless (it merely points to the latest commit release).
     const output = (err as execa.ExecaError).all ?? ''
-    if (!/\bE403\b|403 Forbidden/.test(output)) throw err
-    console.log(`No permission to remove npm tag \`${tag}\``)
+    if (/\bE403\b|403 Forbidden/.test(output)) {
+      // Since August 2026, npm rejects `$ npm dist-tag rm` with `403 Forbidden` when using an access token that bypasses 2FA
+      // - https://github.blog/changelog/2026-07-31-restricting-npm-bypass-2fa-granular-access-tokens/
+      // - Removing a tag requires an interactive 2FA session (e.g. `$ npm login`)
+      // - There is no `$ npm publish` option to publish without a tag, hence why we publish with a tag and remove the tag afterwards
+      // - We just log: the version is already published — a lingering tag is harmless (it merely points to the latest commit release)
+      console.log(`(No permission to remove the npm tag ${pc.cyan(tag)}.)`)
+    } else {
+      console.log(pc.bold(pc.blue(`$ ${cmd}`)))
+      throw err
+    }
   }
 }
 
