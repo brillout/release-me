@@ -143,13 +143,16 @@ When releasing a package from a monorepo, the following commits are added to the
 
 ### Release script
 
-Consider adding a `release` script to the monorepo root's `package.json`:
+Consider adding `release` scripts to the monorepo root's `package.json`:
 
 ```diff
   // package.json
   {
     "scripts": {
-+     "release": "pnpm --recursive --sequential run release --yes"
++     "release": "pnpm --recursive --sequential run release --yes",
++     "release:minor": "pnpm --recursive --sequential run release:minor --yes",
++     "release:major": "pnpm --recursive --sequential run release:major --yes",
++     "release:commit": "pnpm --recursive --sequential run release:commit --yes",
     }
   }
 ```
