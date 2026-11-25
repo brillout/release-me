@@ -8,7 +8,7 @@ import * as path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { isCommitReleaseVersion, parseReleaseTag } from './versions.ts'
 import { fail, getEnv } from './utils.ts'
-import { releaseWorkflowFileName } from './releaseWorkflow.ts'
+import { isReleaseWorkflowUpToDate, releaseWorkflowFileName, releaseWorkflowOutdated } from './releaseWorkflow.ts'
 
 type Package = { tarball: string; name: string; version: string; hasPublishConfigTag: boolean }
 type ToPublish = Package & {
@@ -20,6 +20,8 @@ type ToPublish = Package & {
 }
 
 function ciPublish() {
+  // E.g. after upgrading release-me without re-running `$ pnpm exec release-me init`
+  if (!isReleaseWorkflowUpToDate(getEnv('GITHUB_WORKSPACE'))) fail(releaseWorkflowOutdated)
   const packages = readPackages(getEnv('PACKED_PACKAGES_DIR'))
   const tag = getEnv('TAG')
   const toPublish = tag ? getStableRelease(packages, tag) : getCommitRelease(packages)
