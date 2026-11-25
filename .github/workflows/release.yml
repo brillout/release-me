@@ -15,11 +15,6 @@ on:
       ref: { description: 'Commit to commit-release: SHA, branch, or refs/pull/<number>/head (default: the selected branch). It runs with npm publish rights: review a pull request from a fork first. To re-publish a stable release, select its tag in "Use workflow from" instead.' }
       package: { description: 'Package (commit-release only, default: all)' }
 
-env:
-  # - Stable release: the release tag (pushed, or selected in "Use workflow from" with an empty input `ref`)
-  # - Commit release: empty
-  TAG: ${{ github.ref_type == 'tag' && !inputs.ref && github.ref_name || '' }}
-
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -37,6 +32,9 @@ jobs:
       - run: npm install --global npm@latest
       - run: pnpm install
       - run: pnpm exec release-me ci-publish
-        # SECURITY: the input is passed as env variable, instead of being inserted into `run:` (shell injection)
+        # SECURITY: the values are passed as env variables, instead of being inserted into `run:` (shell injection)
         env:
+          # - Stable release: the release tag (pushed, or selected in "Use workflow from" with an empty input `ref`)
+          # - Commit release: empty
+          TAG: ${{ github.ref_type == 'tag' && !inputs.ref && github.ref_name || '' }}
           PACKAGE: ${{ inputs.package }}
