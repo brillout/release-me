@@ -1,0 +1,126 @@
+export { publish }
+
+// Job `publish` of the GitHub Action: publishes the tarballs made by the job `pack`.
+// The job `pack` runs the repository's code: the package.json inside each tarball (that's what npm publishes) is verified.
+
+import * as fs from 'node:fs'
+import * as path from 'node:path'
+import { execFileSync } from 'node:child_process'
+import { isCommitReleaseVersion, parseReleaseTag } from './versions.js'
+import { fail, getEnv } from './utils.js'
+
+type Package = { tarball: string; name: string; version: string; hasPublishConfigTag: boolean }
+type ToPublish = Package & {
+  /** `$ npm publish --tag` (`null` => npm's default, i.e. package.json#publishConfig.tag) */
+  tag: string | null
+  /** Remove the dist-tag after publishing */
+  removeTag?: true
+  provenance: boolean
+}
+
+function publish() {
+  const packages = readPackages(getEnv('PACKAGES_DIR'))
+  const tag = getEnv('TAG')
+  const toPublish = tag ? getStableRelease(packages, tag, getEnv('PROVENANCE') === 'true') : getCommitRelease(packages)
+
+  const summary: string[] = []
+  for (const p of toPublish) {
+    const spec = `${p.name}@${p.version}`
+    if (isPublished(p)) {
+      console.log(`${spec} is already published, skipping it.`)
+    } else {
+      npm(
+        ['publish', p.tarball, ...(p.tag ? ['--tag', p.tag] : [])],
+        p.provenance ? {} : { NPM_CONFIG_PROVENANCE: 'false' },
+      )
+      if (p.removeTag) {
+        try {
+          npm(['dist-tag', 'rm', p.name, p.tag!])
+        } catch {
+          console.log(
+            `::warning::Couldn't remove the npm dist-tag ${p.tag} of ${p.name}: on npmjs.com, enable "Allow npm dist-tag" for the trusted publisher release.yml of ${p.name}.`,
+          )
+        }
+      }
+    }
+    summary.push(tag ? `- \`${spec}\`` : `- \`${spec}\` — \`npm install ${spec}\``)
+  }
+  const { GITHUB_STEP_SUMMARY } = process.env
+  if (GITHUB_STEP_SUMMARY) fs.appendFileSync(GITHUB_STEP_SUMMARY, `### Published to npm\n\n${summary.join('\n')}\n`)
+}
+
+function readPackages(packagesDir: string): Package[] {
+  const packages = fs
+    .readdirSync(packagesDir)
+    .filter((file) => file.endsWith('.tgz'))
+    .map((file) => {
+      const tarball = path.join(packagesDir, file)
+      const packageJson = JSON.parse(
+        execFileSync('tar', ['-xzOf', tarball, 'package/package.json'], { encoding: 'utf8' }),
+      )
+      return {
+        tarball,
+        name: packageJson.name,
+        version: packageJson.version,
+        hasPublishConfigTag: !!packageJson.publishConfig?.tag,
+      }
+    })
+  if (packages.length === 0) fail('No package to publish.')
+  return packages
+}
+
+function getStableRelease(packages: Package[], tag: string, provenance: boolean): ToPublish[] {
+  const releaseTag = parseReleaseTag(tag)
+  if (!releaseTag) fail(`${tag} isn't a release tag.`)
+  const { version, packageName } = releaseTag
+  // The released package, and its boilerplate create-${name} (if any)
+  const main = packages.find(
+    (p) =>
+      p.version === version &&
+      p.name === (packageName ?? p.name) &&
+      packages.every((other) => other === p || other.name === `create-${p.name}`),
+  )
+  if (!main) {
+    const name = packageName ?? '<package>'
+    fail(
+      `The packages ${list(
+        packages,
+      )} don't match the Git tag ${tag}: expected ${name}@${version} (and its boilerplate create-${name}, if any).`,
+    )
+  }
+  const others = packages.filter((p) => p !== main)
+  // npm requires an explicit tag for pre-release versions and for versions lower than the highest published version: use `latest`, as `$ pnpm publish` does (unless package.json#publishConfig.tag is set).
+  return [main, ...others].map((p) => ({ ...p, tag: p.hasPublishConfigTag ? null : 'latest', provenance }))
+}
+
+function getCommitRelease(packages: Package[]): ToPublish[] {
+  return packages.map((p) => {
+    if (!isCommitReleaseVersion(p.version)) {
+      fail(`${p.name}@${p.version} isn't a commit release version (x.y.z-commit-<hash>).`)
+    }
+    // - `$ npm publish` always sets a dist-tag: use the dist-tag `commit` and remove it afterwards.
+    // - No provenance: it would point to the commit the workflow run belongs to (the tip of the branch selected in "Use workflow from"), which isn't necessarily the released commit.
+    return { ...p, tag: 'commit', removeTag: true, provenance: false }
+  })
+}
+
+function isPublished({ name, version }: Package): boolean {
+  try {
+    const stdout = execFileSync('npm', ['view', `${name}@${version}`, 'version'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+    return stdout.trim() === version
+  } catch {
+    return false
+  }
+}
+
+function npm(args: string[], env: Record<string, string> = {}) {
+  console.log(`$ npm ${args.join(' ')}`)
+  execFileSync('npm', args, { stdio: 'inherit', env: { ...process.env, ...env } })
+}
+
+function list(packages: Package[]): string {
+  return packages.map((p) => `${p.name}@${p.version}`).join(', ')
+}

@@ -1,14 +1,14 @@
 export { ciPack }
 
-// `$ release-me ci-pack` is run by the reusable workflow .github/workflows/publish.yml (its job that doesn't have permission to publish to npm):
+// `$ release-me ci-pack` is run by the GitHub Action .github/workflows/release.yml, in its job `pack` that isn't allowed to publish to npm:
 // - It builds and packs the packages to publish.
-// - The workflow then publishes the tarballs in a separate job that doesn't run any code of the repository.
+// - The job `publish` then publishes the tarballs, without running any code of the repository.
 
 import * as fs from 'fs'
 import * as path from 'path'
 import pc from '@brillout/picocolors'
 import { assertUsage } from './utils.js'
-import { assertCiWorkflowUpToDate } from './githubAction.js'
+import { getCommitReleaseVersion, parseReleaseTag } from './ci/versions.js'
 import {
   build,
   findBoilerplatePacakge,
@@ -18,7 +18,6 @@ import {
   getMonorepoRootDir,
   getPackageJson,
   getReleaseMePackages,
-  getVersion,
   logTitle,
   run,
   thisPackageName,
@@ -28,25 +27,23 @@ import {
 } from './releaseMe.js'
 
 type CiPackArgs = {
-  /** Git tag of a stable release (`v1.2.3` or `some-package@1.2.3`), or `commit` for a commit release of HEAD */
-  target: string
+  /** Stable release: its Git tag (`v1.2.3` or `some-package@1.2.3`). Commit release of HEAD: empty. */
+  tag: string
+  /** Commit release: only release this package (default: all packages that use release-me) */
+  packageName: string
   /** Directory where the tarballs are written */
   outDir: string
-  /** Commit release: only release this package (default: all packages that use release-me) */
-  packageName?: string
 }
 
-async function ciPack({ target, outDir, packageName }: CiPackArgs) {
+async function ciPack({ tag, packageName, outDir }: CiPackArgs) {
   outDir = path.resolve(outDir)
   const monorepoRootDir = await getMonorepoRootDir()
-  // Fail on drift also in CI (normally caught earlier, when releasing locally)
-  assertCiWorkflowUpToDate(monorepoRootDir)
   const filesMonorepo = await getFilesInsideDir(monorepoRootDir)
   const filesMonorepoPackageJson = getFilesMonorepoPackageJson(filesMonorepo)
   const packages = getReleaseMePackages(filesMonorepoPackageJson)
 
   const toPack: { packageRootDir: string; skipBuild?: true }[] = []
-  if (target === 'commit') {
+  if (!tag) {
     let selected = packages
     if (packageName) {
       selected = packages.filter((p) => p.packageName === packageName)
@@ -58,17 +55,18 @@ async function ciPack({ target, outDir, packageName }: CiPackArgs) {
     const commitHash = await getCommitHash('HEAD')
     // Set all versions before building, so that packages depending on each other reference the commit release versions
     for (const { packageRootDir } of selected) {
-      const { versionOld, versionNew } = await getVersion(packageRootDir, 'commit', commitHash)
+      const versionOld = getPackageJson(packageRootDir).packageJson.version!
+      const versionNew = getCommitReleaseVersion(versionOld, commitHash)
       await updateVersionMacro(versionOld, versionNew, await getFilesInsideDir(packageRootDir))
       updatePackageJsonVersion(packageRootDir, versionNew)
     }
     toPack.push(...selected.map(({ packageRootDir }) => ({ packageRootDir })))
   } else {
-    const { pkg, version } = parseGitTag(target, packages)
+    const { pkg, version } = parseGitTag(tag, packages)
     const { packageJson } = getPackageJson(pkg.packageRootDir)
     assertUsage(
       packageJson.version === version,
-      `The Git tag ${pc.bold(target)} doesn't match ${pkg.packageName}'s package.json#version ${pc.bold(
+      `The Git tag ${pc.bold(tag)} doesn't match ${pkg.packageName}'s package.json#version ${pc.bold(
         String(packageJson.version),
       )}.`,
     )
@@ -93,31 +91,29 @@ async function ciPack({ target, outDir, packageName }: CiPackArgs) {
 }
 
 function parseGitTag(gitTag: string, packages: ReleaseMePackage[]): { pkg: ReleaseMePackage; version: string } {
-  // some-package@1.2.3, @some-scope/some-package@1.2.3
-  const i = gitTag.lastIndexOf('@')
-  if (i > 0) {
-    const name = gitTag.slice(0, i)
-    const pkg = packages.find((p) => p.packageName === name)
+  const releaseTag = parseReleaseTag(gitTag)
+  assertUsage(
+    releaseTag,
+    `${pc.bold(gitTag)} isn't a release tag (${pc.bold('v1.2.3')} or ${pc.bold('some-package@1.2.3')}).`,
+  )
+  const { packageName, version } = releaseTag
+  if (packageName) {
+    const pkg = packages.find((p) => p.packageName === packageName)
     assertUsage(
       pkg,
       `The Git tag ${pc.bold(gitTag)} doesn't match any package that uses ${thisPackageName} (packages: ${listPackages(
         packages,
       )}).`,
     )
-    return { pkg, version: gitTag.slice(i + 1) }
+    return { pkg, version }
   }
-  // v1.2.3
-  assertUsage(
-    gitTag.startsWith('v'),
-    `${pc.bold(gitTag)} isn't a release tag (${pc.bold('v1.2.3')} or ${pc.bold('some-package@1.2.3')}).`,
-  )
   assertUsage(
     packages.length === 1,
     `The Git tag ${pc.bold(gitTag)} is ambiguous: there are several packages (${listPackages(
       packages,
     )}) and their release tags are ${pc.bold('some-package@1.2.3')}.`,
   )
-  return { pkg: packages[0]!, version: gitTag.slice(1) }
+  return { pkg: packages[0]!, version }
 }
 
 function listPackages(packages: ReleaseMePackage[]) {

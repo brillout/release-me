@@ -1,0 +1,103 @@
+# Publishes to npm, see https://github.com/brillout/release-me#github-action
+# - Stable releases: triggered by `$ pnpm exec release-me patch` (or minor/major/v1.2.3), which pushes the release tag.
+# - Commit releases: triggered by `$ pnpm exec release-me commit`.
+# - "Run workflow" button: enter a commit to commit-release it, or a release tag to (re-)publish it.
+# Don't modify this file: it's a copy of https://github.com/brillout/release-me/blob/main/.github/workflows/release.yml
+# created by `$ pnpm exec release-me init` and updated by `$ pnpm exec release-me patch` (or minor/major/v1.2.3).
+
+name: Release
+
+on:
+  push:
+    tags: ['v[0-9]*', '**@[0-9]*'] # v1.2.3, some-package@1.2.3
+  workflow_dispatch:
+    inputs:
+      ref: { description: 'Commit (commit-release) or tag (stable-release). Commit: SHA, branch, or refs/pull/<number>/head (default: the selected branch).' }
+      package: { description: 'Package (commit-release only, default: all)' }
+
+permissions: {}
+
+env:
+  # The release-me version that runs the jobs (the version installed by the repository)
+  RELEASE_ME: '@brillout/release-me@0.4.20'
+
+jobs:
+  resolve:
+    name: Resolve release
+    runs-on: ubuntu-latest
+    # Doesn't run any code of the repository: the other jobs trust its outputs.
+    permissions:
+      contents: read
+    outputs:
+      ref: ${{ steps.resolve.outputs.ref }}
+      tag: ${{ steps.resolve.outputs.tag }}
+      provenance: ${{ steps.resolve.outputs.provenance }}
+    steps:
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 'lts/*'
+          package-manager-cache: false
+      - name: Download release-me
+        run: mkdir release-me && npm pack "$RELEASE_ME" --pack-destination release-me && tar -xzf release-me/*.tgz --strip-components=1 -C release-me
+      - id: resolve
+        run: node release-me/dist/ci/index.js resolve
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+  pack:
+    name: Build & pack
+    needs: resolve
+    runs-on: ubuntu-latest
+    # Runs the repository's code (install scripts, build scripts, ...), which may be untrusted (e.g. a commit release of a pull request from a fork) => it isn't allowed to publish to npm.
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.resolve.outputs.ref }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 'lts/*'
+          # No cache: untrusted code could poison it for subsequent releases.
+          package-manager-cache: false
+      # pnpm switches to the version of package.json#packageManager (or devEngines.packageManager), if set
+      - run: npm install --global pnpm@latest
+      - run: pnpm install --frozen-lockfile
+      - name: Build & pack
+        run: pnpm dlx "$RELEASE_ME" ci-pack --tag "$TAG" --package "$PACKAGE" --out "$RUNNER_TEMP/release-me-packages"
+        env:
+          TAG: ${{ needs.resolve.outputs.tag }}
+          PACKAGE: ${{ inputs.package }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-me-packages
+          path: ${{ runner.temp }}/release-me-packages/*.tgz
+          if-no-files-found: error
+          retention-days: 3
+
+  publish:
+    name: Publish to npm
+    needs: [resolve, pack]
+    runs-on: ubuntu-latest
+    # Doesn't run any code of the repository: it's the only job allowed to publish to npm (trusted publishing authenticates with the GitHub OIDC token).
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 'lts/*'
+          package-manager-cache: false
+      # Trusted publishing requires npm >= 11.5.1, and removing a dist-tag requires npm >= 11.21.0
+      - run: npm install --global npm@latest
+      - name: Download release-me
+        run: mkdir release-me && npm pack "$RELEASE_ME" --pack-destination release-me && tar -xzf release-me/*.tgz --strip-components=1 -C release-me
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-me-packages
+          path: ${{ runner.temp }}/release-me-packages
+      - run: node release-me/dist/ci/index.js publish
+        env:
+          PACKAGES_DIR: ${{ runner.temp }}/release-me-packages
+          TAG: ${{ needs.resolve.outputs.tag }}
+          PROVENANCE: ${{ needs.resolve.outputs.provenance }}

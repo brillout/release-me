@@ -35,7 +35,8 @@
   },
   "bin": "./bin.js",
   "files": [
-    "dist/"
+    "dist/",
+    ".github/workflows/release.yml"
   ],
   "license": "MIT",
   "type": "module",

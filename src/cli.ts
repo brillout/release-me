@@ -14,7 +14,7 @@ const helpText = [
   '',
   'Publish to npm via a GitHub Action (see https://github.com/brillout/release-me#github-action):',
   '  $ pnpm exec release-me init                         # create/update .github/workflows/release.yml (GitHub Action that publishes to npm)',
-  '  $ pnpm exec release-me ci-pack <git-tag|commit> --out <dir> [--package <name>]  # used by the GitHub Action',
+  '  $ pnpm exec release-me ci-pack --out <dir> [--tag <git-tag>] [--package <name>]  # used by the GitHub Action',
 ].join('\n')
 
 if (process.argv[2] === 'ci-pack') {
@@ -44,19 +44,18 @@ function cli() {
 function cliCiPack() {
   const command = new Command('release-me ci-pack')
     .description(
-      'Build and pack the packages that the GitHub Action publishes to npm (run by the reusable workflow brillout/release-me/.github/workflows/publish.yml).',
-    )
-    .argument(
-      '<target>',
-      'Git tag of a stable release (v1.2.3 or some-package@1.2.3), or "commit" for a commit release of HEAD',
+      'Build and pack the packages that the GitHub Action .github/workflows/release.yml publishes to npm (run by its job `pack`).',
     )
     .requiredOption('--out <dir>', 'directory where the tarballs are written')
+    .option(
+      '--tag <git-tag>',
+      'stable release of the Git tag v1.2.3 or some-package@1.2.3 (default: commit release of HEAD)',
+    )
     .option('--package <name>', 'commit release: only release this package (default: all packages that use release-me)')
     .showHelpAfterError()
   command.parse(process.argv.slice(3), { from: 'user' })
-  const target = command.args[0]!
-  const opts = command.opts<{ out: string; package?: string }>()
-  ciPack({ target, outDir: opts.out, packageName: opts.package || undefined })
+  const opts = command.opts<{ out: string; tag?: string; package?: string }>()
+  ciPack({ tag: opts.tag ?? '', packageName: opts.package ?? '', outDir: opts.out })
 }
 
 function parseArgs(): CliArgs {

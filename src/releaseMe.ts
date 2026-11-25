@@ -13,7 +13,6 @@ export { getFilesMonorepoPackageJson }
 export { getMonorepoRootDir }
 export { getPackageJson }
 export { getReleaseMePackages }
-export { getVersion }
 export { logTitle }
 export { run }
 export { updatePackageJsonVersion }
@@ -31,7 +30,9 @@ import {
   getWorkflowLink,
   releaseWorkflow,
   releaseWorkflowPath,
+  writeReleaseWorkflow,
 } from './githubAction.js'
+import { getCommitReleaseVersion } from './ci/versions.js'
 import * as path from 'path'
 /*
 //  "js-yaml": "4.1.0",
@@ -125,6 +126,9 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
     bumpBoilerplateVersion(boilerplatePackageJson)
   }
 
+  // E.g. after upgrading release-me: release.yml sets the release-me version that runs the GitHub Action
+  const isReleaseWorkflowUpdated = !!ciWorkflow && writeReleaseWorkflow(monorepoRootDir) === 'updated'
+
   const gitTagPrefix: GitTagPrefix = monorepoInfo.hasMultiplePackages ? `${packageName}@` : 'v'
 
   const { changeLogFilePath, changeLogFileAlreadyExisted } = getChangelogPath(
@@ -140,7 +144,12 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
     packageName,
   )
 
-  await showPreview(packageJsonPath, changeLogFilePath, changeLogFileAlreadyExisted)
+  await showPreview(
+    packageJsonPath,
+    changeLogFilePath,
+    changeLogFileAlreadyExisted,
+    isReleaseWorkflowUpdated ? path.join(monorepoRootDir, releaseWorkflowPath) : null,
+  )
 
   if (isMissingChangeLog && !args.force) {
     assert(changeLogFileAlreadyExisted)
@@ -418,11 +427,17 @@ function getChangelogPath(packageRootDir: string, monorepoRootDir: string, hasMu
   return { changeLogFilePath, changeLogFileAlreadyExisted }
 }
 
-async function showPreview(packageJsonPath: string, changeLogFilePath: string, changeLogFileAlreadyExisted: boolean) {
+async function showPreview(
+  packageJsonPath: string,
+  changeLogFilePath: string,
+  changeLogFileAlreadyExisted: boolean,
+  releaseWorkflowFilePath: string | null,
+) {
   logTitle('Confirm changes')
   await logCmd('git status')
   await logDiff(changeLogFilePath, changeLogFileAlreadyExisted)
   await logDiff(packageJsonPath, true)
+  if (releaseWorkflowFilePath) await logDiff(releaseWorkflowFilePath, true)
 
   return
 
@@ -580,9 +595,7 @@ async function getVersion(
   let isCommitRelease = false
   let versionNew: string
   if (releaseTarget === 'commit') {
-    // Align with GitHub: GitHub (always?) picks the first 7 characters.
-    const hash = commitHashBegin.slice(0, 7)
-    versionNew = `${versionOld}-commit-${hash}`
+    versionNew = getCommitReleaseVersion(versionOld, commitHashBegin)
     isCommitRelease = true
   } else if (releaseTarget === 'patch' || releaseTarget === 'minor' || releaseTarget === 'major') {
     versionNew = semver.inc(versionOld, releaseTarget) as string
