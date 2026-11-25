@@ -1,11 +1,11 @@
 export { ciPack }
 
-// `$ release-me ci-pack`: job `pack` of the GitHub Action, builds and packs the packages to publish (with the released commit's code, so this job isn't allowed to publish to npm).
+// `$ release-me ci-internal-cmd-pack`: job `pack` of the GitHub Action, builds and packs the packages to publish (with the released commit's code, so this job isn't allowed to publish to npm).
 
 import * as fs from 'fs'
 import * as path from 'path'
 import pc from '@brillout/picocolors'
-import { assertUsage } from '../utils.js'
+import { assertUsage, logTitle, run } from '../utils.js'
 import { getCommitReleaseVersion, parseReleaseTag } from './versions.js'
 import {
   build,
@@ -16,8 +16,6 @@ import {
   getMonorepoRootDir,
   getPackageJson,
   getReleaseMePackages,
-  logTitle,
-  run,
   thisPackageName,
   updatePackageJsonVersion,
   updateVersionMacro,

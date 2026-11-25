@@ -27,7 +27,7 @@ jobs:
           node-version: lts/*
       - run: pnpm install --ignore-scripts
       - id: resolve
-        run: pnpm exec release-me ci-resolve
+        run: pnpm exec release-me ci-internal-cmd-resolve
 
   pack:
     # Runs the released commit's code, which may be untrusted (e.g. a pull request from a fork): this job can't publish to npm.
@@ -45,7 +45,7 @@ jobs:
         with:
           node-version: lts/*
       - run: pnpm install
-      - run: pnpm exec release-me ci-pack --tag "$TAG" --package "$PACKAGE" --out release-me-packages
+      - run: pnpm exec release-me ci-internal-cmd-pack --tag "$TAG" --package "$PACKAGE" --out release-me-packages
         env:
           TAG: ${{ needs.resolve.outputs.tag }}
           PACKAGE: ${{ inputs.package }}
@@ -74,7 +74,7 @@ jobs:
         with:
           name: release-me-packages
           path: release-me-packages
-      - run: pnpm exec release-me ci-publish
+      - run: pnpm exec release-me ci-internal-cmd-publish
         env:
           PACKAGES_DIR: release-me-packages
           TAG: ${{ needs.resolve.outputs.tag }}

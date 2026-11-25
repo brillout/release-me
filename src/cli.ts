@@ -10,9 +10,8 @@ const helpText = [
   '  $ pnpm exec release-me commit                       # out-of-band release (as x.y.z-commit-123456 without npm tag)',
   '  $ pnpm exec release-me v${major}.${minor}.${patch}  # release specific version',
   '',
-  'Publish to npm via a GitHub Action (see https://github.com/brillout/release-me#github-action):',
+  'To set up GitHub Action (see https://github.com/brillout/release-me#github-action):',
   '  $ pnpm exec release-me init                         # create/update .github/workflows/release.yml (GitHub Action that publishes to npm)',
-  '  $ pnpm exec release-me ci-resolve|ci-pack|ci-publish  # used by the GitHub Action',
 ].join('\n')
 
 // Each command only loads its own code: the GitHub Action's jobs `resolve` and `publish` run as little code as possible
@@ -20,14 +19,14 @@ switch (process.argv[2]) {
   case 'init':
     await cliInit()
     break
-  case 'ci-resolve':
-    ;(await import('./ci/ci-resolve.js')).ciResolve()
+  case 'ci-internal-cmd-resolve':
+    ;(await import('./ci/ci-internal-cmd-resolve.js')).ciResolve()
     break
-  case 'ci-pack':
+  case 'ci-internal-cmd-pack':
     await cliCiPack()
     break
-  case 'ci-publish':
-    ;(await import('./ci/ci-publish.js')).ciPublish()
+  case 'ci-internal-cmd-publish':
+    ;(await import('./ci/ci-internal-cmd-publish.js')).ciPublish()
     break
   default:
     await cli()
@@ -40,7 +39,7 @@ async function cliInit() {
     )
     .showHelpAfterError()
     .parse(process.argv.slice(3), { from: 'user' })
-  const { init } = await import('./init.js')
+  const { init } = await import('./ci/init.js')
   init()
 }
 
@@ -52,7 +51,7 @@ async function cli() {
 }
 
 async function cliCiPack() {
-  const command = new Command('release-me ci-pack')
+  const command = new Command('release-me ci-internal-cmd-pack')
     .description(
       'Build and pack the packages that the GitHub Action .github/workflows/release.yml publishes to npm (run by its job `pack`).',
     )
@@ -65,7 +64,7 @@ async function cliCiPack() {
     .showHelpAfterError()
   command.parse(process.argv.slice(3), { from: 'user' })
   const opts = command.opts<{ out: string; tag?: string; package?: string }>()
-  const { ciPack } = await import('./ci/ci-pack.js')
+  const { ciPack } = await import('./ci/ci-internal-cmd-pack.js')
   ciPack({ tag: opts.tag ?? '', packageName: opts.package ?? '', outDir: opts.out })
 }
 

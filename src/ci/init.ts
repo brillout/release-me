@@ -4,29 +4,23 @@ export { init }
 
 import * as path from 'path'
 import pc from '@brillout/picocolors'
+import { getGitHubRepo, parseGitHubRepo } from './githubAction.js'
+import { releaseWorkflow, releaseWorkflowPath, writeReleaseWorkflow } from './releaseWorkflow.js'
 import {
-  getGitHubRepo,
-  parseGitHubRepo,
-  releaseWorkflow,
-  releaseWorkflowPath,
-  writeReleaseWorkflow,
-} from './githubAction.js'
-import {
+  assertInstalledAtRoot,
   findBoilerplatePacakge,
   getFilesInsideDir,
   getFilesMonorepoPackageJson,
   getMonorepoRootDir,
   getPackageJson,
   getReleaseMePackages,
-  logTitle,
-  run,
-  thisPackageName,
-} from './releaseMe.js'
-import { assertUsage } from './utils.js'
+} from '../releaseMe.js'
+import { assertUsage, logTitle, run } from '../utils.js'
 
 async function init() {
   const monorepoRootDir = await getMonorepoRootDir()
-  assertRootPackageJson(monorepoRootDir)
+  assertInstalledAtRoot(monorepoRootDir)
+  assertPackageManager(monorepoRootDir)
   const packages = await getPublishedPackages(monorepoRootDir)
 
   const status = writeReleaseWorkflow(monorepoRootDir)
@@ -45,18 +39,13 @@ async function init() {
   if (status === 'created') await logNpmSetup(monorepoRootDir, packages)
 }
 
-/** The GitHub Action installs the pnpm version and runs the release-me installed by the root package.json */
-function assertRootPackageJson(monorepoRootDir: string) {
+/** The GitHub Action installs the pnpm version of the root package.json */
+function assertPackageManager(monorepoRootDir: string) {
   const { packageJson, packageJsonPath } = getPackageJson(monorepoRootDir)
-  const { devDependencies, packageManager, devEngines } = packageJson as {
-    devDependencies?: Record<string, string>
+  const { packageManager, devEngines } = packageJson as {
     packageManager?: string
     devEngines?: { packageManager?: { name?: string } }
   }
-  assertUsage(
-    devDependencies?.[thisPackageName],
-    `The GitHub Action runs ${thisPackageName} installed at the root: add it to the devDependencies of ${packageJsonPath}.`,
-  )
   assertUsage(
     packageManager?.startsWith('pnpm@') || devEngines?.packageManager?.name === 'pnpm',
     `The GitHub Action installs the pnpm version of ${packageJsonPath}: set its ${pc.bold(

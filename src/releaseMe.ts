@@ -3,7 +3,7 @@ export { releaseTypes }
 export type { CliArgs }
 export type { ReleaseType }
 export type { ReleaseTarget }
-// Used by ./ciPack.ts and ./init.ts
+// Used by ./ci/
 export { thisPackageName }
 export { build }
 export { findBoilerplatePacakge }
@@ -12,9 +12,8 @@ export { getFilesInsideDir }
 export { getFilesMonorepoPackageJson }
 export { getMonorepoRootDir }
 export { getPackageJson }
+export { assertInstalledAtRoot }
 export { getReleaseMePackages }
-export { logTitle }
-export { run }
 export { updatePackageJsonVersion }
 export { updateVersionMacro }
 export type { ReleaseMePackage }
@@ -23,14 +22,15 @@ import execa from 'execa'
 import * as fs from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
-import { runCommand, assertUsage } from './utils.js'
+import { runCommand, assertUsage, logDetail, logTitle, run, run__return } from './utils.js'
 import {
   type CiWorkflow,
   getCiWorkflow,
-  getWorkflowLink,
-  releaseWorkflow,
-  releaseWorkflowPath,
-} from './githubAction.js'
+  gitPushReleaseTag,
+  logCiPublish,
+  triggerCommitRelease,
+} from './ci/githubAction.js'
+import { releaseWorkflow, releaseWorkflowPath } from './ci/releaseWorkflow.js'
 import { getCommitReleaseVersion } from './ci/versions.js'
 import * as path from 'path'
 /*
@@ -67,6 +67,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   // =======
 
   const monorepoRootDir = await getMonorepoRootDir()
+  assertInstalledAtRoot(monorepoRootDir)
 
   // The GitHub Action that publishes to npm (if the repository uses it)
   const ciWorkflow = await getCiWorkflow(monorepoRootDir)
@@ -197,8 +198,13 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
     await gitPush()
   } else {
     await gitPushReleaseTag(gitTag)
-    const packageRootDirs = [packageRootDir, ...(boilerplatePackageJson ? [path.dirname(boilerplatePackageJson)] : [])]
-    logCiPublish(ciWorkflow, gitTag, packageRootDirs)
+    const published = [packageRootDir, ...(boilerplatePackageJson ? [path.dirname(boilerplatePackageJson)] : [])].map(
+      (dir) => {
+        const { packageJson } = getPackageJson(dir)
+        return `${packageJson.name}@${packageJson.version}`
+      },
+    )
+    logCiPublish(ciWorkflow, gitTag, published)
   }
 }
 
@@ -476,98 +482,9 @@ async function gitPush() {
   await run('git push')
   await run('git push --tags')
 }
-async function gitPushReleaseTag(gitTag: GitTag) {
-  logTitle('Git push')
-  // - Push the release commit and its tag atomically: the tag triggers the GitHub Action that publishes to npm.
-  // - Only push this one tag: GitHub doesn't trigger any workflow when more than three tags are pushed at once.
-  await run(['git', 'push', '--atomic', 'origin', 'HEAD', `refs/tags/${gitTag}`])
-}
-/** The pushed release tag triggers the GitHub Action, which publishes the packages to npm */
-function logCiPublish(ciWorkflow: CiWorkflow, gitTag: GitTag, packageRootDirs: string[]) {
-  const published = packageRootDirs.map((packageRootDir) => {
-    const { packageJson } = getPackageJson(packageRootDir)
-    return pc.cyan(`${packageJson.name}@${packageJson.version}`)
-  })
-  const workflowLink = getWorkflowLink(ciWorkflow)
-  logTitle('npm publish')
-  console.log(
-    `GitHub Action ${pc.bold(releaseWorkflow.fileName)} will publish ${published.join(
-      ' and ',
-    )} to npm: ${workflowLink}`,
-  )
-  console.log(
-    pc.dim(`(If it fails, you can retry it: go to ${workflowLink}, press Run workflow, and enter the tag ${gitTag}.)`),
-  )
-}
 async function build(cwd?: string) {
   logTitle(`Build ${logDetail('$ pnpm run build')}`)
   await run('pnpm run build', { cwd })
-}
-
-async function triggerCommitRelease(
-  ciWorkflow: CiWorkflow,
-  packageName: string,
-  versionNew: string,
-  commitHash: string,
-) {
-  logTitle('Trigger commit release')
-  const { repo } = ciWorkflow
-  const { fileName } = releaseWorkflow
-  assertUsage(
-    repo,
-    `Couldn't determine the GitHub repository of ${pc.cyan('origin')} ${logDetail('$ git remote get-url origin')}.`,
-  )
-  const workflowLink = getWorkflowLink(ciWorkflow)
-
-  // The GitHub Action can only release commits that exist on GitHub (any branch, including pull requests from forks)
-  const ghArgs = ['api', `repos/${repo}/commits/${commitHash}`, '--silent']
-  try {
-    await execa('gh', ghArgs, { all: true })
-  } catch (err) {
-    const { code, all: output } = err as execa.ExecaError & NodeJS.ErrnoException
-    const isMissingCommit = !!output?.includes('(HTTP 422)')
-    const reason =
-      code === 'ENOENT'
-        ? `triggering the GitHub Action ${fileName} requires the GitHub CLI ${pc.cyan('gh')} (https://cli.github.com)`
-        : isMissingCommit
-          ? `GitHub (${repo}) doesn't have the commit ${commitHash.slice(0, 7)} — push it first`
-          : `${pc.cyan('gh')} failed`
-    throw new Error(
-      [
-        pc.red(pc.bold(`Release aborted, because ${reason}.`)),
-        output && `${pc.dim(`$ gh ${ghArgs.join(' ')}`)}\n${output}`,
-        !isMissingCommit &&
-          `Alternatively, go to ${workflowLink} and press ${pc.bold('Run workflow')} with commit ${pc.bold(
-            commitHash,
-          )}.`,
-      ]
-        .filter(Boolean)
-        .join('\n'),
-    )
-  }
-
-  await run([
-    'gh',
-    'workflow',
-    'run',
-    fileName,
-    '--repo',
-    repo,
-    '-f',
-    `ref=${commitHash}`,
-    '-f',
-    `package=${packageName}`,
-  ])
-  console.log(
-    `GitHub Action ${pc.bold(fileName)} will publish ${pc.cyan(
-      `${packageName}@${versionNew}`,
-    )} to npm: ${workflowLink}`,
-  )
-  console.log(
-    pc.dim(
-      `(You can also commit-release any commit, including pull requests from forks: go to ${workflowLink} and press Run workflow.)`,
-    ),
-  )
 }
 
 async function getVersion(
@@ -774,29 +691,6 @@ function writePackageJson(pkgPath: string, pkg: object) {
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
 }
 
-async function run(
-  cmd: string | string[],
-  {
-    cwd,
-    env = process.env,
-    swallowError,
-    timeout,
-  }: { cwd?: string; env?: NodeJS.ProcessEnv; swallowError?: boolean; timeout?: number } = {},
-) {
-  const stdio = 'inherit'
-  const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
-  try {
-    await execa(command!, args, { cwd, stdio, env, timeout })
-  } catch (err) {
-    if (!swallowError) throw err
-  }
-}
-async function run__return(cmd: string | string[], cwd?: string): Promise<string> {
-  const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
-  const { stdout } = await execa(command!, args, { cwd })
-  return stdout
-}
-
 async function abortIfUncommitedChanges(monorepoRootDir: string) {
   if (await repoHasUncommittedChanges()) {
     throw new Error(
@@ -934,15 +828,6 @@ function logAnalysis(
   }
 }
 
-function logTitle(title: string, noMargin?: true) {
-  const titleLine = `==== ${title} ====`
-  const titleLength = pc.rm(titleLine).length
-  const borderLine = '='.repeat(titleLength)
-  let lines = [borderLine, titleLine, borderLine]
-  if (!noMargin) lines = ['', '', ...lines]
-  console.log(lines.join('\n'))
-}
-
 let cleanRootDir = process.cwd()
 let cleanEnabled: false | string = false
 let isCleaning = false
@@ -976,6 +861,17 @@ function analyzeMonorepo(filesMonorepoPackageJson: Files, packageRootDir: string
   }
 }
 
+/** release-me must be in the devDependencies of the root package.json (e.g. the GitHub Action runs it from there) */
+function assertInstalledAtRoot(monorepoRootDir: string) {
+  const packageJsonPath = path.join(monorepoRootDir, 'package.json')
+  const isInstalled =
+    fs.existsSync(packageJsonPath) && !!getPackageJson(monorepoRootDir).packageJson.devDependencies?.[thisPackageName]
+  assertUsage(
+    isInstalled,
+    `${pc.cyan(thisPackageName)} should be installed at the root: add it to the devDependencies of ${packageJsonPath}.`,
+  )
+}
+
 type ReleaseMePackage = ReturnType<typeof getReleaseMePackages>[number]
 /** The packages that use release-me (i.e. that have it in their devDependencies), except private ones (e.g. the monorepo root) */
 function getReleaseMePackages(filesMonorepoPackageJson: Files) {
@@ -1000,9 +896,6 @@ function getReleaseMePackages(filesMonorepoPackageJson: Files) {
   return packages
 }
 
-function logDetail(msg: string): string {
-  return `(${pc.dim(msg)})`
-}
 function logBoolean(bool: boolean): 'yes' | 'no' {
   return pc.bold(bool ? 'yes' : 'no')
 }

@@ -1,6 +1,6 @@
 export { ciPublish }
 
-// `$ release-me ci-publish`: job `publish` of the GitHub Action, publishes the tarballs made by the job `pack`.
+// `$ release-me ci-internal-cmd-publish`: job `publish` of the GitHub Action, publishes the tarballs made by the job `pack`.
 // The job `pack` runs the repository's code: the package.json inside each tarball (that's what npm publishes) is verified.
 
 import * as fs from 'node:fs'
