@@ -60,7 +60,7 @@ async function cliCiPack() {
       '--tag <git-tag>',
       'stable release of the Git tag v1.2.3 or some-package@1.2.3 (default: commit release of HEAD)',
     )
-    .option('--package <name>', 'commit release: only release this package (default: all packages that use release-me)')
+    .option('--package <name>', 'commit release: only release this package (default: all packages)')
     .showHelpAfterError()
   command.parse(process.argv.slice(3), { from: 'user' })
   const opts = command.opts<{ out: string; tag?: string; package?: string }>()

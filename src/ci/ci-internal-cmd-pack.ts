@@ -16,7 +16,6 @@ import {
   getMonorepoRootDir,
   getPackageJson,
   getReleaseMePackages,
-  thisPackageName,
   updatePackageJsonVersion,
   updateVersionMacro,
   type ReleaseMePackage,
@@ -25,7 +24,7 @@ import {
 type CiPackArgs = {
   /** Stable release: its Git tag (`v1.2.3` or `some-package@1.2.3`). Commit release of HEAD: empty. */
   tag: string
-  /** Commit release: only release this package (default: all packages that use release-me) */
+  /** Commit release: only release this package (default: all packages) */
   packageName: string
   /** Directory where the tarballs are written */
   outDir: string
@@ -45,7 +44,7 @@ async function ciPack({ tag, packageName, outDir }: CiPackArgs) {
       selected = packages.filter((p) => p.packageName === packageName)
       assertUsage(
         selected.length === 1,
-        `No package ${pc.cyan(packageName)} uses ${thisPackageName} (packages: ${listPackages(packages)}).`,
+        `No package ${pc.cyan(packageName)} is released by release-me (packages: ${listPackages(packages)}).`,
       )
     }
     const commitHash = await getCommitHash('HEAD')
@@ -97,7 +96,7 @@ function parseGitTag(gitTag: string, packages: ReleaseMePackage[]): { pkg: Relea
     const pkg = packages.find((p) => p.packageName === packageName)
     assertUsage(
       pkg,
-      `The Git tag ${pc.bold(gitTag)} doesn't match any package that uses ${thisPackageName} (packages: ${listPackages(
+      `The Git tag ${pc.bold(gitTag)} doesn't match any package released by release-me (packages: ${listPackages(
         packages,
       )}).`,
     )

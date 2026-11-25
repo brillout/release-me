@@ -135,7 +135,23 @@ pnpm exec release-me commit
 
 ### Installation
 
-Add `@brillout/release-me` to the `devDependencies` of the monorepo root's `package.json` and of each package you want to release.
+Add `@brillout/release-me` to the `devDependencies` of the monorepo root's `package.json`, and add scripts that run `release-me` to each package you want to release:
+
+```diff
+ // packages/my-package/package.json
+ {
+   "name": "my-package",
+   "version": "0.1.2",
+   "scripts": {
++    "release": "release-me patch",
++    "release:minor": "release-me minor",
++    "release:major": "release-me major",
++    "release:commit": "release-me commit"
+   }
+ }
+```
+
+release-me releases the packages that have a script that runs `release-me` (they don't need `@brillout/release-me` in their own `devDependencies`).
 
 ### `CHANGELOG.md` & commit scope
 

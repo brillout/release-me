@@ -237,6 +237,7 @@ type PackageJson = {
   name?: string
   version?: string
   private?: boolean
+  scripts?: Record<string, string>
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
 }
@@ -853,7 +854,13 @@ function analyzeMonorepo(filesMonorepoPackageJson: Files, packageRootDir: string
     isCurrentPackage: isSamePath(packageRootDir, pkg.packageRootDir),
   }))
   const currentPackages = monorepoPackages.filter((pkg) => pkg.isCurrentPackage)
-  assert(currentPackages.length === 1)
+  assertUsage(
+    currentPackages.length === 1,
+    `${pc.cyan(packageName)} isn't released by release-me: add a script that runs release-me to ${path.join(
+      packageRootDir,
+      'package.json',
+    )} (e.g. ${pc.bold('"release": "release-me patch"')}).`,
+  )
   assert(currentPackages[0]!.packageName === packageName)
   return {
     hasMultiplePackages: monorepoPackages.length > 1,
@@ -873,9 +880,13 @@ function assertInstalledAtRoot(monorepoRootDir: string) {
 }
 
 type ReleaseMePackage = ReturnType<typeof getReleaseMePackages>[number]
-/** The packages that use release-me (i.e. that have it in their devDependencies), except private ones (e.g. the monorepo root) */
+/**
+ * The packages that release-me releases: the ones with a script that runs release-me (e.g. `"release": "release-me patch"`), except private ones.
+ * If no package has such script: the root package (e.g. a repository with a single package, released with `$ pnpm exec release-me patch`).
+ */
 function getReleaseMePackages(filesMonorepoPackageJson: Files) {
   const packages: { packageName: string; packageRootDir: string; packageRootDirRelative: string }[] = []
+  let rootPackage: (typeof packages)[number] | null = null
   for (const { filePathAbsolute, filePathRelative } of filesMonorepoPackageJson) {
     const packageRootDir = path.dirname(filePathAbsolute)
     const { packageJson } = getPackageJson(packageRootDir)
@@ -885,15 +896,29 @@ function getReleaseMePackages(filesMonorepoPackageJson: Files) {
         'dependencies',
       )} as it should be only in package.json#${pc.bold('devDependencies')} instead.`,
     )
-    if (!packageJson.name || packageJson.private || !packageJson.devDependencies?.[thisPackageName]) continue
-    packages.push({
+    if (!packageJson.name || packageJson.private) continue
+    const pkg = {
       packageName: packageJson.name,
       packageRootDir,
       packageRootDirRelative: path.dirname(filePathRelative),
-    })
+    }
+    if (hasReleaseScript(packageJson)) packages.push(pkg)
+    else if (pkg.packageRootDirRelative === '.') rootPackage = pkg
   }
-  assertUsage(packages.length > 0, `No package.json has ${thisPackageName} in its devDependencies.`)
+  if (packages.length === 0 && rootPackage) packages.push(rootPackage)
+  assertUsage(
+    packages.length > 0,
+    `No package to release: add a script that runs release-me to the package.json of each package to release (e.g. ${pc.bold(
+      '"release": "release-me patch"',
+    )}).`,
+  )
   return packages
+}
+/** Whether one of the scripts runs release-me, e.g. `"release": "release-me patch"` */
+function hasReleaseScript(packageJson: PackageJson): boolean {
+  return Object.values(packageJson.scripts ?? {}).some(
+    (script) => typeof script === 'string' && script.split(/[\s;&|()]+/).includes('release-me'),
+  )
 }
 
 function logBoolean(bool: boolean): 'yes' | 'no' {
