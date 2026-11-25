@@ -23,22 +23,25 @@ import {
 } from '../releaseMe.ts'
 
 async function ciPublish() {
+  const monorepoRootDir = await getMonorepoRootDir()
   // E.g. after upgrading release-me without re-running `$ pnpm exec release-me init`
-  if (!isReleaseWorkflowUpToDate(getEnv('GITHUB_WORKSPACE'))) fail(releaseWorkflowOutdated)
+  if (!isReleaseWorkflowUpToDate(monorepoRootDir)) fail(releaseWorkflowOutdated)
   // Stable release: its Git tag (`v1.2.3` or `some-package@1.2.3`). Commit release: empty.
   const tag = getEnv('TAG')
-  const monorepoRootDir = await getMonorepoRootDir()
+  const isCommitRelease = !tag
   const packages = getReleaseMePackages(getFilesMonorepoPackageJson(await getFilesInsideDir(monorepoRootDir)))
 
-  const toPublish = tag ? [getTaggedPackage(tag, packages)] : await prepareCommitRelease(packages, getEnv('PACKAGE'))
+  const toPublish = isCommitRelease
+    ? await prepareCommitRelease(packages, getEnv('PACKAGE'))
+    : [getTaggedPackage(tag, packages)]
   for (const { packageRootDir } of toPublish) {
     await build(packageRootDir)
   }
   const published: string[] = []
   for (const pkg of toPublish) {
-    published.push(await publish(pkg, !tag))
+    published.push(await publish(pkg, isCommitRelease))
   }
-  writeSummary(published, !tag)
+  writeSummary(published, isCommitRelease)
 }
 
 /** The package that the Git tag releases */
