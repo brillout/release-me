@@ -12,6 +12,7 @@ import {
   getPackageJson,
   getReleaseMePackages,
   type PackageJson,
+  type ReleaseMePackage,
 } from '../releaseMe.ts'
 import { assertUsage, logTitle, run } from '../utils.ts'
 
@@ -19,7 +20,7 @@ async function init() {
   const monorepoRootDir = await getMonorepoRootDir()
   assertInstalledAtRoot(monorepoRootDir)
   assertPackageManager(monorepoRootDir)
-  const packages = await getPublishedPackages(monorepoRootDir)
+  const packages = getReleaseMePackages(await getFilesInsideDir(monorepoRootDir))
 
   const status = writeReleaseWorkflow(monorepoRootDir)
   logTitle('GitHub Action', true)
@@ -59,14 +60,14 @@ async function commitReleaseWorkflow(monorepoRootDir: string, status: 'created' 
 }
 
 /** The steps to set up npm's trusted publishing */
-async function logNpmSetup(monorepoRootDir: string, packages: PublishedPackage[]) {
+async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[]) {
   const repo = await getGitHubRepo(monorepoRootDir)
   const [owner, repoName] = repo ? repo.split('/') : []
   console.log(
     `2. On npmjs.com, go to ${packages.length === 1 ? "the package's" : "each package's"} ${pc.bold('Settings')}:`,
   )
-  for (const { name } of packages) {
-    console.log(`   ${pc.underline(`https://www.npmjs.com/package/${name}/access`)}`)
+  for (const { packageName } of packages) {
+    console.log(`   ${pc.underline(`https://www.npmjs.com/package/${packageName}/access`)}`)
   }
   console.log(
     `   and, under ${pc.bold('Trusted Publisher')}, press ${pc.bold('GitHub Actions')} to set up a connection:`,
@@ -80,29 +81,18 @@ async function logNpmSetup(monorepoRootDir: string, packages: PublishedPackage[]
   console.log(`   ${pc.dim("(A new connection expires if it isn't used within 2 days.)")}`)
 
   // npm's trusted publishing requires package.json#repository to match the GitHub repository
-  for (const { name, repository } of packages) {
+  for (const { packageName, packageRootDir } of packages) {
+    const repository = getRepository(getPackageJson(packageRootDir).packageJson.repository)
     if (!repo || repository?.toLowerCase() === repo.toLowerCase()) continue
     console.log()
     console.log(
       pc.yellow(
-        `Warning: set ${pc.cyan(name)}'s ${pc.bold('package.json#repository')} to ${pc.bold(
+        `Warning: set ${pc.cyan(packageName)}'s ${pc.bold('package.json#repository')} to ${pc.bold(
           `https://github.com/${repo}`,
         )} — npm's trusted publishing requires it to match the GitHub repository.`,
       ),
     )
   }
-}
-
-type PublishedPackage = Awaited<ReturnType<typeof getPublishedPackages>>[number]
-/** The packages published by the GitHub Action */
-async function getPublishedPackages(monorepoRootDir: string) {
-  return getReleaseMePackages(await getFilesInsideDir(monorepoRootDir)).map(({ packageRootDir }) => {
-    const { packageJson } = getPackageJson(packageRootDir)
-    return {
-      name: packageJson.name!,
-      repository: getRepository(packageJson.repository),
-    }
-  })
 }
 
 /** package.json#repository => `owner/repo` */
