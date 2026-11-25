@@ -1,5 +1,4 @@
 export { getCommitReleaseVersion }
-export { isCommitReleaseVersion }
 export { parseReleaseTag }
 
 // Release tags and commit release versions, used by both release-me's CLI and the GitHub Action.
@@ -23,7 +22,4 @@ function parseReleaseTag(tag: string): { packageName: string | null; version: st
 function getCommitReleaseVersion(version: string, commitHash: string): string {
   // Align with GitHub: GitHub (always?) picks the first 7 characters.
   return `${version}-commit-${commitHash.slice(0, 7)}`
-}
-function isCommitReleaseVersion(version: string): boolean {
-  return /^\d+\.\d+\.\d+-(?:[0-9A-Za-z.-]+-)?commit-[0-9a-f]{7}$/.test(version)
 }
