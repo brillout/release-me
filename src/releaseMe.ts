@@ -528,8 +528,8 @@ function getFilesMonorepoPackageJson(filesMonorepo: Files): Files {
   return filesMonorepoPackageJson
 }
 
-/** @param ciPackageName The released package, if it's published by the GitHub Action (i.e. after the push) */
-async function bumpPnpmLockFile(monorepoRootDir: string, ciPackageName: string | null) {
+/** @param unpublishedPackageName The released package, if it isn't on npm yet (the GitHub Action publishes it after the push) */
+async function bumpPnpmLockFile(monorepoRootDir: string, unpublishedPackageName: string | null) {
   logTitle('Bump pnpm-lock.yaml')
   try {
     await run(
@@ -545,11 +545,10 @@ async function bumpPnpmLockFile(monorepoRootDir: string, ciPackageName: string |
     )
   } catch (err) {
     if (!(err as Error).message.includes('ERR_PNPM_PEER_DEP_ISSUES')) {
-      if (ciPackageName) {
-        // Unlike when publishing locally, the new version isn't on npm yet
+      if (unpublishedPackageName) {
         console.log(
           pc.yellow(
-            `Hint: the new version of ${ciPackageName} isn't on npm yet (the GitHub Action publishes it after the release is pushed), so the packages of the monorepo that depend on ${ciPackageName} must get it from the workspace (with the ${pc.bold(
+            `Hint: the new version of ${unpublishedPackageName} isn't on npm yet (the GitHub Action publishes it after the release is pushed), so the packages of the monorepo that depend on ${unpublishedPackageName} must get it from the workspace (with the ${pc.bold(
               'workspace:',
             )} protocol, or with the pnpm setting ${pc.bold('link-workspace-packages')}).`,
           ),
