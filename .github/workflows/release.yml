@@ -2,7 +2,7 @@
 # Don't modify this file: it's a copy of https://github.com/brillout/release-me/blob/main/.github/workflows/release.yml created and updated by `$ pnpm exec release-me init`.
 # SECURITY:
 # - Only users with write access can trigger this workflow: by pushing a release tag, or by pressing "Run workflow".
-# - No caches: the job `pack` (which runs the released commit's code) could poison a cache restored by the other jobs.
+# - No caches: the job `pack` (which runs the released commit's code) could poison a cache restored by another release.
 name: Release
 on:
   push:
@@ -24,12 +24,9 @@ jobs:
       tag: ${{ steps.resolve.outputs.tag }}
       provenance: ${{ steps.resolve.outputs.provenance }}
     steps:
-      # Checks out the workflow's own commit: the pushed tag, or the branch (or tag) selected in "Use workflow from"
+      # Checks out the pushed tag or the "Use workflow from" commit (SAFE)
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version: lts/*
       # SECURITY: runs no install scripts (neither the dependencies' nor the root package.json's)
       - run: pnpm install --ignore-scripts
       - id: resolve
@@ -43,16 +40,13 @@ jobs:
     permissions:
       contents: read
     steps:
-      # Checks out the released commit: the release tag (stable release), or the commit, branch or pull request entered in "Run workflow" (commit release, default: the branch selected in "Use workflow from")
+      # Checks out the released commit (UNSAFE)
       - uses: actions/checkout@v7
         with:
           ref: ${{ needs.resolve.outputs.ref }}
           # SECURITY: don't store the GitHub token in .git/config, where the released commit's code could read it
           persist-credentials: false
       - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version: lts/*
       - run: pnpm install
       - run: pnpm exec release-me ci-internal-cmd-pack
         # SECURITY: the inputs are passed as env variables, instead of being inserted into `run:` (shell injection)
@@ -77,12 +71,9 @@ jobs:
       contents: read
       id-token: write
     steps:
-      # Checks out the workflow's own commit: the pushed tag, or the branch (or tag) selected in "Use workflow from"
+      # Checks out the pushed tag or the "Use workflow from" commit (SAFE)
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version: lts/*
       # Trusted publishing requires npm >= 11.5.1, and removing a dist-tag requires npm >= 11.21.0
       - run: npm install --global npm@latest
       # SECURITY: runs no install scripts (neither the dependencies' nor the root package.json's)
