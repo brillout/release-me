@@ -34,15 +34,15 @@
     "typescript": "^7.0.2"
   },
   "bin": "./src/cli.ts",
+  "publishConfig": {
+    "bin": "./dist/cli.js",
+    "access": "public"
+  },
   "files": [
     "dist/",
     ".github/workflows/release.yml"
   ],
   "packageManager": "pnpm@12.23.0",
-  "license": "MIT",
   "type": "module",
-  "publishConfig": {
-    "access": "public",
-    "bin": "./dist/cli.js"
-  }
+  "license": "MIT"
 }
