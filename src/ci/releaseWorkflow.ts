@@ -1,7 +1,5 @@
-export { assertReleaseWorkflowUpToDate }
-export { isReleaseMeWorkflow }
 export { isReleaseWorkflowUpToDate }
-export { readReleaseWorkflow }
+export { publishesViaGitHubAction }
 export { releaseWorkflowFileName }
 export { releaseWorkflowOutdated }
 export { releaseWorkflowPath }
@@ -24,9 +22,13 @@ const releaseWorkflowOutdated = `${releaseWorkflowPath} isn't up-to-date (or was
 
 const thisPackageRootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
-function assertReleaseWorkflowUpToDate(monorepoRootDir: string) {
-  if (isReleaseWorkflowUpToDate(monorepoRootDir)) return
-  throw new Error(pc.red(pc.bold(`Release aborted, because ${releaseWorkflowOutdated}`)))
+/** Whether the repository publishes to npm via the GitHub Action (instead of locally). Throws if release.yml is outdated. */
+function publishesViaGitHubAction(monorepoRootDir: string): boolean {
+  if (!isReleaseMeWorkflow(readReleaseWorkflow(monorepoRootDir))) return false
+  if (!isReleaseWorkflowUpToDate(monorepoRootDir)) {
+    throw new Error(pc.red(pc.bold(`Release aborted, because ${releaseWorkflowOutdated}`)))
+  }
+  return true
 }
 
 function isReleaseWorkflowUpToDate(monorepoRootDir: string): boolean {

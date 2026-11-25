@@ -1,6 +1,5 @@
 export { getGitHubRepo }
 export { parseGitHubRepo }
-export { publishesViaGitHubAction }
 export { triggerCommitRelease }
 export { triggerStableRelease }
 
@@ -10,20 +9,7 @@ export { triggerStableRelease }
 import execa from 'execa'
 import pc from '@brillout/picocolors'
 import { assertUsage, logDetail, logTitle, run } from '../utils.ts'
-import {
-  assertReleaseWorkflowUpToDate,
-  isReleaseMeWorkflow,
-  readReleaseWorkflow,
-  releaseWorkflowFileName,
-  releaseWorkflowPath,
-} from './releaseWorkflow.ts'
-
-/** Whether the repository publishes to npm via the GitHub Action (instead of locally). Throws if release.yml is outdated. */
-function publishesViaGitHubAction(monorepoRootDir: string): boolean {
-  if (!isReleaseMeWorkflow(readReleaseWorkflow(monorepoRootDir))) return false
-  assertReleaseWorkflowUpToDate(monorepoRootDir)
-  return true
-}
+import { releaseWorkflowFileName, releaseWorkflowPath } from './releaseWorkflow.ts'
 
 /** @param packageSpec The released package, e.g. `vike@0.4.271` */
 async function triggerStableRelease(gitTag: string, packageSpec: string) {
