@@ -5,7 +5,7 @@ export { init }
 import * as path from 'path'
 import pc from '@brillout/picocolors'
 import { getGitHubRepo, parseGitHubRepo } from './githubAction.ts'
-import { releaseWorkflow, releaseWorkflowPath, writeReleaseWorkflow } from './releaseWorkflow.ts'
+import { releaseWorkflowFileName, releaseWorkflowPath, writeReleaseWorkflow } from './releaseWorkflow.ts'
 import {
   assertInstalledAtRoot,
   findBoilerplatePacakge,
@@ -76,10 +76,11 @@ async function logNpmSetup(monorepoRootDir: string, packages: PublishedPackage[]
   console.log(
     `   and, under ${pc.bold('Trusted Publisher')}, press ${pc.bold('GitHub Actions')} to set up a connection:`,
   )
+  // `$ npm dist-tag rm` removes the dist-tag that `$ npm publish` requires for commit releases (see ./ci-internal-cmd-publish.ts)
   console.log(
     `   - ${pc.bold(owner ?? '<owner>')} / ${pc.bold(repoName ?? '<repo>')}, workflow filename ${pc.bold(
-      releaseWorkflow.fileName,
-    )}, ${releaseWorkflow.npmAllowedActions.map((a) => pc.bold(`Allow ${a}`)).join(' and ')}`,
+      releaseWorkflowFileName,
+    )}, ${pc.bold('Allow npm publish')} and ${pc.bold('Allow npm dist-tag')}`,
   )
   console.log(`   ${pc.dim("(A new connection expires if it isn't used within 2 days.)")}`)
 

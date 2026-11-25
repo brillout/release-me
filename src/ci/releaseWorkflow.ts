@@ -2,7 +2,7 @@ export { assertReleaseWorkflowUpToDate }
 export { isReleaseMeWorkflow }
 export { isReleaseWorkflowUpToDate }
 export { readReleaseWorkflow }
-export { releaseWorkflow }
+export { releaseWorkflowFileName }
 export { releaseWorkflowOutdated }
 export { releaseWorkflowPath }
 export { writeReleaseWorkflow }
@@ -18,12 +18,8 @@ import assert from 'assert'
 import pc from '@brillout/picocolors'
 
 const initCommand = '$ pnpm exec release-me init'
-const releaseWorkflow = {
-  fileName: 'release.yml',
-  // `$ npm dist-tag rm` removes the dist-tag that `$ npm publish` requires for commit releases
-  npmAllowedActions: ['npm publish', 'npm dist-tag'],
-}
-const releaseWorkflowPath = `.github/workflows/${releaseWorkflow.fileName}`
+const releaseWorkflowFileName = 'release.yml'
+const releaseWorkflowPath = `.github/workflows/${releaseWorkflowFileName}`
 const releaseWorkflowOutdated = `${releaseWorkflowPath} isn't up-to-date (or was modified): run ${initCommand} and push the commit it makes.`
 
 const thisPackageRootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..')

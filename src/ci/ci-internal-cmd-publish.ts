@@ -8,6 +8,7 @@ import * as path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { isCommitReleaseVersion, parseReleaseTag } from './versions.ts'
 import { fail, getEnv } from './utils.ts'
+import { releaseWorkflowFileName } from './releaseWorkflow.ts'
 
 type Package = { tarball: string; name: string; version: string; hasPublishConfigTag: boolean }
 type ToPublish = Package & {
@@ -38,7 +39,7 @@ function ciPublish() {
           npm(['dist-tag', 'rm', p.name, p.tag!])
         } catch {
           console.log(
-            `::warning::Couldn't remove the npm dist-tag ${p.tag} of ${p.name}: on npmjs.com, enable "Allow npm dist-tag" for the trusted publisher release.yml of ${p.name}.`,
+            `::warning::Couldn't remove the npm dist-tag ${p.tag} of ${p.name}: on npmjs.com, enable "Allow npm dist-tag" for the trusted publisher ${releaseWorkflowFileName} of ${p.name}.`,
           )
         }
       }

@@ -16,7 +16,7 @@ import {
   assertReleaseWorkflowUpToDate,
   isReleaseMeWorkflow,
   readReleaseWorkflow,
-  releaseWorkflow,
+  releaseWorkflowFileName,
   releaseWorkflowPath,
 } from './releaseWorkflow.ts'
 
@@ -44,7 +44,7 @@ function logCiPublish(ciWorkflow: CiWorkflow, gitTag: string, published: string[
   const workflowLink = getWorkflowLink(ciWorkflow)
   logTitle('npm publish')
   console.log(
-    `GitHub Action ${pc.bold(releaseWorkflow.fileName)} will publish ${published
+    `GitHub Action ${pc.bold(releaseWorkflowFileName)} will publish ${published
       .map((p) => pc.cyan(p))
       .join(' and ')} to npm: ${workflowLink}`,
   )
@@ -61,7 +61,6 @@ async function triggerCommitRelease(
 ) {
   logTitle('Trigger commit release')
   const { repo } = ciWorkflow
-  const { fileName } = releaseWorkflow
   assertUsage(
     repo,
     `Couldn't determine the GitHub repository of ${pc.cyan('origin')} ${logDetail('$ git remote get-url origin')}.`,
@@ -77,7 +76,9 @@ async function triggerCommitRelease(
     const isMissingCommit = !!output?.includes('(HTTP 422)')
     const reason =
       code === 'ENOENT'
-        ? `triggering the GitHub Action ${fileName} requires the GitHub CLI ${pc.cyan('gh')} (https://cli.github.com)`
+        ? `triggering the GitHub Action ${releaseWorkflowFileName} requires the GitHub CLI ${pc.cyan(
+            'gh',
+          )} (https://cli.github.com)`
         : isMissingCommit
           ? `GitHub (${repo}) doesn't have the commit ${commitHash.slice(0, 7)} — push it first`
           : `${pc.cyan('gh')} failed`
@@ -99,7 +100,7 @@ async function triggerCommitRelease(
     'gh',
     'workflow',
     'run',
-    fileName,
+    releaseWorkflowFileName,
     '--repo',
     repo,
     '-f',
@@ -108,7 +109,7 @@ async function triggerCommitRelease(
     `package=${packageName}`,
   ])
   console.log(
-    `GitHub Action ${pc.bold(fileName)} will publish ${pc.cyan(
+    `GitHub Action ${pc.bold(releaseWorkflowFileName)} will publish ${pc.cyan(
       `${packageName}@${versionNew}`,
     )} to npm: ${workflowLink}`,
   )
@@ -140,5 +141,5 @@ function parseGitHubRepo(url: string): string | null {
 function getWorkflowLink(ciWorkflow: CiWorkflow): string {
   const { repo } = ciWorkflow
   if (!repo) return pc.bold(releaseWorkflowPath)
-  return pc.underline(`https://github.com/${repo}/actions/workflows/${releaseWorkflow.fileName}`)
+  return pc.underline(`https://github.com/${repo}/actions/workflows/${releaseWorkflowFileName}`)
 }

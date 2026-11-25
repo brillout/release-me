@@ -30,7 +30,7 @@ import {
   logCiPublish,
   triggerCommitRelease,
 } from './ci/githubAction.ts'
-import { releaseWorkflow, releaseWorkflowPath } from './ci/releaseWorkflow.ts'
+import { releaseWorkflowFileName, releaseWorkflowPath } from './ci/releaseWorkflow.ts'
 import { getCommitReleaseVersion } from './ci/versions.ts'
 import * as path from 'path'
 /*
@@ -811,7 +811,7 @@ function logAnalysis(
   console.log(
     `Publish to npm: ${
       ciWorkflow
-        ? `GitHub Action ${pc.bold(releaseWorkflow.fileName)} ${logDetail(releaseWorkflowPath)}`
+        ? `GitHub Action ${pc.bold(releaseWorkflowFileName)} ${logDetail(releaseWorkflowPath)}`
         : `locally ${logDetail('$ pnpm publish')}`
     }`,
   )
