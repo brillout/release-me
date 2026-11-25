@@ -23,7 +23,7 @@ import * as fs from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
 import { runCommand, assertUsage, logDetail, logTitle, run, run__return } from './utils.ts'
-import { type CiWorkflow, getCiWorkflow, triggerCommitRelease, triggerStableRelease } from './ci/githubAction.ts'
+import { publishesViaGitHubAction, triggerCommitRelease, triggerStableRelease } from './ci/githubAction.ts'
 import { releaseWorkflowFileName, releaseWorkflowPath } from './ci/releaseWorkflow.ts'
 import { getCommitReleaseVersion } from './ci/versions.ts'
 import * as path from 'path'
@@ -63,8 +63,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   const monorepoRootDir = await getMonorepoRootDir()
   assertInstalledAtRoot(monorepoRootDir)
 
-  // The GitHub Action that publishes to npm (if the repository uses it)
-  const ciWorkflow = await getCiWorkflow(monorepoRootDir)
+  const viaGitHubAction = publishesViaGitHubAction(monorepoRootDir)
 
   await abortIfUncommitedChanges(monorepoRootDir)
 
@@ -84,13 +83,13 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   const monorepoInfo = analyzeMonorepo(filesMonorepoPackageJson, packageRootDir, packageName)
 
-  logAnalysis(monorepoInfo, monorepoRootDir, packageRootDir, ciWorkflow)
+  logAnalysis(monorepoInfo, monorepoRootDir, packageRootDir, viaGitHubAction)
 
   if (!isCommitRelease && !args.force) await abortIfNotLatestMainCommit()
 
-  if (isCommitRelease && ciWorkflow) {
+  if (isCommitRelease && viaGitHubAction) {
     // The GitHub Action builds & publishes the commit release: there is nothing to do locally.
-    await triggerCommitRelease(ciWorkflow, packageName, versionNew, commitHashBegin)
+    await triggerCommitRelease(packageName, versionNew, commitHashBegin)
     return
   }
 
@@ -164,13 +163,13 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   // =============================
 
   // With a GitHub Action, it publishes to npm upon `git push` (see below).
-  if (!ciWorkflow) await npmPublish(packageRootDir)
+  if (!viaGitHubAction) await npmPublish(packageRootDir)
 
   // ===================
   // Bump pnpm-lock.yaml
   // ===================
 
-  await bumpPnpmLockFile(monorepoRootDir, ciWorkflow ? packageName : null)
+  await bumpPnpmLockFile(monorepoRootDir, viaGitHubAction ? packageName : null)
 
   // =============================
   // Git commit & push
@@ -179,10 +178,10 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   const gitTag = getGitTag(versionNew, gitTagPrefix)
   await makeGitCommit(monorepoRootDir, gitTag)
   await makeGitTag(gitTag)
-  if (!ciWorkflow) {
+  if (!viaGitHubAction) {
     await gitPush()
   } else {
-    await triggerStableRelease(ciWorkflow, gitTag, `${packageName}@${versionNew}`)
+    await triggerStableRelease(gitTag, `${packageName}@${versionNew}`)
   }
 }
 
@@ -758,13 +757,13 @@ function logAnalysis(
   monorepoInfo: MonorepoInfo,
   monorepoRootDir: string,
   packageRootDir: string,
-  ciWorkflow: CiWorkflow | null,
+  viaGitHubAction: boolean,
 ) {
   logTitle('Analysis result', true)
   console.log(`Package root directory: ${pc.bold(packageRootDir)} ${logDetail('process.cwd()')}`)
   console.log(
     `Publish to npm: ${
-      ciWorkflow
+      viaGitHubAction
         ? `GitHub Action ${pc.bold(releaseWorkflowFileName)} ${logDetail(releaseWorkflowPath)}`
         : `locally ${logDetail('$ pnpm publish')}`
     }`,

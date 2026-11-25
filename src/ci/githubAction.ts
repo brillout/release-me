@@ -1,9 +1,8 @@
-export { getCiWorkflow }
 export { getGitHubRepo }
 export { parseGitHubRepo }
+export { publishesViaGitHubAction }
 export { triggerCommitRelease }
 export { triggerStableRelease }
-export type { CiWorkflow }
 
 // In repositories that use the GitHub Action (see ./releaseWorkflow.ts), `$ pnpm exec release-me` triggers the GitHub
 // Action instead of publishing to npm: it pushes the release tag (stable release) or runs the workflow (commit release).
@@ -19,26 +18,21 @@ import {
   releaseWorkflowPath,
 } from './releaseWorkflow.ts'
 
-type CiWorkflow = {
-  /** GitHub repository, e.g. `vikejs/vike` */
-  repo: string | null
-}
-
 /** Whether the repository publishes to npm via the GitHub Action (instead of locally). Throws if release.yml is outdated. */
-async function getCiWorkflow(monorepoRootDir: string): Promise<CiWorkflow | null> {
-  if (!isReleaseMeWorkflow(readReleaseWorkflow(monorepoRootDir))) return null
+function publishesViaGitHubAction(monorepoRootDir: string): boolean {
+  if (!isReleaseMeWorkflow(readReleaseWorkflow(monorepoRootDir))) return false
   assertReleaseWorkflowUpToDate(monorepoRootDir)
-  return { repo: await getGitHubRepo(monorepoRootDir) }
+  return true
 }
 
 /** @param packageSpec The released package, e.g. `vike@0.4.271` */
-async function triggerStableRelease(ciWorkflow: CiWorkflow, gitTag: string, packageSpec: string) {
+async function triggerStableRelease(gitTag: string, packageSpec: string) {
   logTitle('Git push')
   // - Push the release commit and its tag atomically: the tag triggers the GitHub Action that publishes to npm.
   // - Only push this one tag: GitHub doesn't trigger any workflow when more than three tags are pushed at once.
   await run(['git', 'push', '--atomic', 'origin', 'HEAD', `refs/tags/${gitTag}`])
   logTitle('npm publish')
-  const workflowLink = getWorkflowLink(ciWorkflow)
+  const workflowLink = getWorkflowLink(await getGitHubRepo())
   logWillPublish(
     packageSpec,
     workflowLink,
@@ -46,19 +40,14 @@ async function triggerStableRelease(ciWorkflow: CiWorkflow, gitTag: string, pack
   )
 }
 
-async function triggerCommitRelease(
-  ciWorkflow: CiWorkflow,
-  packageName: string,
-  versionNew: string,
-  commitHash: string,
-) {
+async function triggerCommitRelease(packageName: string, versionNew: string, commitHash: string) {
   logTitle('Trigger commit release')
-  const { repo } = ciWorkflow
+  const repo = await getGitHubRepo()
   assertUsage(
     repo,
     `Couldn't determine the GitHub repository of ${pc.cyan('origin')} ${logDetail('$ git remote get-url origin')}.`,
   )
-  const workflowLink = getWorkflowLink(ciWorkflow)
+  const workflowLink = getWorkflowLink(repo)
   await assertCommitOnGitHub(repo, commitHash, workflowLink)
   await run([
     'gh',
@@ -117,7 +106,8 @@ function logWillPublish(packageSpec: string, workflowLink: string, hint: string)
   console.log(pc.dim(`(${hint})`))
 }
 
-async function getGitHubRepo(cwd: string): Promise<string | null> {
+/** The GitHub repository of `origin`, e.g. `vikejs/vike` */
+async function getGitHubRepo(cwd?: string): Promise<string | null> {
   let remoteUrl: string
   try {
     remoteUrl = (await execa('git', ['remote', 'get-url', 'origin'], { cwd })).stdout.trim()
@@ -135,8 +125,7 @@ function parseGitHubRepo(url: string): string | null {
   return match?.[1] ?? null
 }
 
-function getWorkflowLink(ciWorkflow: CiWorkflow): string {
-  const { repo } = ciWorkflow
+function getWorkflowLink(repo: string | null): string {
   if (!repo) return pc.bold(releaseWorkflowPath)
   return pc.underline(`https://github.com/${repo}/actions/workflows/${releaseWorkflowFileName}`)
 }
