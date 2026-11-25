@@ -181,28 +181,26 @@ Instead of publishing from your machine (which requires npm 2FA), a GitHub Actio
    name: Release
    on:
      push:
-       tags:
-         - 'v[0-9]*' # v1.2.3
-         - '**@[0-9]*' # some-package@1.2.3, @some-scope/some-package@1.2.3
+       tags: ['v[0-9]*', '**@[0-9]*'] # v1.2.3, some-package@1.2.3
      workflow_dispatch:
        inputs:
-         commit:
-           description: 'Commit to release as x.y.z-commit-<hash>: SHA, branch, or refs/pull/<number>/head (empty: the selected branch)'
-           required: false
-         package:
-           description: 'Package to release (empty: all packages using @brillout/release-me)'
-           required: false
+         commit: { description: 'Commit: SHA, branch, or refs/pull/<number>/head (default: the selected branch)' }
+         package: { description: 'Package (default: all)' }
+   permissions:
+     contents: read
+     id-token: write
    jobs:
      release:
        uses: brillout/release-me/.github/workflows/publish.yml@main
-       permissions:
-         contents: read
-         id-token: write
+   ```
+   Everything else lives in the reusable workflow [`publish.yml`](.github/workflows/publish.yml), which reads the `commit` and `package` inputs directly. The rest has to be in your repository: GitHub only reads triggers (`on:`) from the repository's own workflow files, and npm checks this file's name (`release.yml`) when publishing.
+
+   Optionally, set the Node.js and pnpm versions used for building (defaults: `lts/*` and `package.json#packageManager`):
+   ```yaml
+       uses: brillout/release-me/.github/workflows/publish.yml@main
        with:
-         commit: ${{ inputs.commit }}
-         package: ${{ inputs.package }}
-         # node-version: 24 # Default: lts/*
-         # pnpm-version: 10 # Default: package.json#packageManager
+         node-version: 24
+         pnpm-version: 10
    ```
 1. On [npmjs.com](https://www.npmjs.com), for each package (including the boilerplate `create-${packageName}` if you have one), go to **Settings** > **Trusted publishing** > **GitHub Actions** and set:
    - **Organization or user** and **Repository**: your GitHub repository (it must match `package.json#repository`).

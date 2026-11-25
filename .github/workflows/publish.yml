@@ -1,6 +1,9 @@
 # Reusable workflow that publishes to npm the packages released with @brillout/release-me — without npm token, using npm's trusted publishing.
 # - Stable release: `$ pnpm exec release-me patch` (or minor/major/v1.2.3) pushes a release tag (`v1.2.3` or `some-package@1.2.3`), which triggers the calling workflow.
-# - Commit release: `$ pnpm exec release-me commit` (or the "Run workflow" button on GitHub) triggers the calling workflow via `workflow_dispatch`.
+# - Commit release: `$ pnpm exec release-me commit` (or the "Run workflow" button on GitHub) triggers the calling workflow via `workflow_dispatch`, with the inputs:
+#   - `commit`: the commit to release (SHA, branch, tag, or refs/pull/<number>/head). Default: the commit the workflow runs on.
+#   - `package`: the package to release. Default: all packages that have @brillout/release-me in their devDependencies.
+#   They're read from the caller's event (`github.event.inputs`), so the caller doesn't have to pass them with `with:`.
 # Setup: https://github.com/brillout/release-me#github-action
 
 name: Publish to npm
@@ -8,14 +11,6 @@ name: Publish to npm
 on:
   workflow_call:
     inputs:
-      commit:
-        description: 'Commit release: the commit to release (SHA, branch, tag, or refs/pull/<number>/head). Default: the commit the workflow runs on.'
-        type: string
-        default: ''
-      package:
-        description: 'Commit release: the package to release. Default: all packages that have @brillout/release-me in their devDependencies.'
-        type: string
-        default: ''
       node-version:
         description: 'Node.js version used to build the packages.'
         type: string
@@ -37,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.commit || github.sha }}
+          ref: ${{ github.event.inputs.commit || github.sha }}
           persist-credentials: false
       - uses: pnpm/action-setup@v6
         with:
@@ -53,7 +48,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
-          PACKAGE: ${{ inputs.package }}
+          PACKAGE: ${{ github.event.inputs.package }}
           OUT_DIR: ${{ runner.temp }}/release-me-packages
         run: |
           if [ "$EVENT_NAME" = push ]; then
@@ -105,7 +100,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
-          COMMIT_INPUT: ${{ inputs.commit }}
+          COMMIT_INPUT: ${{ github.event.inputs.commit }}
         run: |
           node <<'EOF'
           const fs = require('fs')
