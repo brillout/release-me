@@ -51,14 +51,14 @@ jobs:
       - run: pnpm exec release-me ci-internal-cmd-pack
         # SECURITY: the inputs are passed as env variables, instead of being inserted into `run:` (shell injection)
         env:
-          PACKAGES_DIR: release-me-packages
+          PACKED_PACKAGES_DIR: packed-packages/
           TAG: ${{ needs.resolve.outputs.tag }}
           PACKAGE: ${{ inputs.package }}
       # SECURITY: the tarballs are the only thing this job passes to the job `publish`
       - uses: actions/upload-artifact@v7
         with:
-          name: release-me-packages
-          path: release-me-packages/
+          name: packed-packages-dir
+          path: packed-packages/
 
   publish:
     # Publishes the tarballs made by the job `pack`.
@@ -80,10 +80,10 @@ jobs:
       - run: pnpm install --ignore-scripts
       - uses: actions/download-artifact@v8
         with:
-          name: release-me-packages
-          path: release-me-packages
+          name: packed-packages-dir
+          path: packed-packages/
       - run: pnpm exec release-me ci-internal-cmd-publish
         env:
-          PACKAGES_DIR: release-me-packages
+          PACKED_PACKAGES_DIR: packed-packages/
           TAG: ${{ needs.resolve.outputs.tag }}
           PROVENANCE: ${{ needs.resolve.outputs.provenance }}

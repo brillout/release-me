@@ -24,7 +24,7 @@ import {
 
 async function ciPack() {
   // Directory where the tarballs are written
-  const outDir = path.resolve(getEnv('PACKAGES_DIR'))
+  const outDir = path.resolve(getEnv('PACKED_PACKAGES_DIR'))
   // Stable release: its Git tag (`v1.2.3` or `some-package@1.2.3`). Commit release of HEAD: empty.
   const tag = getEnv('TAG')
   // Commit release: only release this package (empty: all packages)

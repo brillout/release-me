@@ -20,7 +20,7 @@ type ToPublish = Package & {
 }
 
 function ciPublish() {
-  const packages = readPackages(getEnv('PACKAGES_DIR'))
+  const packages = readPackages(getEnv('PACKED_PACKAGES_DIR'))
   const tag = getEnv('TAG')
   const toPublish = tag ? getStableRelease(packages, tag, getEnv('PROVENANCE') === 'true') : getCommitRelease(packages)
 
