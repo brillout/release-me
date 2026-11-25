@@ -4,7 +4,6 @@ export { init }
 
 import * as path from 'path'
 import pc from '@brillout/picocolors'
-import { getReleaseMePackages } from './ciPack.js'
 import { getGitHubRepo, parseGitHubRepo, releaseWorkflow, writeReleaseWorkflow } from './githubAction.js'
 import {
   findBoilerplatePacakge,
@@ -12,6 +11,7 @@ import {
   getFilesMonorepoPackageJson,
   getMonorepoRootDir,
   getPackageJson,
+  getReleaseMePackages,
   logTitle,
   run,
 } from './releaseMe.js'

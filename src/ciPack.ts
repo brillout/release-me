@@ -1,6 +1,4 @@
 export { ciPack }
-export { getReleaseMePackages }
-export type { CiPackArgs }
 
 // `$ release-me ci-pack` is run by the reusable workflow .github/workflows/publish.yml (its job that doesn't have permission to publish to npm):
 // - It builds and packs the packages to publish.
@@ -19,13 +17,14 @@ import {
   getFilesMonorepoPackageJson,
   getMonorepoRootDir,
   getPackageJson,
+  getReleaseMePackages,
   getVersion,
   logTitle,
   run,
   thisPackageName,
   updatePackageJsonVersion,
   updateVersionMacro,
-  type Files,
+  type ReleaseMePackage,
 } from './releaseMe.js'
 
 type CiPackArgs = {
@@ -36,7 +35,6 @@ type CiPackArgs = {
   /** Commit release: only release this package (default: all packages that use release-me) */
   packageName?: string
 }
-type ReleaseMePackage = { packageName: string; packageRootDir: string }
 
 async function ciPack({ target, outDir, packageName }: CiPackArgs) {
   outDir = path.resolve(outDir)
@@ -92,18 +90,6 @@ async function ciPack({ target, outDir, packageName }: CiPackArgs) {
     // `$ pnpm pack` replaces `workspace:` and `catalog:` dependency versions
     await run(['pnpm', 'pack', '--pack-destination', outDir], { cwd: packageRootDir })
   }
-}
-
-function getReleaseMePackages(filesMonorepoPackageJson: Files): ReleaseMePackage[] {
-  const packages: ReleaseMePackage[] = []
-  for (const { filePathAbsolute } of filesMonorepoPackageJson) {
-    const packageRootDir = path.dirname(filePathAbsolute)
-    const { packageJson } = getPackageJson(packageRootDir)
-    if (!packageJson.name || !packageJson.devDependencies?.[thisPackageName]) continue
-    packages.push({ packageName: packageJson.name, packageRootDir })
-  }
-  assertUsage(packages.length > 0, `No package.json has ${thisPackageName} in its devDependencies.`)
-  return packages
 }
 
 function parseGitTag(gitTag: string, packages: ReleaseMePackage[]): { pkg: ReleaseMePackage; version: string } {

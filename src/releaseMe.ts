@@ -3,7 +3,7 @@ export { releaseTypes }
 export type { CliArgs }
 export type { ReleaseType }
 export type { ReleaseTarget }
-// Used by ./ciPack.ts
+// Used by ./ciPack.ts and ./init.ts
 export { thisPackageName }
 export { build }
 export { findBoilerplatePacakge }
@@ -12,12 +12,13 @@ export { getFilesInsideDir }
 export { getFilesMonorepoPackageJson }
 export { getMonorepoRootDir }
 export { getPackageJson }
+export { getReleaseMePackages }
 export { getVersion }
 export { logTitle }
 export { run }
 export { updatePackageJsonVersion }
 export { updateVersionMacro }
-export type { Files }
+export type { ReleaseMePackage }
 
 import execa from 'execa'
 import * as fs from 'fs'
@@ -972,40 +973,41 @@ async function clean(err: unknown) {
 
 type MonorepoInfo = ReturnType<typeof analyzeMonorepo>
 function analyzeMonorepo(filesMonorepoPackageJson: Files, packageRootDir: string, packageName: string) {
-  let currentPackageFound = false
-  const monorepoPackages: {
-    packageName: string
-    packageRootDirRelative: string
-    isCurrentPackage: boolean
-  }[] = []
-  filesMonorepoPackageJson.forEach((packageJsonFile) => {
-    const packageJsonDir = path.dirname(packageJsonFile.filePathAbsolute)
-    const { packageJson } = getPackageJson(packageJsonDir)
-    assertUsage(
-      !packageJson.dependencies?.[thisPackageName],
-      `${pc.cyan('@brillout/release-me')} shouldn't be inside ${pc.gray(packageJsonDir)}/package.json#${pc.bold(
-        'dependencies',
-      )} as it should be only in package.json#${pc.bold('devDependencies')} instead.`,
-    )
-    if (!packageJson?.name || !packageJson.devDependencies?.[thisPackageName]) return
-    const isCurrentPackage = isSamePath(packageRootDir, packageJsonDir)
-    if (isCurrentPackage) {
-      assert(!currentPackageFound)
-      currentPackageFound = true
-      assert(packageJson.name === packageName)
-    }
-    monorepoPackages.push({
-      packageName: packageJson.name,
-      packageRootDirRelative: path.dirname(packageJsonFile.filePathRelative),
-      isCurrentPackage,
-    })
-  })
-
-  assert(currentPackageFound)
+  const monorepoPackages = getReleaseMePackages(filesMonorepoPackageJson).map((pkg) => ({
+    ...pkg,
+    isCurrentPackage: isSamePath(packageRootDir, pkg.packageRootDir),
+  }))
+  const currentPackages = monorepoPackages.filter((pkg) => pkg.isCurrentPackage)
+  assert(currentPackages.length === 1)
+  assert(currentPackages[0]!.packageName === packageName)
   return {
     hasMultiplePackages: monorepoPackages.length > 1,
     monorepoPackages,
   }
+}
+
+type ReleaseMePackage = ReturnType<typeof getReleaseMePackages>[number]
+/** The packages that use release-me (i.e. that have it in their devDependencies) */
+function getReleaseMePackages(filesMonorepoPackageJson: Files) {
+  const packages: { packageName: string; packageRootDir: string; packageRootDirRelative: string }[] = []
+  for (const { filePathAbsolute, filePathRelative } of filesMonorepoPackageJson) {
+    const packageRootDir = path.dirname(filePathAbsolute)
+    const { packageJson } = getPackageJson(packageRootDir)
+    assertUsage(
+      !packageJson.dependencies?.[thisPackageName],
+      `${pc.cyan('@brillout/release-me')} shouldn't be inside ${pc.gray(packageRootDir)}/package.json#${pc.bold(
+        'dependencies',
+      )} as it should be only in package.json#${pc.bold('devDependencies')} instead.`,
+    )
+    if (!packageJson.name || !packageJson.devDependencies?.[thisPackageName]) continue
+    packages.push({
+      packageName: packageJson.name,
+      packageRootDir,
+      packageRootDirRelative: path.dirname(filePathRelative),
+    })
+  }
+  assertUsage(packages.length > 0, `No package.json has ${thisPackageName} in its devDependencies.`)
+  return packages
 }
 
 function logDetail(msg: string): string {
