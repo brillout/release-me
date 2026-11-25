@@ -23,13 +23,7 @@ import * as fs from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
 import { runCommand, assertUsage, logDetail, logTitle, run, run__return } from './utils.ts'
-import {
-  type CiWorkflow,
-  getCiWorkflow,
-  gitPushReleaseTag,
-  logCiPublish,
-  triggerCommitRelease,
-} from './ci/githubAction.ts'
+import { type CiWorkflow, getCiWorkflow, triggerCommitRelease, triggerStableRelease } from './ci/githubAction.ts'
 import { releaseWorkflowFileName, releaseWorkflowPath } from './ci/releaseWorkflow.ts'
 import { getCommitReleaseVersion } from './ci/versions.ts'
 import * as path from 'path'
@@ -197,15 +191,15 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   if (!ciWorkflow) {
     await gitPush()
   } else {
-    await gitPushReleaseTag(gitTag)
-    const published = [packageRootDir, ...(boilerplatePackageJson ? [path.dirname(boilerplatePackageJson)] : [])].map(
-      (dir) => {
-        const { packageJson } = getPackageJson(dir)
-        return `${packageJson.name}@${packageJson.version}`
-      },
-    )
-    logCiPublish(ciWorkflow, gitTag, published)
+    const published = [packageRootDir, ...(boilerplatePackageJson ? [path.dirname(boilerplatePackageJson)] : [])]
+    await triggerStableRelease(ciWorkflow, gitTag, published.map(getPackageSpec))
   }
+}
+
+/** E.g. `vike@0.4.271` */
+function getPackageSpec(packageRootDir: string): string {
+  const { packageJson } = getPackageJson(packageRootDir)
+  return `${packageJson.name}@${packageJson.version}`
 }
 
 function getPackageName(packageRootDir: string): { packageName: string; packageJsonPath: string } {

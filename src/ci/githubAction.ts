@@ -1,13 +1,12 @@
 export { getCiWorkflow }
 export { getGitHubRepo }
-export { gitPushReleaseTag }
-export { logCiPublish }
 export { parseGitHubRepo }
 export { triggerCommitRelease }
+export { triggerStableRelease }
 export type { CiWorkflow }
 
-// In repositories that use the GitHub Action (see ./releaseWorkflow.ts), `$ pnpm exec release-me` pushes the release
-// (stable release) or triggers the workflow (commit release) instead of publishing to npm.
+// In repositories that use the GitHub Action (see ./releaseWorkflow.ts), `$ pnpm exec release-me` triggers the GitHub
+// Action instead of publishing to npm: it pushes the release tag (stable release) or runs the workflow (commit release).
 
 import execa from 'execa'
 import pc from '@brillout/picocolors'
@@ -32,24 +31,18 @@ async function getCiWorkflow(monorepoRootDir: string): Promise<CiWorkflow | null
   return { repo: await getGitHubRepo(monorepoRootDir) }
 }
 
-async function gitPushReleaseTag(gitTag: string) {
+/** @param published The released packages, e.g. `['vike@0.4.271', 'create-vike@0.0.42']` */
+async function triggerStableRelease(ciWorkflow: CiWorkflow, gitTag: string, published: string[]) {
   logTitle('Git push')
   // - Push the release commit and its tag atomically: the tag triggers the GitHub Action that publishes to npm.
   // - Only push this one tag: GitHub doesn't trigger any workflow when more than three tags are pushed at once.
   await run(['git', 'push', '--atomic', 'origin', 'HEAD', `refs/tags/${gitTag}`])
-}
-
-/** The pushed release tag triggers the GitHub Action, which publishes the packages to npm */
-function logCiPublish(ciWorkflow: CiWorkflow, gitTag: string, published: string[]) {
-  const workflowLink = getWorkflowLink(ciWorkflow)
   logTitle('npm publish')
-  console.log(
-    `GitHub Action ${pc.bold(releaseWorkflowFileName)} will publish ${published
-      .map((p) => pc.cyan(p))
-      .join(' and ')} to npm: ${workflowLink}`,
-  )
-  console.log(
-    pc.dim(`(If it fails, you can retry it: go to ${workflowLink}, press Run workflow, and enter the tag ${gitTag}.)`),
+  const workflowLink = getWorkflowLink(ciWorkflow)
+  logWillPublish(
+    published,
+    workflowLink,
+    `If it fails, you can retry it: go to ${workflowLink}, press Run workflow, and enter the tag ${gitTag}.`,
   )
 }
 
@@ -66,8 +59,28 @@ async function triggerCommitRelease(
     `Couldn't determine the GitHub repository of ${pc.cyan('origin')} ${logDetail('$ git remote get-url origin')}.`,
   )
   const workflowLink = getWorkflowLink(ciWorkflow)
+  await assertCommitOnGitHub(repo, commitHash, workflowLink)
+  await run([
+    'gh',
+    'workflow',
+    'run',
+    releaseWorkflowFileName,
+    '--repo',
+    repo,
+    '-f',
+    `ref=${commitHash}`,
+    '-f',
+    `package=${packageName}`,
+  ])
+  logWillPublish(
+    [`${packageName}@${versionNew}`],
+    workflowLink,
+    `You can also commit-release any commit, including pull requests from forks: go to ${workflowLink} and press Run workflow.`,
+  )
+}
 
-  // The GitHub Action can only release commits that exist on GitHub (any branch, including pull requests from forks)
+/** The GitHub Action can only release commits that exist on GitHub (any branch, including pull requests from forks) */
+async function assertCommitOnGitHub(repo: string, commitHash: string, workflowLink: string) {
   const ghArgs = ['api', `repos/${repo}/commits/${commitHash}`, '--silent']
   try {
     await execa('gh', ghArgs, { all: true })
@@ -95,29 +108,15 @@ async function triggerCommitRelease(
         .join('\n'),
     )
   }
+}
 
-  await run([
-    'gh',
-    'workflow',
-    'run',
-    releaseWorkflowFileName,
-    '--repo',
-    repo,
-    '-f',
-    `ref=${commitHash}`,
-    '-f',
-    `package=${packageName}`,
-  ])
+function logWillPublish(published: string[], workflowLink: string, hint: string) {
   console.log(
-    `GitHub Action ${pc.bold(releaseWorkflowFileName)} will publish ${pc.cyan(
-      `${packageName}@${versionNew}`,
-    )} to npm: ${workflowLink}`,
+    `GitHub Action ${pc.bold(releaseWorkflowFileName)} will publish ${published
+      .map((p) => pc.cyan(p))
+      .join(' and ')} to npm: ${workflowLink}`,
   )
-  console.log(
-    pc.dim(
-      `(You can also commit-release any commit, including pull requests from forks: go to ${workflowLink} and press Run workflow.)`,
-    ),
-  )
+  console.log(pc.dim(`(${hint})`))
 }
 
 async function getGitHubRepo(cwd: string): Promise<string | null> {
