@@ -34,7 +34,7 @@ Used by:
 
 ### Installation
 
-Run `$ pnpm -D @brillout/release-me` and make sure you have the following:
+Run `$ pnpm add -D @brillout/release-me` and make sure you have the following:
 
 ```json5
 // package.json
