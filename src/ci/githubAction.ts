@@ -42,7 +42,7 @@ async function triggerStableRelease(ciWorkflow: CiWorkflow, gitTag: string, pack
   logWillPublish(
     packageSpec,
     workflowLink,
-    `If it fails, you can retry it: go to ${workflowLink}, press Run workflow, and enter the tag ${gitTag}.`,
+    `If it fails, you can retry it: go to ${workflowLink}, press Run workflow, and select the tag ${gitTag} in Use workflow from.`,
   )
 }
 

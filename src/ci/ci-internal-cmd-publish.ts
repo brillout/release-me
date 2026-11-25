@@ -22,7 +22,7 @@ type ToPublish = Package & {
 function ciPublish() {
   const packages = readPackages(getEnv('PACKED_PACKAGES_DIR'))
   const tag = getEnv('TAG')
-  const toPublish = tag ? getStableRelease(packages, tag, getEnv('PROVENANCE') === 'true') : getCommitRelease(packages)
+  const toPublish = tag ? getStableRelease(packages, tag) : getCommitRelease(packages)
 
   const summary: string[] = []
   for (const p of toPublish) {
@@ -70,7 +70,7 @@ function readPackages(packagesDir: string): Package[] {
   return packages
 }
 
-function getStableRelease(packages: Package[], tag: string, provenance: boolean): ToPublish[] {
+function getStableRelease(packages: Package[], tag: string): ToPublish[] {
   const releaseTag = parseReleaseTag(tag)
   if (!releaseTag) fail(`${tag} isn't a release tag.`)
   const { version, packageName } = releaseTag
@@ -80,7 +80,8 @@ function getStableRelease(packages: Package[], tag: string, provenance: boolean)
     fail(`The packages ${list(packages)} don't match the Git tag ${tag}: expected ${expected}.`)
   }
   // npm requires an explicit tag for pre-release versions and for versions lower than the highest published version: use `latest`, as `$ pnpm publish` does (unless package.json#publishConfig.tag is set).
-  return [{ ...p, tag: p.hasPublishConfigTag ? null : 'latest', provenance }]
+  // Provenance: the workflow runs on the tag's commit (the pushed tag, or the tag selected in "Use workflow from")
+  return [{ ...p, tag: p.hasPublishConfigTag ? null : 'latest', provenance: true }]
 }
 
 function getCommitRelease(packages: Package[]): ToPublish[] {

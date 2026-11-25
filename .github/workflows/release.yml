@@ -12,7 +12,7 @@ on:
     tags: ['v[0-9]*', '**@[0-9]*'] # v1.2.3, some-package@1.2.3
   workflow_dispatch:
     inputs:
-      ref: { description: 'Commit (commit-release) or tag (stable-release). Commit: SHA, branch, or refs/pull/<number>/head (default: the selected branch).' }
+      ref: { description: 'Commit to commit-release: SHA, branch, or refs/pull/<number>/head (default: the selected branch). To re-publish a stable release, select its tag in "Use workflow from" instead.' }
       package: { description: 'Package (commit-release only, default: all)' }
 
 jobs:
@@ -26,7 +26,6 @@ jobs:
     outputs:
       output_ref: ${{ steps.resolve.outputs.output_ref }}
       output_tag: ${{ steps.resolve.outputs.output_tag }}
-      output_provenance: ${{ steps.resolve.outputs.output_provenance }}
     steps:
       # SECURITY: runs the release-me installed by the workflow's commit (as trusted as this file), not by the released commit: the other jobs trust its outputs.
       # Checks out: [TRUSTED] `main` (the pushed release tag), or commit of "Use workflow from"
@@ -95,4 +94,3 @@ jobs:
         env:
           PACKED_PACKAGES_DIR: packed-packages/
           TAG: ${{ needs.resolve.outputs.output_tag }}
-          PROVENANCE: ${{ needs.resolve.outputs.output_provenance }}

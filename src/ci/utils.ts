@@ -1,7 +1,6 @@
 export { fail }
 export { getEnv }
 export { getInput }
-export { notice }
 export { setOutputs }
 
 import * as fs from 'node:fs'
@@ -21,10 +20,6 @@ function getInput(name: string): string {
 function setOutputs(outputs: Record<string, string>) {
   const lines = Object.entries(outputs).map(([name, value]) => `${name}=${value}\n`)
   fs.appendFileSync(getEnv('GITHUB_OUTPUT'), lines.join(''))
-}
-
-function notice(msg: string) {
-  console.log(`::notice::${msg}`)
 }
 
 function fail(msg: string): never {
