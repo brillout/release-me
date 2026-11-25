@@ -27,7 +27,7 @@ switch (process.argv[2]) {
     ;(await import('./ci/ci-internal-cmd-resolve.ts')).ciResolve()
     break
   case 'ci-internal-cmd-pack':
-    await cliCiPack()
+    await (await import('./ci/ci-internal-cmd-pack.ts')).ciPack()
     break
   case 'ci-internal-cmd-publish':
     ;(await import('./ci/ci-internal-cmd-publish.ts')).ciPublish()
@@ -52,24 +52,6 @@ async function cli() {
   const packageRootDir = process.cwd()
   const args = parseArgs(releaseTypes)
   releaseMe(args, packageRootDir)
-}
-
-async function cliCiPack() {
-  const command = new Command('release-me ci-internal-cmd-pack')
-    .description(
-      'Build and pack the packages that the GitHub Action .github/workflows/release.yml publishes to npm (run by its job `pack`).',
-    )
-    .requiredOption('--out <dir>', 'directory where the tarballs are written')
-    .option(
-      '--tag <git-tag>',
-      'stable release of the Git tag v1.2.3 or some-package@1.2.3 (default: commit release of HEAD)',
-    )
-    .option('--package <name>', 'commit release: only release this package (default: all packages)')
-    .showHelpAfterError()
-  command.parse(process.argv.slice(3), { from: 'user' })
-  const opts = command.opts<{ out: string; tag?: string; package?: string }>()
-  const { ciPack } = await import('./ci/ci-internal-cmd-pack.ts')
-  ciPack({ tag: opts.tag ?? '', packageName: opts.package ?? '', outDir: opts.out })
 }
 
 function parseArgs(releaseTypes: readonly ReleaseType[]): CliArgs {

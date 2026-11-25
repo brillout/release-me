@@ -7,6 +7,7 @@ import * as path from 'path'
 import pc from '@brillout/picocolors'
 import { assertUsage, logTitle, run } from '../utils.ts'
 import { getCommitReleaseVersion, parseReleaseTag } from './versions.ts'
+import { getEnv } from './utils.ts'
 import {
   build,
   findBoilerplatePacakge,
@@ -21,17 +22,13 @@ import {
   type ReleaseMePackage,
 } from '../releaseMe.ts'
 
-type CiPackArgs = {
-  /** Stable release: its Git tag (`v1.2.3` or `some-package@1.2.3`). Commit release of HEAD: empty. */
-  tag: string
-  /** Commit release: only release this package (default: all packages) */
-  packageName: string
-  /** Directory where the tarballs are written */
-  outDir: string
-}
-
-async function ciPack({ tag, packageName, outDir }: CiPackArgs) {
-  outDir = path.resolve(outDir)
+async function ciPack() {
+  // Directory where the tarballs are written
+  const outDir = path.resolve(getEnv('PACKAGES_DIR'))
+  // Stable release: its Git tag (`v1.2.3` or `some-package@1.2.3`). Commit release of HEAD: empty.
+  const tag = getEnv('TAG')
+  // Commit release: only release this package (empty: all packages)
+  const packageName = getEnv('PACKAGE')
   const monorepoRootDir = await getMonorepoRootDir()
   const filesMonorepo = await getFilesInsideDir(monorepoRootDir)
   const filesMonorepoPackageJson = getFilesMonorepoPackageJson(filesMonorepo)

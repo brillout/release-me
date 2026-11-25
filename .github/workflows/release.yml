@@ -45,8 +45,9 @@ jobs:
         with:
           node-version: lts/*
       - run: pnpm install
-      - run: pnpm exec release-me ci-internal-cmd-pack --tag "$TAG" --package "$PACKAGE" --out release-me-packages
+      - run: pnpm exec release-me ci-internal-cmd-pack
         env:
+          PACKAGES_DIR: release-me-packages
           TAG: ${{ needs.resolve.outputs.tag }}
           PACKAGE: ${{ inputs.package }}
       - uses: actions/upload-artifact@v7
