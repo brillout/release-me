@@ -7,12 +7,12 @@ import * as os from 'node:os'
 import * as path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { logTitle, run } from '../utils.ts'
-import { getCommitReleaseVersion, parseReleaseTag } from './versions.ts'
 import { fail, getEnv } from './utils.ts'
 import { isReleaseWorkflowUpToDate, releaseWorkflowFileName, releaseWorkflowOutdated } from './releaseWorkflow.ts'
 import {
   build,
   getCommitHash,
+  getCommitReleaseVersion,
   getFilesInsideDir,
   getFilesMonorepoPackageJson,
   getMonorepoRootDir,
@@ -61,6 +61,21 @@ function getTaggedPackage(tag: string, packages: ReleaseMePackage[]): ReleaseMeP
     fail(`The Git tag ${tag} doesn't match the version of ${pkg.packageName}'s package.json (${versionPackage}).`)
   }
   return pkg
+}
+
+/**
+ * `v1.2.3` => `{ packageName: null, version: '1.2.3' }`
+ * `some-package@1.2.3` => `{ packageName: 'some-package', version: '1.2.3' }`
+ * `@some-scope/some-package@1.2.3` => `{ packageName: '@some-scope/some-package', version: '1.2.3' }`
+ */
+function parseReleaseTag(tag: string): { packageName: string | null; version: string } | null {
+  // 1.2.3, 1.2.3-beta.1, ...
+  const version = '(\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.+-]+)?)'
+  const single = new RegExp(`^v${version}$`).exec(tag)
+  if (single) return { packageName: null, version: single[1]! }
+  const monorepo = new RegExp(`^((?:@[\\w.~-]+/)?[\\w.~-]+)@${version}$`).exec(tag)
+  if (monorepo) return { packageName: monorepo[1]!, version: monorepo[2]! }
+  return null
 }
 
 /** Sets the commit release version of the package `packageName` (empty: of all packages) */

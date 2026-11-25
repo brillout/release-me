@@ -6,6 +6,7 @@ export type { ReleaseTarget }
 // Used by ./ci/
 export { build }
 export { getCommitHash }
+export { getCommitReleaseVersion }
 export { getFilesInsideDir }
 export { getFilesMonorepoPackageJson }
 export { getMonorepoRootDir }
@@ -24,7 +25,6 @@ import * as semver from 'semver'
 import { runCommand, assertUsage, logDetail, logTitle, run, run__return } from './utils.ts'
 import { triggerCommitRelease, triggerStableRelease } from './ci/githubAction.ts'
 import { publishesViaGitHubAction, releaseWorkflowFileName, releaseWorkflowPath } from './ci/releaseWorkflow.ts'
-import { getCommitReleaseVersion } from './ci/versions.ts'
 import * as path from 'path'
 /*
 //  "js-yaml": "4.1.0",
@@ -485,6 +485,11 @@ async function getVersion(
     versionNew = releaseTarget.slice(1)
   }
   return { versionNew, versionOld, isCommitRelease }
+}
+/** `1.2.3` => `1.2.3-commit-1234567`: a pre-release version, so that semver ranges such as `^1.2.3` never match it */
+function getCommitReleaseVersion(version: string, commitHash: string): string {
+  // Align with GitHub: GitHub (always?) picks the first 7 characters.
+  return `${version}-commit-${commitHash.slice(0, 7)}`
 }
 async function updateVersionMacro(versionOld: string, versionNew: string, filesPackage: Files) {
   filesPackage
