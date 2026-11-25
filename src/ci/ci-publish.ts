@@ -1,6 +1,6 @@
 export { ciPublish }
 
-// `$ release-me ci-internal-cmd-publish`: the GitHub Action, builds the released packages and publishes them to npm.
+// `$ release-me ci-publish`: the GitHub Action, builds the released packages and publishes them to npm.
 
 import * as fs from 'node:fs'
 import * as os from 'node:os'

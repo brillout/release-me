@@ -76,7 +76,5 @@ function readFile(filePath: string): string | null {
 }
 
 function isReleaseMeWorkflow(releaseWorkflowContent: string | null): releaseWorkflowContent is string {
-  return (
-    releaseWorkflowContent !== null && releaseWorkflowContent.includes('pnpm exec release-me ci-internal-cmd-publish')
-  )
+  return releaseWorkflowContent !== null && releaseWorkflowContent.includes('pnpm exec release-me ci-publish')
 }

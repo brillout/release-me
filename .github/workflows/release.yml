@@ -36,7 +36,7 @@ jobs:
       # Trusted publishing requires npm >= 11.5.1, and removing a dist-tag requires npm >= 11.21.0
       - run: npm install --global npm@latest
       - run: pnpm install
-      - run: pnpm exec release-me ci-internal-cmd-publish
+      - run: pnpm exec release-me ci-publish
         # SECURITY: the input is passed as env variable, instead of being inserted into `run:` (shell injection)
         env:
           PACKAGE: ${{ inputs.package }}

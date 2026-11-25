@@ -23,8 +23,8 @@ switch (process.argv[2]) {
   case 'init':
     await cliInit()
     break
-  case 'ci-internal-cmd-publish':
-    await (await import('./ci/ci-internal-cmd-publish.ts')).ciPublish()
+  case 'ci-publish':
+    await (await import('./ci/ci-publish.ts')).ciPublish()
     break
   default:
     await cli()

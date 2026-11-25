@@ -72,7 +72,7 @@ async function logNpmSetup(monorepoRootDir: string, packages: PublishedPackage[]
   console.log(
     `   and, under ${pc.bold('Trusted Publisher')}, press ${pc.bold('GitHub Actions')} to set up a connection:`,
   )
-  // `$ npm dist-tag rm` removes the dist-tag that `$ npm publish` requires for commit releases (see ./ci-internal-cmd-publish.ts)
+  // `$ npm dist-tag rm` removes the dist-tag that `$ npm publish` requires for commit releases (see ./ci-publish.ts)
   console.log(
     `   - ${pc.bold(owner ?? '<owner>')} / ${pc.bold(repoName ?? '<repo>')}, workflow filename ${pc.bold(
       releaseWorkflowFileName,
