@@ -18,7 +18,8 @@ import pc from '@brillout/picocolors'
 const initCommand = '$ pnpm exec release-me init'
 const releaseWorkflowFileName = 'release.yml'
 const releaseWorkflowPath = `.github/workflows/${releaseWorkflowFileName}`
-const releaseWorkflowOutdated = `${releaseWorkflowPath} isn't up-to-date (or was modified): run ${initCommand} and push the commit it makes.`
+// `$ pnpm install` first: if node_modules/ has an older release-me than the lockfile (e.g. after `$ git pull`), `$ pnpm exec release-me init` would downgrade release.yml
+const releaseWorkflowOutdated = `${releaseWorkflowPath} doesn't match the installed release-me's (e.g. after upgrading release-me, or if it was modified): run $ pnpm install and ${initCommand}, then push the commit it makes (if any).`
 
 const thisPackageRootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
