@@ -10,7 +10,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import pc from '@brillout/picocolors'
 import { assertUsage } from './utils.js'
-import { assertCiWorkflowUpToDate, getCiWorkflow } from './githubAction.js'
+import { assertCiWorkflowsUpToDate, getCiWorkflow } from './githubAction.js'
 import {
   build,
   findBoilerplatePacakge,
@@ -41,8 +41,9 @@ type ReleaseMePackage = { packageName: string; packageRootDir: string }
 async function ciPack({ target, outDir, packageName }: CiPackArgs) {
   outDir = path.resolve(outDir)
   const monorepoRootDir = await getMonorepoRootDir()
-  // Fail on drift also in CI (normally caught earlier, when releasing locally). Skipped if the released commit predates .github/workflows/release.yml.
-  if (await getCiWorkflow(monorepoRootDir)) assertCiWorkflowUpToDate(monorepoRootDir)
+  // Fail on drift also in CI (normally caught earlier, when releasing locally). Skipped if the released commit predates the workflows.
+  if (await getCiWorkflow(monorepoRootDir, target === 'commit' ? 'commit' : 'stable'))
+    assertCiWorkflowsUpToDate(monorepoRootDir)
   const filesMonorepo = await getFilesInsideDir(monorepoRootDir)
   const filesMonorepoPackageJson = getFilesMonorepoPackageJson(filesMonorepo)
   const packages = getReleaseMePackages(filesMonorepoPackageJson)

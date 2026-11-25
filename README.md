@@ -168,37 +168,17 @@ Consider adding `release` scripts to the monorepo root's `package.json`:
 
 Instead of publishing from your machine (which requires npm 2FA), a GitHub Action can publish to npm using [npm's trusted publishing](https://docs.npmjs.com/trusted-publishers) — no npm login and no npm token.
 
-`release-me` then works like this:
-
-- `$ pnpm exec release-me patch` (or `minor`/`major`/`v1.2.3`) does the same as before (`CHANGELOG.md`, confirmation, build, Git commit & tag) but, instead of publishing to npm, it pushes the release commit and its Git tag, which triggers the GitHub Action that publishes to npm.
-- `$ pnpm exec release-me commit` triggers the GitHub Action that builds and publishes the commit release (it requires the [GitHub CLI `gh`](https://cli.github.com)).
-- You can also commit-release any commit in GitHub's UI: go to the workflow page (`https://github.com/${owner}/${repo}/actions/workflows/release.yml`), press **Run workflow**, and enter the commit (a SHA, a branch, or `refs/pull/${number}/head` for a pull request — including pull requests from forks). Leave it empty to release the tip of the selected branch.
+> [!NOTE]
+> `release-me` then pushes the release (instead of publishing it) and the GitHub Action publishes it to npm.
 
 ### Setup
 
-1. Run `$ pnpm exec release-me init-github-action`, then commit and push the `.github/workflows/release.yml` it creates. (Once this file exists, `release-me` stops publishing from your machine.) The command also prints the npm settings of the following steps, filled in for your repository and packages.
+1. Run `$ pnpm exec release-me init-github-action` (it creates `.github/workflows/release.yml` and `.github/workflows/release-commit.yml`, and commits them).
+1. On npmjs.com, go to the package's **Settings** (`https://www.npmjs.com/package/${packageName}/access`) and, under **Trusted Publisher**, press **GitHub Actions** to set up two connections:
+   - **Organization or user** / **Repository**: your GitHub repository, **Workflow filename**: `release.yml`, **Allowed actions**: **Allow npm publish**
+   - **Organization or user** / **Repository**: your GitHub repository, **Workflow filename**: `release-commit.yml`, **Allowed actions**: **Allow npm publish** and **Allow npm dist-tag**
 
-   > [!NOTE]
-   > Don't modify `.github/workflows/release.yml`: `release-me` (and the GitHub Action) abort the release if the file differs from what `$ pnpm exec release-me init-github-action` generates — for example after updating `@brillout/release-me`. In that case, re-run the command and commit the result.
-
-   The file is short: everything else lives in the reusable workflow [`publish.yml`](.github/workflows/publish.yml), and updates to it apply to every repository without any change on your side. The file can't be shorter, because GitHub only reads triggers (`on:`) from the repository's own workflow files, and npm checks the file name (`release.yml`) when publishing. The build uses the latest Node.js LTS and the pnpm version of `package.json#packageManager` (or the latest pnpm).
-1. On [npmjs.com](https://www.npmjs.com), for each package (including the boilerplate `create-${packageName}` if you have one), go to **Settings** > **Trusted publishing** > **GitHub Actions** and set:
-   - **Organization or user** and **Repository**: your GitHub repository (it must match `package.json#repository`).
-   - **Workflow filename**: `release.yml`
-   - **Allowed actions**: `npm publish` (otherwise npm only allows staged publishing, which requires approving each release with 2FA) and `npm dist-tag` (to remove the `commit` dist-tag that npm requires when publishing commit releases).
-
-   > [!NOTE]
-   > A new trusted publisher expires if it isn't used within 2 days.
-1. (Recommended.) On npmjs.com, go to **Settings** > **Publishing access** and select **Require two-factor authentication and disallow tokens** — trusted publishing keeps working while npm tokens can't publish anymore.
-
-### How it works
-
-The reusable workflow [`publish.yml`](.github/workflows/publish.yml) runs two jobs:
-
-1. **Build & pack** runs `$ pnpm install` and `$ pnpm exec release-me ci-pack` (which builds and packs the packages). This job runs the repository's code, so it isn't allowed to publish to npm — that's why commit-releasing untrusted code (e.g. a pull request from a fork) is safe.
-1. **Publish to npm** publishes the tarballs without running any code of the repository. It's the only job allowed to authenticate to npm, and it verifies the tarballs before publishing them: for a stable release, the version must match the Git tag; for a commit release, it must be `x.y.z-commit-${hash}` (a pre-release version, so that semver ranges never match it).
+   Do this for each package, including the boilerplate `create-${packageName}` if you have one.
 
 > [!NOTE]
-> - Re-running a failed workflow is safe: versions that are already published are skipped.
-> - npm [provenance](https://docs.npmjs.com/generating-provenance-statements) is added to stable releases and to commit releases of the tip of a branch (but not to commit releases of other commits, since provenance would point to the wrong commit).
-> - Since the release commit (including `pnpm-lock.yaml`) is made before the new version is on npm, packages of your monorepo that depend on the released package (e.g. `examples/`) must get it from the workspace (`workspace:` protocol, or the [`link-workspace-packages`](https://pnpm.io/settings#linkworkspacepackages) setting) — otherwise updating `pnpm-lock.yaml` fails and the release is aborted.
+> Stable releases get npm [provenance](https://docs.npmjs.com/generating-provenance-statements), commit releases don't.

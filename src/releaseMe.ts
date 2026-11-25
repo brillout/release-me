@@ -24,7 +24,7 @@ import * as fs from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
 import { runCommand, assertUsage } from './utils.js'
-import { assertCiWorkflowUpToDate, type CiWorkflow, getCiWorkflow, getWorkflowLink } from './githubAction.js'
+import { assertCiWorkflowsUpToDate, type CiWorkflow, getCiWorkflow, getWorkflowLink } from './githubAction.js'
 import * as path from 'path'
 /*
 //  "js-yaml": "4.1.0",
@@ -61,8 +61,9 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   const monorepoRootDir = await getMonorepoRootDir()
 
-  const ciWorkflow = await getCiWorkflow(monorepoRootDir)
-  if (ciWorkflow) assertCiWorkflowUpToDate(monorepoRootDir)
+  // The GitHub Action that publishes to npm (if the repository uses it)
+  const ciWorkflow = await getCiWorkflow(monorepoRootDir, args.releaseTarget === 'commit' ? 'commit' : 'stable')
+  if (ciWorkflow) assertCiWorkflowsUpToDate(monorepoRootDir)
 
   await abortIfUncommitedChanges(monorepoRootDir)
 
@@ -177,7 +178,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   // Bump pnpm-lock.yaml
   // ===================
 
-  await bumpPnpmLockFile(monorepoRootDir)
+  await bumpPnpmLockFile(monorepoRootDir, ciWorkflow ? packageName : null)
 
   // =============================
   // Git commit & push
@@ -196,10 +197,16 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
       published.push(`${packageJson.name}@${packageJson.version}`)
     }
     logTitle('npm publish')
+    const workflowLink = getWorkflowLink(ciWorkflow)
     console.log(
       `GitHub Action ${pc.bold(ciWorkflow.fileName)} will publish ${published
         .map((p) => pc.cyan(p))
-        .join(' and ')} to npm: ${getWorkflowLink(ciWorkflow)}`,
+        .join(' and ')} to npm: ${workflowLink}`,
+    )
+    console.log(
+      pc.dim(
+        `(If it fails, you can retry it: go to ${workflowLink}, press Run workflow, and select the tag ${gitTag} in "Use workflow from".)`,
+      ),
     )
   }
 }
@@ -561,6 +568,11 @@ async function triggerCommitRelease(
       `${packageName}@${versionNew}`,
     )} to npm: ${workflowLink}`,
   )
+  console.log(
+    pc.dim(
+      `(You can also commit-release any commit, including pull requests from forks: go to ${workflowLink} and press Run workflow.)`,
+    ),
+  )
 }
 
 async function getVersion(
@@ -649,7 +661,8 @@ async function findBoilerplatePacakge(packageName: string, filesMonorepoPackageJ
   return null
 }
 
-async function bumpPnpmLockFile(monorepoRootDir: string) {
+/** @param ciPackageName The released package, if it's published by the GitHub Action (i.e. after the push) */
+async function bumpPnpmLockFile(monorepoRootDir: string, ciPackageName: string | null) {
   logTitle('Bump pnpm-lock.yaml')
   try {
     await run(
@@ -665,6 +678,16 @@ async function bumpPnpmLockFile(monorepoRootDir: string) {
     )
   } catch (err) {
     if (!(err as Error).message.includes('ERR_PNPM_PEER_DEP_ISSUES')) {
+      if (ciPackageName) {
+        // Previously, pnpm-lock.yaml was updated after publishing to npm
+        console.log(
+          pc.yellow(
+            `Hint: the new version of ${ciPackageName} isn't on npm yet (the GitHub Action publishes it after the release is pushed), so the packages of the monorepo that depend on ${ciPackageName} must get it from the workspace (with the ${pc.bold(
+              'workspace:',
+            )} protocol, or with the pnpm setting ${pc.bold('link-workspace-packages')}).`,
+          ),
+        )
+      }
       throw err
     }
   }
