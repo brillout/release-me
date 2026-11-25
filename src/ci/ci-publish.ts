@@ -111,7 +111,8 @@ async function publish({ packageName, packageRootDir }: ReleaseMePackage, isComm
   } else {
     // - `$ npm publish` always sets a dist-tag: use the dist-tag `commit` and remove it afterwards.
     // - No provenance: it would point to the commit the workflow run belongs to (the tip of the branch selected in "Use workflow from"), which isn't necessarily the released commit.
-    npm(['publish', tarball, '--tag', 'commit'], { NPM_CONFIG_PROVENANCE: 'false' })
+    //   (A CLI flag, because package.json#publishConfig.provenance overrides env variables, but not CLI flags.)
+    npm(['publish', tarball, '--tag', 'commit', '--provenance=false'])
     try {
       npm(['dist-tag', 'rm', packageName, 'commit'])
     } catch {
@@ -155,9 +156,9 @@ function isPublished(packageName: string, version: string): boolean {
   }
 }
 
-function npm(args: string[], env: Record<string, string> = {}) {
+function npm(args: string[]) {
   console.log(`$ npm ${args.join(' ')}`)
-  execFileSync('npm', args, { stdio: 'inherit', env: { ...process.env, ...env } })
+  execFileSync('npm', args, { stdio: 'inherit' })
 }
 
 function list(packages: ReleaseMePackage[]): string {
