@@ -22,7 +22,10 @@ async function triggerStableRelease(gitTag: string, packageSpec: string) {
   logWillPublish(
     packageSpec,
     workflowLink,
-    `If it fails, you can retry it: go to ${workflowLink}, press Run workflow, and select the tag ${gitTag} in Use workflow from.`,
+    `If it fails, you can retry it: ${getRunWorkflowCta(
+      workflowLink,
+      `select the tag ${pc.bold(gitTag)} in ${pc.bold('Use workflow from')}`,
+    )}.`,
   )
 }
 
@@ -35,7 +38,10 @@ async function triggerCommitRelease(packageName: string, versionNew: string, com
   )
   const workflowLink = getWorkflowLink(repo)
   const packageSpec = `${packageName}@${versionNew}`
-  const runWorkflow = getRunWorkflowCta(workflowLink, commitHash, packageName)
+  const runWorkflow = getRunWorkflowCta(
+    workflowLink,
+    `enter the commit ${pc.bold(commitHash)} and the package ${pc.bold(packageName)}`,
+  )
   const ghUnavailable = await checkCommitOnGitHub(repo, commitHash, runWorkflow)
   if (ghUnavailable) {
     console.log(`${ghUnavailable}, so release-me can't trigger the GitHub Action ${pc.bold(releaseWorkflowFileName)}.`)
@@ -57,15 +63,14 @@ async function triggerCommitRelease(packageName: string, versionNew: string, com
   logWillPublish(
     packageSpec,
     workflowLink,
-    `You can also commit-release any commit, including pull requests from forks: go to ${workflowLink} and press Run workflow.`,
+    `You can also commit-release any commit, including pull requests from forks: ${getRunWorkflowCta(workflowLink)}.`,
   )
 }
 
-/** E.g. `go to https://github.com/vikejs/vike/actions/workflows/release.yml, press Run workflow, and enter the commit 580a94e… and the package vike` */
-function getRunWorkflowCta(workflowLink: string, commitHash: string, packageName: string): string {
-  return `go to ${workflowLink}, press ${pc.bold(pc.cyan('Run workflow'))}, and enter the commit ${pc.bold(
-    commitHash,
-  )} and the package ${pc.bold(packageName)}`
+/** E.g. `go to https://github.com/vikejs/vike/actions/workflows/release.yml, press Run workflow, and ${then}` */
+function getRunWorkflowCta(workflowLink: string, then?: string): string {
+  const press = `press ${pc.bold(pc.cyan('Run workflow'))}`
+  return then ? `go to ${workflowLink}, ${press}, and ${then}` : `go to ${workflowLink} and ${press}`
 }
 
 /**
