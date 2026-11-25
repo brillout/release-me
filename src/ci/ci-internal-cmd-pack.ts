@@ -10,7 +10,6 @@ import { getCommitReleaseVersion, parseReleaseTag } from './versions.ts'
 import { getEnv } from './utils.ts'
 import {
   build,
-  findBoilerplatePacakge,
   getCommitHash,
   getFilesInsideDir,
   getFilesMonorepoPackageJson,
@@ -34,7 +33,7 @@ async function ciPack() {
   const filesMonorepoPackageJson = getFilesMonorepoPackageJson(filesMonorepo)
   const packages = getReleaseMePackages(filesMonorepoPackageJson)
 
-  const toPack: { packageRootDir: string; skipBuild?: true }[] = []
+  const toPack: string[] = []
   if (!tag) {
     let selected = packages
     if (packageName) {
@@ -52,7 +51,7 @@ async function ciPack() {
       await updateVersionMacro(versionOld, versionNew, await getFilesInsideDir(packageRootDir))
       updatePackageJsonVersion(packageRootDir, versionNew)
     }
-    toPack.push(...selected.map(({ packageRootDir }) => ({ packageRootDir })))
+    toPack.push(...selected.map(({ packageRootDir }) => packageRootDir))
   } else {
     const { pkg, version } = parseGitTag(tag, packages)
     const { packageJson } = getPackageJson(pkg.packageRootDir)
@@ -62,18 +61,15 @@ async function ciPack() {
         String(packageJson.version),
       )}.`,
     )
-    toPack.push({ packageRootDir: pkg.packageRootDir })
-    // Same as the local release: the boilerplate create-${packageName} is published alongside (without build step)
-    const boilerplatePackageJson = await findBoilerplatePacakge(pkg.packageName, filesMonorepoPackageJson)
-    if (boilerplatePackageJson) toPack.push({ packageRootDir: path.dirname(boilerplatePackageJson), skipBuild: true })
+    toPack.push(pkg.packageRootDir)
   }
 
-  for (const { packageRootDir, skipBuild } of toPack) {
-    if (!skipBuild) await build(packageRootDir)
+  for (const packageRootDir of toPack) {
+    await build(packageRootDir)
   }
 
   fs.mkdirSync(outDir, { recursive: true })
-  for (const { packageRootDir } of toPack) {
+  for (const packageRootDir of toPack) {
     logTitle(`Pack ${getPackageJson(packageRootDir).packageJson.name}`)
     // `$ pnpm publish` runs prepublishOnly, whereas `$ pnpm pack` doesn't
     await run('pnpm run --if-present prepublishOnly', { cwd: packageRootDir })

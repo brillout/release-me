@@ -31,8 +31,8 @@ async function getCiWorkflow(monorepoRootDir: string): Promise<CiWorkflow | null
   return { repo: await getGitHubRepo(monorepoRootDir) }
 }
 
-/** @param published The released packages, e.g. `['vike@0.4.271', 'create-vike@0.0.42']` */
-async function triggerStableRelease(ciWorkflow: CiWorkflow, gitTag: string, published: string[]) {
+/** @param packageSpec The released package, e.g. `vike@0.4.271` */
+async function triggerStableRelease(ciWorkflow: CiWorkflow, gitTag: string, packageSpec: string) {
   logTitle('Git push')
   // - Push the release commit and its tag atomically: the tag triggers the GitHub Action that publishes to npm.
   // - Only push this one tag: GitHub doesn't trigger any workflow when more than three tags are pushed at once.
@@ -40,7 +40,7 @@ async function triggerStableRelease(ciWorkflow: CiWorkflow, gitTag: string, publ
   logTitle('npm publish')
   const workflowLink = getWorkflowLink(ciWorkflow)
   logWillPublish(
-    published,
+    packageSpec,
     workflowLink,
     `If it fails, you can retry it: go to ${workflowLink}, press Run workflow, and enter the tag ${gitTag}.`,
   )
@@ -73,7 +73,7 @@ async function triggerCommitRelease(
     `package=${packageName}`,
   ])
   logWillPublish(
-    [`${packageName}@${versionNew}`],
+    `${packageName}@${versionNew}`,
     workflowLink,
     `You can also commit-release any commit, including pull requests from forks: go to ${workflowLink} and press Run workflow.`,
   )
@@ -110,11 +110,9 @@ async function assertCommitOnGitHub(repo: string, commitHash: string, workflowLi
   }
 }
 
-function logWillPublish(published: string[], workflowLink: string, hint: string) {
+function logWillPublish(packageSpec: string, workflowLink: string, hint: string) {
   console.log(
-    `GitHub Action ${pc.bold(releaseWorkflowFileName)} will publish ${published
-      .map((p) => pc.cyan(p))
-      .join(' and ')} to npm: ${workflowLink}`,
+    `GitHub Action ${pc.bold(releaseWorkflowFileName)} will publish ${pc.cyan(packageSpec)} to npm: ${workflowLink}`,
   )
   console.log(pc.dim(`(${hint})`))
 }

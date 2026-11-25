@@ -2,13 +2,11 @@ export { init }
 
 // `$ pnpm exec release-me init` creates (or updates) .github/workflows/release.yml
 
-import * as path from 'path'
 import pc from '@brillout/picocolors'
 import { getGitHubRepo, parseGitHubRepo } from './githubAction.ts'
 import { releaseWorkflowFileName, releaseWorkflowPath, writeReleaseWorkflow } from './releaseWorkflow.ts'
 import {
   assertInstalledAtRoot,
-  findBoilerplatePacakge,
   getFilesInsideDir,
   getFilesMonorepoPackageJson,
   getMonorepoRootDir,
@@ -97,16 +95,10 @@ async function logNpmSetup(monorepoRootDir: string, packages: PublishedPackage[]
 }
 
 type PublishedPackage = Awaited<ReturnType<typeof getPublishedPackages>>[number]
-/** The packages published by the GitHub Action (including boilerplates create-${packageName}) */
+/** The packages published by the GitHub Action */
 async function getPublishedPackages(monorepoRootDir: string) {
   const filesMonorepoPackageJson = getFilesMonorepoPackageJson(await getFilesInsideDir(monorepoRootDir))
-  const packageRootDirs: string[] = []
-  for (const { packageName, packageRootDir } of getReleaseMePackages(filesMonorepoPackageJson)) {
-    packageRootDirs.push(packageRootDir)
-    const boilerplatePackageJson = await findBoilerplatePacakge(packageName, filesMonorepoPackageJson)
-    if (boilerplatePackageJson) packageRootDirs.push(path.dirname(boilerplatePackageJson))
-  }
-  return packageRootDirs.map((packageRootDir) => {
+  return getReleaseMePackages(filesMonorepoPackageJson).map(({ packageRootDir }) => {
     const { packageJson } = getPackageJson(packageRootDir)
     return {
       name: packageJson.name!,

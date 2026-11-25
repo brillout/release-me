@@ -74,24 +74,13 @@ function getStableRelease(packages: Package[], tag: string, provenance: boolean)
   const releaseTag = parseReleaseTag(tag)
   if (!releaseTag) fail(`${tag} isn't a release tag.`)
   const { version, packageName } = releaseTag
-  // The released package, and its boilerplate create-${name} (if any)
-  const main = packages.find(
-    (p) =>
-      p.version === version &&
-      p.name === (packageName ?? p.name) &&
-      packages.every((other) => other === p || other.name === `create-${p.name}`),
-  )
-  if (!main) {
-    const name = packageName ?? '<package>'
-    fail(
-      `The packages ${list(
-        packages,
-      )} don't match the Git tag ${tag}: expected ${name}@${version} (and its boilerplate create-${name}, if any).`,
-    )
+  const [p, ...others] = packages
+  if (!p || others.length > 0 || p.version !== version || p.name !== (packageName ?? p.name)) {
+    const expected = `${packageName ?? '<package>'}@${version}`
+    fail(`The packages ${list(packages)} don't match the Git tag ${tag}: expected ${expected}.`)
   }
-  const others = packages.filter((p) => p !== main)
   // npm requires an explicit tag for pre-release versions and for versions lower than the highest published version: use `latest`, as `$ pnpm publish` does (unless package.json#publishConfig.tag is set).
-  return [main, ...others].map((p) => ({ ...p, tag: p.hasPublishConfigTag ? null : 'latest', provenance }))
+  return [{ ...p, tag: p.hasPublishConfigTag ? null : 'latest', provenance }]
 }
 
 function getCommitRelease(packages: Package[]): ToPublish[] {
