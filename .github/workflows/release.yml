@@ -23,9 +23,9 @@ jobs:
     permissions:
       contents: read
     outputs:
-      ref: ${{ steps.resolve.outputs.ref }}
-      tag: ${{ steps.resolve.outputs.tag }}
-      provenance: ${{ steps.resolve.outputs.provenance }}
+      ref: ${{ steps.resolve.outputs.output_ref }}
+      tag: ${{ steps.resolve.outputs.output_tag }}
+      provenance: ${{ steps.resolve.outputs.output_provenance }}
     steps:
       # Checks out: [TRUSTED] `main` (the pushed release tag), or commit of "Use workflow from"
       - uses: actions/checkout@v7

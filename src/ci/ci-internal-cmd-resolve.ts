@@ -20,7 +20,7 @@ function ciResolve() {
   if (!isReleaseWorkflowUpToDate(getEnv('GITHUB_WORKSPACE'))) fail(releaseWorkflowOutdated)
   const { ref, tag, provenance } = getRelease()
   console.log(tag ? `Stable release: ${tag}` : `Commit release: ${ref}`)
-  setOutputs({ ref, tag, provenance: String(provenance) })
+  setOutputs({ output_ref: ref, output_tag: tag, output_provenance: String(provenance) })
 }
 
 function getRelease(): Release {
