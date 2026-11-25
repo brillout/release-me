@@ -166,20 +166,17 @@ Consider adding `release` scripts to the monorepo root's `package.json`:
 
 ## GitHub Action
 
-Instead of publishing from your machine (which requires npm 2FA), a GitHub Action can publish to npm using [npm's trusted publishing](https://docs.npmjs.com/trusted-publishers) — no npm login and no npm token.
-
-> [!NOTE]
-> `release-me` then pushes the release (instead of publishing it) and the GitHub Action publishes it to npm.
-
-### Setup
+Instead of publishing from your machine (which requires npm 2FA), you can let a GitHub Action publish releases to npm (without even needing an npm secret token).
 
 1. Run `$ pnpm exec release-me init-github-action` (it creates `.github/workflows/release.yml` and commits it).
-1. On npmjs.com, go to the package's **Settings** (`https://www.npmjs.com/package/${packageName}/access`) and, under **Trusted Publisher**, press **GitHub Actions** to set up a connection:
+1. On [npmjs.com](npmjs.com), for each package: go to the package's **Settings** (`https://www.npmjs.com/package/${packageName}/access`) and, under **Trusted Publisher**, press **GitHub Actions**:
    - **Organization or user** / **Repository**: your GitHub repository
    - **Workflow filename**: `release.yml`
-   - **Allowed actions**: **Allow npm publish** and **Allow npm dist-tag**
+   - **Allowed actions**: **[x] Allow `npm publish`** and **[x] Allow `npm dist-tag`**
+   - **Confirm**: click `Set up connection`
 
-   Do this for each package, including the boilerplate `create-${packageName}` if you have one.
+> [!NOTE]
+> It uses [npm's trusted publishing](https://docs.npmjs.com/trusted-publishers).
 
 > [!NOTE]
 > Stable releases get npm [provenance](https://docs.npmjs.com/generating-provenance-statements), commit releases don't.
