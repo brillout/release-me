@@ -4,7 +4,6 @@ export type { CliArgs }
 export type { ReleaseType }
 export type { ReleaseTarget }
 // Used by ./ci/
-export { thisPackageName }
 export { build }
 export { getCommitHash }
 export { getFilesInsideDir }
