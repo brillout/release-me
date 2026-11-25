@@ -16,7 +16,8 @@ on:
       package: { description: 'Package (commit-release only, default: all)' }
 
 env:
-  # Stable release: the release tag (pushed, or selected in "Use workflow from" with an empty input `ref`). Commit release: empty.
+  # - Stable release: the release tag (pushed, or selected in "Use workflow from" with an empty input `ref`)
+  # - Commit release: empty
   TAG: ${{ github.ref_type == 'tag' && !inputs.ref && github.ref_name || '' }}
 
 jobs:
