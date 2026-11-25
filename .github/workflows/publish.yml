@@ -1,0 +1,192 @@
+# Reusable workflow that publishes to npm the packages released with @brillout/release-me — without npm token, using npm's trusted publishing.
+# - Stable release: `$ pnpm exec release-me patch` (or minor/major/v1.2.3) pushes a release tag (`v1.2.3` or `some-package@1.2.3`), which triggers the calling workflow.
+# - Commit release: `$ pnpm exec release-me commit` (or the "Run workflow" button on GitHub) triggers the calling workflow via `workflow_dispatch`.
+# Setup: https://github.com/brillout/release-me#github-action
+
+name: Publish to npm
+
+on:
+  workflow_call:
+    inputs:
+      commit:
+        description: 'Commit release: the commit to release (SHA, branch, tag, or refs/pull/<number>/head). Default: the commit the workflow runs on.'
+        type: string
+        default: ''
+      package:
+        description: 'Commit release: the package to release. Default: all packages that have @brillout/release-me in their devDependencies.'
+        type: string
+        default: ''
+      node-version:
+        description: 'Node.js version used to build the packages.'
+        type: string
+        default: 'lts/*'
+      pnpm-version:
+        description: 'pnpm version. Default: package.json#packageManager.'
+        type: string
+        default: ''
+
+permissions: {}
+
+jobs:
+  pack:
+    name: Build & pack
+    runs-on: ubuntu-latest
+    # This job runs the repository's code (install scripts, build scripts, ...), which may be untrusted (e.g. a commit release of a pull request from a fork) => it isn't allowed to publish to npm.
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.commit || github.sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ inputs.pnpm-version }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          # No cache: untrusted code could poison it for subsequent releases.
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - name: Build & pack
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          PACKAGE: ${{ inputs.package }}
+          OUT_DIR: ${{ runner.temp }}/release-me-packages
+        run: |
+          if [ "$EVENT_NAME" = push ]; then
+            if [ "$REF_TYPE" != tag ]; then
+              echo "::error::Stable releases are triggered by pushing a release tag, but the $REF_TYPE $REF_NAME was pushed."
+              exit 1
+            fi
+            set -- "$REF_NAME"
+          else
+            set -- commit
+            if [ -n "$PACKAGE" ]; then set -- commit --package "$PACKAGE"; fi
+          fi
+          # Use the @brillout/release-me version installed by the repository
+          package_json=$(git grep -l '"@brillout/release-me"' -- '*package.json' | head -n 1 || true)
+          if [ -z "$package_json" ]; then
+            echo "::error::No package.json has @brillout/release-me in its devDependencies."
+            exit 1
+          fi
+          cd "$(dirname "$package_json")"
+          pnpm exec release-me ci-pack "$@" --out "$OUT_DIR"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-me-packages
+          path: ${{ runner.temp }}/release-me-packages/*.tgz
+          if-no-files-found: error
+          retention-days: 3
+
+  publish:
+    name: Publish to npm
+    needs: pack
+    runs-on: ubuntu-latest
+    # This job doesn't run any code of the repository: it's the only job allowed to publish to npm (trusted publishing authenticates with the GitHub OIDC token).
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 'lts/*'
+          package-manager-cache: false
+      # Trusted publishing requires npm >= 11.5.1, and removing a dist-tag requires npm >= 11.21.0
+      - run: npm install --global npm@latest
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-me-packages
+          path: ${{ runner.temp }}/release-me-packages
+      - name: Publish
+        env:
+          PACKAGES_DIR: ${{ runner.temp }}/release-me-packages
+          EVENT_NAME: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          COMMIT_INPUT: ${{ inputs.commit }}
+        run: |
+          node <<'EOF'
+          const fs = require('fs')
+          const path = require('path')
+          const { execFileSync } = require('child_process')
+          const { PACKAGES_DIR, EVENT_NAME, REF_TYPE, REF_NAME, COMMIT_INPUT, GITHUB_SHA, GITHUB_STEP_SUMMARY } = process.env
+          const isStableRelease = EVENT_NAME === 'push'
+
+          // The tarballs were made by the `pack` job, which runs the repository's code: verify the package.json inside each tarball (that's what npm publishes).
+          const packages = fs
+            .readdirSync(PACKAGES_DIR)
+            .filter((file) => file.endsWith('.tgz'))
+            .map((file) => {
+              const tarball = path.join(PACKAGES_DIR, file)
+              const pkg = JSON.parse(execFileSync('tar', ['-xzOf', tarball, 'package/package.json'], { encoding: 'utf8' }))
+              return { tarball, name: pkg.name, version: pkg.version, hasPublishConfigTag: !!pkg.publishConfig?.tag }
+            })
+          if (packages.length === 0) fail('No package to publish.')
+
+          let toPublish
+          if (isStableRelease) {
+            if (REF_TYPE !== 'tag') fail(`Expected a release tag but the ${REF_TYPE} ${JSON.stringify(REF_NAME)} was pushed.`)
+            const main = packages.find((p) => REF_NAME === `v${p.version}` || REF_NAME === `${p.name}@${p.version}`)
+            if (!main) fail(`No package matches the Git tag ${JSON.stringify(REF_NAME)}: ${list(packages)}`)
+            const others = packages.filter((p) => p !== main)
+            for (const p of others) {
+              if (p.name !== `create-${main.name}`) fail(`Unexpected package ${JSON.stringify(p.name)}: only ${main.name} and its boilerplate create-${main.name} are published.`)
+            }
+            // npm requires an explicit tag for pre-release versions and for versions lower than the highest published version: use `latest`, as `$ pnpm publish` does (unless package.json#publishConfig.tag is set).
+            toPublish = [main, ...others].map((p) => ({ ...p, tag: p.hasPublishConfigTag ? null : 'latest', provenance: true }))
+          } else {
+            // Provenance attests that the package was built from GITHUB_SHA: only true if the released commit is GITHUB_SHA.
+            const provenance = !COMMIT_INPUT || (COMMIT_INPUT.length >= 7 && GITHUB_SHA.startsWith(COMMIT_INPUT))
+            toPublish = packages.map((p) => {
+              // A pre-release version, so that semver ranges such as ^1.2.3 never match it.
+              const match = /^\d+\.\d+\.\d+-(?:[0-9A-Za-z.-]+-)?commit-([0-9a-f]{7})$/.exec(p.version)
+              if (!match) fail(`${JSON.stringify(`${p.name}@${p.version}`)} isn't a commit release version (x.y.z-commit-<hash>).`)
+              if (provenance && match[1] !== GITHUB_SHA.slice(0, 7)) fail(`${JSON.stringify(`${p.name}@${p.version}`)} doesn't match the commit ${GITHUB_SHA}.`)
+              // `$ npm publish` always sets a tag: use the tag `commit` and remove it afterwards.
+              return { ...p, tag: 'commit', removeTag: true, provenance }
+            })
+          }
+
+          const summary = []
+          for (const p of toPublish) {
+            const spec = `${p.name}@${p.version}`
+            if (isPublished(p)) {
+              console.log(`${spec} is already published, skipping it.`)
+            } else {
+              const args = ['publish', p.tarball]
+              if (p.tag) args.push('--tag', p.tag)
+              npm(args, p.provenance ? {} : { NPM_CONFIG_PROVENANCE: 'false' })
+              if (p.removeTag) {
+                try {
+                  npm(['dist-tag', 'rm', p.name, p.tag])
+                } catch {
+                  console.log(`::warning::Couldn't remove the npm dist-tag ${p.tag} of ${p.name}: on npmjs.com, enable "Allow npm dist-tag" in the trusted publisher settings of ${p.name}.`)
+                }
+              }
+            }
+            summary.push(isStableRelease ? `- \`${spec}\`` : `- \`${spec}\` — \`npm install ${spec}\``)
+          }
+          if (GITHUB_STEP_SUMMARY) fs.appendFileSync(GITHUB_STEP_SUMMARY, `### Published to npm\n\n${summary.join('\n')}\n`)
+
+          function isPublished({ name, version }) {
+            try {
+              const stdout = execFileSync('npm', ['view', `${name}@${version}`, 'version'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+              return stdout.trim() === version
+            } catch {
+              return false
+            }
+          }
+          function npm(args, env) {
+            console.log(`$ npm ${args.join(' ')}`)
+            execFileSync('npm', args, { stdio: 'inherit', env: { ...process.env, ...env } })
+          }
+          function list(packages) {
+            return packages.map((p) => JSON.stringify(`${p.name}@${p.version}`)).join(', ')
+          }
+          function fail(msg) {
+            console.log(`::error::${msg}`)
+            process.exit(1)
+          }
+          EOF

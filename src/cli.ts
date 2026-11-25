@@ -1,5 +1,6 @@
-import { program } from 'commander'
+import { Command, program } from 'commander'
 import { type CliArgs, releaseMe, type ReleaseType, releaseTypes, type ReleaseTarget } from './releaseMe.js'
+import { ciPack } from './ciPack.js'
 
 const helpText = [
   '',
@@ -9,14 +10,39 @@ const helpText = [
   '  $ pnpm exec release-me major                        # bump major semver',
   '  $ pnpm exec release-me commit                       # out-of-band release (as x.y.z-commit-123456 without npm tag)',
   '  $ pnpm exec release-me v${major}.${minor}.${patch}  # release specific version',
+  '',
+  'Used by the GitHub Action that publishes to npm (see https://github.com/brillout/release-me#github-action):',
+  '  $ pnpm exec release-me ci-pack <git-tag|commit> --out <dir> [--package <name>]',
 ].join('\n')
 
-cli()
+if (process.argv[2] === 'ci-pack') {
+  cliCiPack()
+} else {
+  cli()
+}
 
 function cli() {
   const packageRootDir = process.cwd()
   const args = parseArgs()
   releaseMe(args, packageRootDir)
+}
+
+function cliCiPack() {
+  const command = new Command('release-me ci-pack')
+    .description(
+      'Build and pack the packages that the GitHub Action publishes to npm (run by the reusable workflow brillout/release-me/.github/workflows/publish.yml).',
+    )
+    .argument(
+      '<target>',
+      'Git tag of a stable release (v1.2.3 or some-package@1.2.3), or "commit" for a commit release of HEAD',
+    )
+    .requiredOption('--out <dir>', 'directory where the tarballs are written')
+    .option('--package <name>', 'commit release: only release this package (default: all packages that use release-me)')
+    .showHelpAfterError()
+  command.parse(process.argv.slice(3), { from: 'user' })
+  const target = command.args[0]!
+  const opts = command.opts<{ out: string; package?: string }>()
+  ciPack({ target, outDir: opts.out, packageName: opts.package || undefined })
 }
 
 function parseArgs(): CliArgs {

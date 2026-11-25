@@ -3,6 +3,21 @@ export { releaseTypes }
 export type { CliArgs }
 export type { ReleaseType }
 export type { ReleaseTarget }
+// Used by ./ciPack.ts
+export { thisPackageName }
+export { build }
+export { findBoilerplatePacakge }
+export { getCommitHash }
+export { getFilesInsideDir }
+export { getFilesMonorepoPackageJson }
+export { getMonorepoRootDir }
+export { getPackageJson }
+export { getVersion }
+export { logTitle }
+export { run }
+export { updatePackageJsonVersion }
+export { updateVersionMacro }
+export type { Files }
 
 import execa from 'execa'
 import * as fs from 'fs'
@@ -45,6 +60,8 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   const monorepoRootDir = await getMonorepoRootDir()
 
+  const ciWorkflow = await getCiWorkflow(monorepoRootDir)
+
   await abortIfUncommitedChanges(monorepoRootDir)
 
   const { packageName, packageJsonPath } = getPackageName(packageRootDir)
@@ -63,9 +80,15 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   const monorepoInfo = analyzeMonorepo(filesMonorepoPackageJson, packageRootDir, packageName)
 
-  logAnalysis(monorepoInfo, monorepoRootDir, packageRootDir)
+  logAnalysis(monorepoInfo, monorepoRootDir, packageRootDir, ciWorkflow)
 
   if (!isCommitRelease && !args.force) await abortIfNotLatestMainCommit()
+
+  if (isCommitRelease && ciWorkflow) {
+    // The GitHub Action builds & publishes the commit release: there is nothing to do locally.
+    await triggerCommitRelease(ciWorkflow, packageName, versionNew, commitHashBegin)
+    return
+  }
 
   // No uncommitted changes => we can safely use `$ git reset` => we can enable cleaning (i.e. reverting the release).
   cleanEnabled = commitHashBegin
@@ -133,15 +156,19 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   // Build
   // =============================
 
+  // With a GitHub Action, the build only checks that the release builds before pushing it (the GitHub Action builds it again).
   await build()
 
   // =============================
   // npm publish
   // =============================
 
-  await npmPublish(packageRootDir)
-  if (boilerplatePackageJson) {
-    await npmPublishBoilerplates(boilerplatePackageJson)
+  // With a GitHub Action, it publishes to npm upon `git push` (see below).
+  if (!ciWorkflow) {
+    await npmPublish(packageRootDir)
+    if (boilerplatePackageJson) {
+      await npmPublishBoilerplates(boilerplatePackageJson)
+    }
   }
 
   // ===================
@@ -157,7 +184,22 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   const gitTag = getGitTag(versionNew, gitTagPrefix)
   await makeGitCommit(monorepoRootDir, gitTag)
   await makeGitTag(gitTag)
-  await gitPush()
+  if (!ciWorkflow) {
+    await gitPush()
+  } else {
+    await gitPushReleaseTag(gitTag)
+    const published = [`${packageName}@${versionNew}`]
+    if (boilerplatePackageJson) {
+      const { packageJson } = getPackageJson(path.dirname(boilerplatePackageJson))
+      published.push(`${packageJson.name}@${packageJson.version}`)
+    }
+    logTitle('npm publish')
+    console.log(
+      `GitHub Action ${pc.bold(ciWorkflow.fileName)} will publish ${published
+        .map((p) => pc.cyan(p))
+        .join(' and ')} to npm: ${getWorkflowLink(ciWorkflow)}`,
+    )
+  }
 }
 
 function getPackageName(packageRootDir: string): { packageName: string; packageJsonPath: string } {
@@ -433,9 +475,134 @@ async function gitPush() {
   await run('git push')
   await run('git push --tags')
 }
-async function build() {
+async function gitPushReleaseTag(gitTag: GitTag) {
+  logTitle('Git push')
+  // - Push the release commit and its tag atomically: the tag triggers the GitHub Action that publishes to npm.
+  // - Only push this one tag: GitHub doesn't trigger any workflow when more than three tags are pushed at once.
+  await run(['git', 'push', '--atomic', 'origin', 'HEAD', `refs/tags/${gitTag}`])
+}
+async function build(cwd?: string) {
   logTitle(`Build ${logDetail('$ pnpm run build')}`)
-  await run('pnpm run build')
+  await run('pnpm run build', { cwd })
+}
+
+// The GitHub Action that publishes to npm, see https://github.com/brillout/release-me#github-action
+type CiWorkflow = {
+  /** Workflow file name, e.g. `release.yml` */
+  fileName: string
+  /** GitHub repository, e.g. `vikejs/vike` */
+  repo: string | null
+}
+async function getCiWorkflow(monorepoRootDir: string): Promise<CiWorkflow | null> {
+  const workflowsDir = path.join(monorepoRootDir, '.github', 'workflows')
+  let fileNames: string[]
+  try {
+    fileNames = fs.readdirSync(workflowsDir).sort()
+  } catch {
+    return null
+  }
+  // The workflow that calls the reusable workflow brillout/release-me/.github/workflows/publish.yml (or a fork's)
+  const usesReusableWorkflow = /^\s*(?:-\s*)?uses:\s*['"]?[\w.-]+\/release-me\/\.github\/workflows\/publish\.ya?ml@/m
+  const fileName = fileNames.find(
+    (f) => /\.ya?ml$/.test(f) && usesReusableWorkflow.test(fs.readFileSync(path.join(workflowsDir, f), 'utf8')),
+  )
+  if (!fileName) return null
+  return { fileName, repo: await getGitHubRepo() }
+}
+async function getGitHubRepo(): Promise<string | null> {
+  let remoteUrl: string
+  try {
+    remoteUrl = (await run__return('git remote get-url origin')).trim()
+  } catch {
+    return null
+  }
+  return parseGitHubRepo(remoteUrl)
+}
+function parseGitHubRepo(remoteUrl: string): string | null {
+  // git@github.com:vikejs/vike.git
+  // https://github.com/vikejs/vike
+  // ssh://git@github.com/vikejs/vike.git
+  const match = /github\.com[:/]([\w.-]+\/[\w.-]+?)(?:\.git)?\/?$/.exec(remoteUrl)
+  return match?.[1] ?? null
+}
+function getWorkflowLink(ciWorkflow: CiWorkflow): string {
+  const { fileName, repo } = ciWorkflow
+  if (!repo) return pc.bold(`.github/workflows/${fileName}`)
+  return pc.underline(`https://github.com/${repo}/actions/workflows/${fileName}`)
+}
+async function triggerCommitRelease(
+  ciWorkflow: CiWorkflow,
+  packageName: string,
+  versionNew: string,
+  commitHash: string,
+) {
+  logTitle('Trigger commit release')
+  const { fileName, repo } = ciWorkflow
+  assertUsage(
+    repo,
+    `Couldn't determine the GitHub repository of ${pc.cyan('origin')} ${logDetail('$ git remote get-url origin')}.`,
+  )
+  const workflowLink = getWorkflowLink(ciWorkflow)
+  const hintManual = `Alternatively, go to ${workflowLink} and press ${pc.bold('Run workflow')} with commit ${pc.bold(
+    commitHash,
+  )}.`
+
+  try {
+    await execa('gh', ['--version'])
+  } catch {
+    throw new Error(
+      [
+        pc.red(
+          pc.bold(
+            `Release aborted, because triggering the GitHub Action ${fileName} requires the GitHub CLI ${pc.cyan(
+              'gh',
+            )} (https://cli.github.com).`,
+          ),
+        ),
+        hintManual,
+      ].join(' '),
+    )
+  }
+
+  // The GitHub Action can only release commits that exist on GitHub (any branch, including pull requests from forks)
+  try {
+    await execa('gh', ['api', `repos/${repo}/commits/${commitHash}`, '--silent'], { all: true })
+  } catch (err) {
+    const output = (err as execa.ExecaError).all ?? ''
+    throw new Error(
+      [
+        pc.red(
+          pc.bold(
+            `Release aborted, because GitHub (${repo}) doesn't have the commit ${commitHash.slice(
+              0,
+              7,
+            )} — push it first.`,
+          ),
+        ),
+        output && `${pc.dim(`$ gh api repos/${repo}/commits/${commitHash}`)}\n${output}`,
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    )
+  }
+
+  await run([
+    'gh',
+    'workflow',
+    'run',
+    fileName,
+    '--repo',
+    repo,
+    '-f',
+    `commit=${commitHash}`,
+    '-f',
+    `package=${packageName}`,
+  ])
+  console.log(
+    `GitHub Action ${pc.bold(fileName)} will publish ${pc.cyan(
+      `${packageName}@${versionNew}`,
+    )} to npm: ${workflowLink}`,
+  )
 }
 
 async function getVersion(
@@ -764,9 +931,21 @@ async function getMonorepoRootDir() {
   return monorepoRootDir
 }
 
-function logAnalysis(monorepoInfo: MonorepoInfo, monorepoRootDir: string, packageRootDir: string) {
+function logAnalysis(
+  monorepoInfo: MonorepoInfo,
+  monorepoRootDir: string,
+  packageRootDir: string,
+  ciWorkflow: CiWorkflow | null,
+) {
   logTitle('Analysis result', true)
   console.log(`Package root directory: ${pc.bold(packageRootDir)} ${logDetail('process.cwd()')}`)
+  console.log(
+    `Publish to npm: ${
+      ciWorkflow
+        ? `GitHub Action ${pc.bold(ciWorkflow.fileName)} ${logDetail(`.github/workflows/${ciWorkflow.fileName}`)}`
+        : `locally ${logDetail('$ pnpm publish')}`
+    }`,
+  )
   const isMonorepo = !isSamePath(packageRootDir, monorepoRootDir) || monorepoInfo.hasMultiplePackages
   console.log(`Monorepo: ${logBoolean(isMonorepo)}`)
   if (isMonorepo) {
