@@ -38,12 +38,13 @@ async function init() {
   if (status === 'created') await logNpmSetup(monorepoRootDir, packages)
 }
 
-/** The GitHub Action installs the pnpm version of the root package.json */
+/** The GitHub Action installs the pnpm version of the root package.json (pnpm/action-setup reads it) */
 function assertPackageManager(monorepoRootDir: string) {
   const { packageJson, packageJsonPath } = getPackageJson(monorepoRootDir)
   const { packageManager, devEngines } = packageJson
   assertUsage(
-    packageManager?.startsWith('pnpm@') || devEngines?.packageManager?.name === 'pnpm',
+    packageManager?.startsWith('pnpm@') ||
+      (devEngines?.packageManager?.name === 'pnpm' && !!devEngines.packageManager.version),
     `The GitHub Action installs the pnpm version of ${packageJsonPath}: set its ${pc.bold(
       'packageManager',
     )} (e.g. ${pc.bold('"packageManager": "pnpm@x.y.z"')}).`,

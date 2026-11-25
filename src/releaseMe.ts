@@ -216,7 +216,7 @@ type PackageJson = {
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
   packageManager?: string
-  devEngines?: { packageManager?: { name?: string } }
+  devEngines?: { packageManager?: { name?: string; version?: string } }
   publishConfig?: { tag?: string }
 }
 function getPackageJson(dir: string): { packageJson: PackageJson; packageJsonPath: string } {
