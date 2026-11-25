@@ -3,6 +3,7 @@ export { isReleaseMeWorkflow }
 export { isReleaseWorkflowUpToDate }
 export { readReleaseWorkflow }
 export { releaseWorkflow }
+export { releaseWorkflowOutdated }
 export { releaseWorkflowPath }
 export { writeReleaseWorkflow }
 
@@ -23,17 +24,13 @@ const releaseWorkflow = {
   npmAllowedActions: ['npm publish', 'npm dist-tag'],
 }
 const releaseWorkflowPath = `.github/workflows/${releaseWorkflow.fileName}`
+const releaseWorkflowOutdated = `${releaseWorkflowPath} isn't up-to-date (or was modified): run ${initCommand} and push the commit it makes.`
 
 const thisPackageRootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
 function assertReleaseWorkflowUpToDate(monorepoRootDir: string) {
   if (isReleaseWorkflowUpToDate(monorepoRootDir)) return
-  throw new Error(
-    [
-      pc.red(pc.bold(`Release aborted, because ${releaseWorkflowPath} isn't up-to-date (or was modified).`)),
-      `Run ${pc.bold(initCommand)} and push the commit it makes.`,
-    ].join(' '),
-  )
+  throw new Error(pc.red(pc.bold(`Release aborted, because ${releaseWorkflowOutdated}`)))
 }
 
 function isReleaseWorkflowUpToDate(monorepoRootDir: string): boolean {

@@ -5,7 +5,7 @@ export { ciResolve }
 import { execFileSync } from 'node:child_process'
 import { parseReleaseTag } from './versions.ts'
 import { fail, getEnv, getInput, notice, setOutputs } from './utils.ts'
-import { isReleaseWorkflowUpToDate, releaseWorkflowPath } from './releaseWorkflow.ts'
+import { isReleaseWorkflowUpToDate, releaseWorkflowOutdated } from './releaseWorkflow.ts'
 
 type Release = {
   /** The Git ref that the job `pack` checks out */
@@ -17,11 +17,7 @@ type Release = {
 
 function ciResolve() {
   // E.g. after upgrading release-me without re-running `$ pnpm exec release-me init`
-  if (!isReleaseWorkflowUpToDate(getEnv('GITHUB_WORKSPACE'))) {
-    fail(
-      `${releaseWorkflowPath} isn't up-to-date (or was modified): run \`$ pnpm exec release-me init\` and push the commit it makes.`,
-    )
-  }
+  if (!isReleaseWorkflowUpToDate(getEnv('GITHUB_WORKSPACE'))) fail(releaseWorkflowOutdated)
   const { ref, tag, provenance } = getRelease()
   console.log(tag ? `Stable release: ${tag}` : `Commit release: ${ref}`)
   setOutputs({ ref, tag, provenance: String(provenance) })
