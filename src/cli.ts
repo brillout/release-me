@@ -1,5 +1,9 @@
+#!/usr/bin/env node
+
+// In release-me's own repository, `$ release-me` runs this file directly (Node.js strips its types). The npm package runs its build dist/cli.js instead (package.json#publishConfig.bin).
+
 import { Command, program } from 'commander'
-import type { CliArgs, ReleaseType, ReleaseTarget } from './releaseMe.js'
+import type { CliArgs, ReleaseType, ReleaseTarget } from './releaseMe.ts'
 
 const helpText = [
   '',
@@ -20,13 +24,13 @@ switch (process.argv[2]) {
     await cliInit()
     break
   case 'ci-internal-cmd-resolve':
-    ;(await import('./ci/ci-internal-cmd-resolve.js')).ciResolve()
+    ;(await import('./ci/ci-internal-cmd-resolve.ts')).ciResolve()
     break
   case 'ci-internal-cmd-pack':
     await cliCiPack()
     break
   case 'ci-internal-cmd-publish':
-    ;(await import('./ci/ci-internal-cmd-publish.js')).ciPublish()
+    ;(await import('./ci/ci-internal-cmd-publish.ts')).ciPublish()
     break
   default:
     await cli()
@@ -39,12 +43,12 @@ async function cliInit() {
     )
     .showHelpAfterError()
     .parse(process.argv.slice(3), { from: 'user' })
-  const { init } = await import('./ci/init.js')
+  const { init } = await import('./ci/init.ts')
   init()
 }
 
 async function cli() {
-  const { releaseMe, releaseTypes } = await import('./releaseMe.js')
+  const { releaseMe, releaseTypes } = await import('./releaseMe.ts')
   const packageRootDir = process.cwd()
   const args = parseArgs(releaseTypes)
   releaseMe(args, packageRootDir)
@@ -64,7 +68,7 @@ async function cliCiPack() {
     .showHelpAfterError()
   command.parse(process.argv.slice(3), { from: 'user' })
   const opts = command.opts<{ out: string; tag?: string; package?: string }>()
-  const { ciPack } = await import('./ci/ci-internal-cmd-pack.js')
+  const { ciPack } = await import('./ci/ci-internal-cmd-pack.ts')
   ciPack({ tag: opts.tag ?? '', packageName: opts.package ?? '', outDir: opts.out })
 }
 

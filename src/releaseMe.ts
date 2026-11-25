@@ -22,16 +22,16 @@ import execa from 'execa'
 import * as fs from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
-import { runCommand, assertUsage, logDetail, logTitle, run, run__return } from './utils.js'
+import { runCommand, assertUsage, logDetail, logTitle, run, run__return } from './utils.ts'
 import {
   type CiWorkflow,
   getCiWorkflow,
   gitPushReleaseTag,
   logCiPublish,
   triggerCommitRelease,
-} from './ci/githubAction.js'
-import { releaseWorkflow, releaseWorkflowPath } from './ci/releaseWorkflow.js'
-import { getCommitReleaseVersion } from './ci/versions.js'
+} from './ci/githubAction.ts'
+import { releaseWorkflow, releaseWorkflowPath } from './ci/releaseWorkflow.ts'
+import { getCommitReleaseVersion } from './ci/versions.ts'
 import * as path from 'path'
 /*
 //  "js-yaml": "4.1.0",

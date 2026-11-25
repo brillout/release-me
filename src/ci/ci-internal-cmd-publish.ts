@@ -6,8 +6,8 @@ export { ciPublish }
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { execFileSync } from 'node:child_process'
-import { isCommitReleaseVersion, parseReleaseTag } from './versions.js'
-import { fail, getEnv } from './utils.js'
+import { isCommitReleaseVersion, parseReleaseTag } from './versions.ts'
+import { fail, getEnv } from './utils.ts'
 
 type Package = { tarball: string; name: string; version: string; hasPublishConfigTag: boolean }
 type ToPublish = Package & {

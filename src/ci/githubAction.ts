@@ -11,14 +11,14 @@ export type { CiWorkflow }
 
 import execa from 'execa'
 import pc from '@brillout/picocolors'
-import { assertUsage, logDetail, logTitle, run } from '../utils.js'
+import { assertUsage, logDetail, logTitle, run } from '../utils.ts'
 import {
   assertReleaseWorkflowUpToDate,
   isReleaseMeWorkflow,
   readReleaseWorkflow,
   releaseWorkflow,
   releaseWorkflowPath,
-} from './releaseWorkflow.js'
+} from './releaseWorkflow.ts'
 
 type CiWorkflow = {
   /** GitHub repository, e.g. `vikejs/vike` */

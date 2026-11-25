@@ -3,9 +3,9 @@ export { ciResolve }
 // `$ release-me ci-internal-cmd-resolve`: job `resolve` of the GitHub Action, decides what to release from what triggered the workflow.
 
 import { execFileSync } from 'node:child_process'
-import { parseReleaseTag } from './versions.js'
-import { fail, getEnv, getInput, notice, setOutputs } from './utils.js'
-import { isReleaseWorkflowUpToDate, releaseWorkflowPath } from './releaseWorkflow.js'
+import { parseReleaseTag } from './versions.ts'
+import { fail, getEnv, getInput, notice, setOutputs } from './utils.ts'
+import { isReleaseWorkflowUpToDate, releaseWorkflowPath } from './releaseWorkflow.ts'
 
 type Release = {
   /** The Git ref that the job `pack` checks out */

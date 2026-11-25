@@ -4,8 +4,8 @@ export { init }
 
 import * as path from 'path'
 import pc from '@brillout/picocolors'
-import { getGitHubRepo, parseGitHubRepo } from './githubAction.js'
-import { releaseWorkflow, releaseWorkflowPath, writeReleaseWorkflow } from './releaseWorkflow.js'
+import { getGitHubRepo, parseGitHubRepo } from './githubAction.ts'
+import { releaseWorkflow, releaseWorkflowPath, writeReleaseWorkflow } from './releaseWorkflow.ts'
 import {
   assertInstalledAtRoot,
   findBoilerplatePacakge,
@@ -14,8 +14,8 @@ import {
   getMonorepoRootDir,
   getPackageJson,
   getReleaseMePackages,
-} from '../releaseMe.js'
-import { assertUsage, logTitle, run } from '../utils.js'
+} from '../releaseMe.ts'
+import { assertUsage, logTitle, run } from '../utils.ts'
 
 async function init() {
   const monorepoRootDir = await getMonorepoRootDir()

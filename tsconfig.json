@@ -9,7 +9,9 @@
     "esModuleInterop": true,
     "declaration": true,
     "strict": true,
-    "noUncheckedIndexedAccess": true
+    "noUncheckedIndexedAccess": true,
+    "rewriteRelativeImportExtensions": true,
+    "erasableSyntaxOnly": true
   },
   "include": ["src/**/*"]
 }

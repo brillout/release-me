@@ -5,8 +5,8 @@ export { ciPack }
 import * as fs from 'fs'
 import * as path from 'path'
 import pc from '@brillout/picocolors'
-import { assertUsage, logTitle, run } from '../utils.js'
-import { getCommitReleaseVersion, parseReleaseTag } from './versions.js'
+import { assertUsage, logTitle, run } from '../utils.ts'
+import { getCommitReleaseVersion, parseReleaseTag } from './versions.ts'
 import {
   build,
   findBoilerplatePacakge,
@@ -19,7 +19,7 @@ import {
   updatePackageJsonVersion,
   updateVersionMacro,
   type ReleaseMePackage,
-} from '../releaseMe.js'
+} from '../releaseMe.ts'
 
 type CiPackArgs = {
   /** Stable release: its Git tag (`v1.2.3` or `some-package@1.2.3`). Commit release of HEAD: empty. */
