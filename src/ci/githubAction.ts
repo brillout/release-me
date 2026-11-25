@@ -67,10 +67,10 @@ async function triggerCommitRelease(packageName: string, versionNew: string, com
   )
 }
 
-/** E.g. `go to https://github.com/vikejs/vike/actions/workflows/release.yml, press Run workflow, and ${then}` */
-function getRunWorkflowCta(workflowLink: string, then?: string): string {
+/** E.g. `go to https://github.com/vikejs/vike/actions/workflows/release.yml, press Run workflow, and ${nextStep}` */
+function getRunWorkflowCta(workflowLink: string, nextStep?: string): string {
   const press = `press ${pc.bold(pc.cyan('Run workflow'))}`
-  return then ? `go to ${workflowLink}, ${press}, and ${then}` : `go to ${workflowLink} and ${press}`
+  return nextStep ? `go to ${workflowLink}, ${press}, and ${nextStep}` : `go to ${workflowLink} and ${press}`
 }
 
 /**
