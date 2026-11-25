@@ -3,7 +3,9 @@
 // In release-me's own repository, `$ release-me` runs this file directly (Node.js strips its types). The npm package runs its build dist/cli.js instead (package.json#publishConfig.bin).
 
 import { Command, program } from 'commander'
-import type { CliArgs, ReleaseType, ReleaseTarget } from './releaseMe.ts'
+import { type CliArgs, releaseMe, type ReleaseType, releaseTypes, type ReleaseTarget } from './releaseMe.ts'
+import { init } from './ci/init.ts'
+import { ciPublish } from './ci/ci-publish.ts'
 
 const helpText = [
   '',
@@ -18,13 +20,12 @@ const helpText = [
   '  $ pnpm exec release-me init                         # create/update .github/workflows/release.yml (GitHub Action that publishes to npm)',
 ].join('\n')
 
-// Each command only loads its own code
 switch (process.argv[2]) {
   case 'init':
     await cliInit()
     break
   case 'ci-publish':
-    await (await import('./ci/ci-publish.ts')).ciPublish()
+    await ciPublish()
     break
   default:
     await cli()
@@ -37,18 +38,16 @@ async function cliInit() {
     )
     .showHelpAfterError()
     .parse(process.argv.slice(3), { from: 'user' })
-  const { init } = await import('./ci/init.ts')
   await init()
 }
 
 async function cli() {
-  const { releaseMe, releaseTypes } = await import('./releaseMe.ts')
   const packageRootDir = process.cwd()
-  const args = parseArgs(releaseTypes)
+  const args = parseArgs()
   await releaseMe(args, packageRootDir)
 }
 
-function parseArgs(releaseTypes: readonly ReleaseType[]): CliArgs {
+function parseArgs(): CliArgs {
   program
     .name('release-me')
     .option(
@@ -73,7 +72,7 @@ function parseArgs(releaseTypes: readonly ReleaseType[]): CliArgs {
     program.outputHelp()
     process.exit(0)
   }
-  if (!isValidReleaseTarget(releaseTarget, releaseTypes)) {
+  if (!isValidReleaseTarget(releaseTarget)) {
     console.error('Wrong CLI usage: argument is invalid.')
     program.outputHelp()
     process.exit(0)
@@ -86,9 +85,6 @@ function parseArgs(releaseTypes: readonly ReleaseType[]): CliArgs {
   }
 }
 
-function isValidReleaseTarget(
-  releaseTarget: string,
-  releaseTypes: readonly ReleaseType[],
-): releaseTarget is ReleaseTarget {
+function isValidReleaseTarget(releaseTarget: string): releaseTarget is ReleaseTarget {
   return releaseTarget.startsWith('v') || releaseTypes.includes(releaseTarget as ReleaseType)
 }
