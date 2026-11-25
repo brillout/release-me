@@ -151,7 +151,8 @@ Add `@brillout/release-me` to the `devDependencies` of the monorepo root's `pack
  }
 ```
 
-release-me releases the packages that have a script that runs `release-me` (they don't need `@brillout/release-me` in their own `devDependencies`).
+> [!NOTE]
+> A package is only considered by `@brillout/release-me` if the package defines a script that runs `release-me`.
 
 ### `CHANGELOG.md` & commit scope
 
