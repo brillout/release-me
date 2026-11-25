@@ -6,7 +6,6 @@ export type { ReleaseTarget }
 // Used by ./ci/
 export { thisPackageName }
 export { build }
-export { findBoilerplatePacakge }
 export { getCommitHash }
 export { getFilesInsideDir }
 export { getFilesMonorepoPackageJson }
@@ -116,10 +115,6 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   updatePackageJsonVersion(packageRootDir, versionNew)
 
   await updateDependencies(packageName, versionNew, versionOld, filesMonorepo)
-  const boilerplatePackageJson = await findBoilerplatePacakge(packageName, filesMonorepoPackageJson)
-  if (boilerplatePackageJson) {
-    bumpBoilerplateVersion(boilerplatePackageJson)
-  }
 
   const gitTagPrefix: GitTagPrefix = monorepoInfo.hasMultiplePackages ? `${packageName}@` : 'v'
 
@@ -169,12 +164,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   // =============================
 
   // With a GitHub Action, it publishes to npm upon `git push` (see below).
-  if (!ciWorkflow) {
-    await npmPublish(packageRootDir)
-    if (boilerplatePackageJson) {
-      await npmPublishBoilerplates(boilerplatePackageJson)
-    }
-  }
+  if (!ciWorkflow) await npmPublish(packageRootDir)
 
   // ===================
   // Bump pnpm-lock.yaml
@@ -192,15 +182,8 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   if (!ciWorkflow) {
     await gitPush()
   } else {
-    const published = [packageRootDir, ...(boilerplatePackageJson ? [path.dirname(boilerplatePackageJson)] : [])]
-    await triggerStableRelease(ciWorkflow, gitTag, published.map(getPackageSpec))
+    await triggerStableRelease(ciWorkflow, gitTag, `${packageName}@${versionNew}`)
   }
-}
-
-/** E.g. `vike@0.4.271` */
-function getPackageSpec(packageRootDir: string): string {
-  const { packageJson } = getPackageJson(packageRootDir)
-  return `${packageJson.name}@${packageJson.version}`
 }
 
 function getPackageName(packageRootDir: string): { packageName: string; packageJsonPath: string } {
@@ -279,9 +262,6 @@ function readYaml(filePathRelative: string, dir: string): Record<string, unknown
 async function publishCommitRelease(packageRootDir: string, packageName: string) {
   await npmPublish(packageRootDir, 'commit')
   await removeNpmTag(packageRootDir, 'commit', packageName)
-}
-async function npmPublishBoilerplates(boilerplatePackageJson: string) {
-  await npmPublish(path.dirname(boilerplatePackageJson))
 }
 async function npmPublish(dir: string, tag?: string) {
   logTitle('Pnpm publish')
@@ -541,33 +521,9 @@ function updatePackageJsonVersion(packageRootDir: string, versionNew: string) {
   })
 }
 
-async function bumpBoilerplateVersion(packageJsonFile: string) {
-  assert(path.isAbsolute(packageJsonFile))
-  const packageJson = require(packageJsonFile)
-  assert(packageJson.version.startsWith('0.0.'))
-  const versionParts = packageJson.version.split('.')
-  assert(versionParts.length === 3)
-  const newPatch = parseInt(versionParts[2], 10) + 1
-  packageJson.version = `0.0.${newPatch}`
-  writePackageJson(packageJsonFile, packageJson)
-}
-
 function getFilesMonorepoPackageJson(filesMonorepo: Files): Files {
   const filesMonorepoPackageJson = filesMonorepo.filter((f) => f.filePathAbsolute.endsWith('/package.json'))
   return filesMonorepoPackageJson
-}
-
-async function findBoilerplatePacakge(packageName: string, filesMonorepoPackageJson: Files) {
-  for (const { filePathAbsolute } of filesMonorepoPackageJson) {
-    const packageJson = require(filePathAbsolute) as Record<string, unknown>
-    const { name } = packageJson
-    if (!name) continue
-    assert(typeof name === 'string')
-    if (name === `create-${packageName}`) {
-      return filePathAbsolute
-    }
-  }
-  return null
 }
 
 /** @param ciPackageName The released package, if it's published by the GitHub Action (i.e. after the push) */
