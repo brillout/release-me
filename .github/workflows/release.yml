@@ -30,7 +30,7 @@ jobs:
       # Checks out: [TRUSTED] `main` (the pushed release tag), or commit of "Use workflow from"
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
-      # SECURITY: runs no install scripts (neither the dependencies' nor the root package.json's)
+      # SECURITY: [MINOR] runs no install scripts
       - run: pnpm install --ignore-scripts
       - id: resolve
         run: pnpm exec release-me ci-internal-cmd-resolve
@@ -79,7 +79,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       # Trusted publishing requires npm >= 11.5.1, and removing a dist-tag requires npm >= 11.21.0
       - run: npm install --global npm@latest
-      # SECURITY: runs no install scripts (neither the dependencies' nor the root package.json's)
+      # SECURITY: [MINOR] runs no install scripts
       - run: pnpm install --ignore-scripts
       - uses: actions/download-artifact@v8
         with:
