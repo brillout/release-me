@@ -14,6 +14,7 @@ import {
   getMonorepoRootDir,
   getPackageJson,
   getReleaseMePackages,
+  type PackageJson,
 } from '../releaseMe.ts'
 import { assertUsage, logTitle, run } from '../utils.ts'
 
@@ -42,10 +43,7 @@ async function init() {
 /** The GitHub Action installs the pnpm version of the root package.json */
 function assertPackageManager(monorepoRootDir: string) {
   const { packageJson, packageJsonPath } = getPackageJson(monorepoRootDir)
-  const { packageManager, devEngines } = packageJson as {
-    packageManager?: string
-    devEngines?: { packageManager?: { name?: string } }
-  }
+  const { packageManager, devEngines } = packageJson
   assertUsage(
     packageManager?.startsWith('pnpm@') || devEngines?.packageManager?.name === 'pnpm',
     `The GitHub Action installs the pnpm version of ${packageJsonPath}: set its ${pc.bold(
@@ -112,19 +110,14 @@ async function getPublishedPackages(monorepoRootDir: string) {
     const { packageJson } = getPackageJson(packageRootDir)
     return {
       name: packageJson.name!,
-      repository: getRepository((packageJson as { repository?: unknown }).repository),
+      repository: getRepository(packageJson.repository),
     }
   })
 }
 
 /** package.json#repository => `owner/repo` */
-function getRepository(repository: unknown): string | null {
-  const url =
-    typeof repository === 'string'
-      ? repository
-      : repository && typeof repository === 'object' && 'url' in repository && typeof repository.url === 'string'
-        ? repository.url
-        : null
+function getRepository(repository: PackageJson['repository']): string | null {
+  const url = typeof repository === 'string' ? repository : repository?.url
   if (!url) return null
   // Shorthand: `vikejs/vike` or `github:vikejs/vike`
   const shorthand = /^(?:github:)?([\w.-]+\/[\w.-]+)$/.exec(url)

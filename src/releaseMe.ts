@@ -16,6 +16,7 @@ export { assertInstalledAtRoot }
 export { getReleaseMePackages }
 export { updatePackageJsonVersion }
 export { updateVersionMacro }
+export type { PackageJson }
 export type { ReleaseMePackage }
 
 import execa from 'execa'
@@ -231,9 +232,12 @@ type PackageJson = {
   name?: string
   version?: string
   private?: boolean
+  repository?: string | { url?: string }
   scripts?: Record<string, string>
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
+  packageManager?: string
+  devEngines?: { packageManager?: { name?: string } }
 }
 function getPackageJson(dir: string): { packageJson: PackageJson; packageJsonPath: string } {
   const { fileJson, filePath } = readJson('package.json', dir)
