@@ -5,7 +5,7 @@ export { init }
 import * as path from 'path'
 import pc from '@brillout/picocolors'
 import { getReleaseMePackages } from './ciPack.js'
-import { getGitHubRepo, parseGitHubRepo, workflowList, writeWorkflows } from './githubAction.js'
+import { getGitHubRepo, parseGitHubRepo, releaseWorkflow, writeReleaseWorkflow } from './githubAction.js'
 import {
   findBoilerplatePacakge,
   getFilesInsideDir,
@@ -28,36 +28,28 @@ async function init() {
     if (boilerplatePackageJson) packageRootDirs.push(path.dirname(boilerplatePackageJson))
   }
 
-  const results = writeWorkflows(monorepoRootDir)
+  const status = writeReleaseWorkflow(monorepoRootDir)
+  const file = `.github/workflows/${releaseWorkflow.fileName}`
 
   logTitle('GitHub Action', true)
-  for (const { fileName, status } of results) {
-    const file = pc.bold(`.github/workflows/${fileName}`)
-    console.log(
-      status === 'created'
-        ? `Created ${file}`
-        : status === 'updated'
-          ? `Updated ${file}`
-          : `${file} is already up-to-date`,
-    )
+  if (status === 'up-to-date') {
+    console.log(`${pc.bold(file)} is already up-to-date`)
+    return
   }
-  const changed = results.filter((r) => r.status !== 'up-to-date')
-  if (changed.length === 0) return
-  // A new workflow file requires a new trusted publisher on npm
-  const created = workflowList.filter((w) => results.some((r) => r.fileName === w.fileName && r.status === 'created'))
+  console.log(`${status === 'created' ? 'Created' : 'Updated'} ${pc.bold(file)}`)
 
-  const files = changed.map((r) => `.github/workflows/${r.fileName}`)
-  await run(['git', 'add', '--', ...files], { cwd: monorepoRootDir })
-  // Only commit the workflow files (`$ git commit -- <files>` ignores other staged changes)
+  await run(['git', 'add', '--', file], { cwd: monorepoRootDir })
+  // Only commit the workflow file (`$ git commit -- <file>` ignores other staged changes)
   const commitMessage =
-    created.length > 0 ? 'ci: set up release-me GitHub Action' : 'ci: update release-me GitHub Action'
-  await run(['git', 'commit', '--quiet', '-m', commitMessage, '--', ...files], { cwd: monorepoRootDir })
+    status === 'created' ? 'ci: set up release-me GitHub Action' : 'ci: update release-me GitHub Action'
+  await run(['git', 'commit', '--quiet', '-m', commitMessage, '--', file], { cwd: monorepoRootDir })
   console.log(`Committed ${pc.dim(`(${commitMessage})`)}`)
 
   console.log()
   console.log('Next steps:')
   console.log(`1. Push the commit to the default branch ${pc.dim('$ git push')}`)
-  if (created.length === 0) return
+  // A new workflow requires a trusted publisher on npm
+  if (status === 'updated') return
 
   const repo = await getGitHubRepo(monorepoRootDir)
   const [owner, repoName] = repo ? repo.split('/') : []
@@ -77,17 +69,13 @@ async function init() {
     console.log(`   ${pc.underline(`https://www.npmjs.com/package/${name}/access`)}`)
   }
   console.log(
-    `   and, under ${pc.bold('Trusted Publisher')}, press ${pc.bold('GitHub Actions')} to set up ${
-      created.length === 1 ? 'this connection' : `these ${created.length} connections`
-    }:`,
+    `   and, under ${pc.bold('Trusted Publisher')}, press ${pc.bold('GitHub Actions')} to set up a connection:`,
   )
-  for (const { fileName, npmAllowedActions } of created) {
-    console.log(
-      `   - ${pc.bold(owner ?? '<owner>')} / ${pc.bold(repoName ?? '<repo>')}, workflow filename ${pc.bold(
-        fileName,
-      )}, ${npmAllowedActions.map((a) => pc.bold(`Allow ${a}`)).join(' and ')}`,
-    )
-  }
+  console.log(
+    `   - ${pc.bold(owner ?? '<owner>')} / ${pc.bold(repoName ?? '<repo>')}, workflow filename ${pc.bold(
+      releaseWorkflow.fileName,
+    )}, ${releaseWorkflow.npmAllowedActions.map((a) => pc.bold(`Allow ${a}`)).join(' and ')}`,
+  )
   console.log(`   ${pc.dim("(A new connection expires if it isn't used within 2 days.)")}`)
   for (const { name } of packages.filter((p) => p.repositoryMismatch)) {
     console.log()

@@ -4,8 +4,8 @@ export { getGitHubRepo }
 export { getWorkflowLink }
 export { initCommand }
 export { parseGitHubRepo }
-export { workflowList }
-export { writeWorkflows }
+export { releaseWorkflow }
+export { writeReleaseWorkflow }
 export type { CiWorkflow }
 
 // The GitHub Action that publishes to npm, see https://github.com/brillout/release-me#github-action
@@ -46,88 +46,53 @@ const releaseWorkflow = {
     '',
   ].join('\n'),
 }
-const workflowList = [releaseWorkflow]
+const releaseWorkflowPath = `.github/workflows/${releaseWorkflow.fileName}`
 
 type CiWorkflow = {
-  /** Workflow file name, i.e. `release.yml` */
-  fileName: string
   /** GitHub repository, e.g. `vikejs/vike` */
   repo: string | null
 }
 
 /** Whether the repository publishes to npm via the GitHub Action (instead of locally) */
 async function getCiWorkflow(monorepoRootDir: string): Promise<CiWorkflow | null> {
-  if (getWorkflowFilesCallingPublish(monorepoRootDir).length === 0) return null
-  return { fileName: releaseWorkflow.fileName, repo: await getGitHubRepo(monorepoRootDir) }
+  const content = readReleaseWorkflow(monorepoRootDir)
+  if (content === null || !callsPublish(content)) return null
+  return { repo: await getGitHubRepo(monorepoRootDir) }
 }
 
 function assertCiWorkflowsUpToDate(monorepoRootDir: string) {
-  const fileNames = workflowList.map((w) => w.fileName)
-  const others = getWorkflowFilesCallingPublish(monorepoRootDir).filter((f) => !fileNames.includes(f))
-  if (others.length > 0) {
+  if (readReleaseWorkflow(monorepoRootDir) === releaseWorkflow.content) return
+  throw new Error(
+    [
+      pc.red(pc.bold(`Release aborted, because ${releaseWorkflowPath} isn't up-to-date (or was modified).`)),
+      `Run ${pc.bold(initCommand)} and commit the result.`,
+    ].join(' '),
+  )
+}
+
+/** Create or update .github/workflows/release.yml */
+function writeReleaseWorkflow(monorepoRootDir: string): 'created' | 'updated' | 'up-to-date' {
+  const content = readReleaseWorkflow(monorepoRootDir)
+  if (content === releaseWorkflow.content) return 'up-to-date'
+  const filePath = path.join(monorepoRootDir, releaseWorkflowPath)
+  if (content !== null && !callsPublish(content)) {
+    // Don't overwrite a release.yml that has nothing to do with release-me
     throw new Error(
-      [
-        pc.red(
-          pc.bold(
-            `Release aborted, because ${listFiles(others)} ${
-              others.length === 1 ? 'calls' : 'call'
-            } release-me's reusable workflow publish.yml, but only ${listFiles(fileNames)} should.`,
-          ),
+      pc.red(
+        pc.bold(
+          `${filePath} already exists and it isn't release-me's (it doesn't call release-me's reusable workflow publish.yml): rename or remove it, then re-run ${initCommand}.`,
         ),
-        `Remove ${others.length === 1 ? 'it' : 'them'}, then run ${pc.bold(initCommand)} and commit the result.`,
-      ].join(' '),
+      ),
     )
   }
-  for (const { fileName, content } of workflowList) {
-    const contentActual = readWorkflow(monorepoRootDir, fileName)
-    if (contentActual !== content) {
-      throw new Error(
-        [
-          pc.red(
-            pc.bold(
-              `Release aborted, because ${listFiles([fileName])} ${
-                contentActual === null ? 'is missing' : "isn't up-to-date (or was modified)"
-              }.`,
-            ),
-          ),
-          `Run ${pc.bold(initCommand)} and commit the result.`,
-        ].join(' '),
-      )
-    }
-  }
+  fs.mkdirSync(path.dirname(filePath), { recursive: true })
+  fs.writeFileSync(filePath, releaseWorkflow.content)
+  return content === null ? 'created' : 'updated'
 }
 
-/** Create or update the workflow files */
-function writeWorkflows(monorepoRootDir: string) {
-  const results = workflowList.map(({ fileName, content }) => {
-    const contentActual = readWorkflow(monorepoRootDir, fileName)
-    const filePath = path.join(getWorkflowsDir(monorepoRootDir), fileName)
-    if (contentActual !== null && contentActual !== content && !callsPublish(contentActual)) {
-      // Don't overwrite a workflow that has nothing to do with release-me
-      throw new Error(
-        pc.red(
-          pc.bold(
-            `${filePath} already exists and it isn't release-me's (it doesn't call release-me's reusable workflow publish.yml): rename or remove it, then re-run ${initCommand}.`,
-          ),
-        ),
-      )
-    }
-    const status: 'created' | 'updated' | 'up-to-date' =
-      contentActual === null ? 'created' : contentActual === content ? 'up-to-date' : 'updated'
-    return { fileName, filePath, content, status }
-  })
-  // Write only after checking all files
-  for (const { filePath, content, status } of results) {
-    if (status === 'up-to-date') continue
-    fs.mkdirSync(path.dirname(filePath), { recursive: true })
-    fs.writeFileSync(filePath, content)
-  }
-  return results.map(({ fileName, status }) => ({ fileName, status }))
-}
-
-function readWorkflow(monorepoRootDir: string, fileName: string): string | null {
+function readReleaseWorkflow(monorepoRootDir: string): string | null {
   try {
-    const content = fs.readFileSync(path.join(getWorkflowsDir(monorepoRootDir), fileName), 'utf8')
+    const content = fs.readFileSync(path.join(monorepoRootDir, releaseWorkflowPath), 'utf8')
     // Git may check out the file with CRLF line endings (Windows)
     return content.replace(/\r\n/g, '\n')
   } catch {
@@ -135,30 +100,9 @@ function readWorkflow(monorepoRootDir: string, fileName: string): string | null 
   }
 }
 
-function listFiles(fileNames: string[]) {
-  return fileNames.map((f) => `.github/workflows/${f}`).join(' and ')
-}
-
-/** The workflow files that call the reusable workflow brillout/release-me/.github/workflows/publish.yml (or a fork's) */
-function getWorkflowFilesCallingPublish(monorepoRootDir: string): string[] {
-  const workflowsDir = getWorkflowsDir(monorepoRootDir)
-  let fileNames: string[]
-  try {
-    fileNames = fs.readdirSync(workflowsDir).sort()
-  } catch {
-    return []
-  }
-  return fileNames.filter((f) => {
-    if (!/\.ya?ml$/.test(f)) return false
-    const filePath = path.join(workflowsDir, f)
-    return fs.statSync(filePath).isFile() && callsPublish(fs.readFileSync(filePath, 'utf8'))
-  })
-}
+/** Whether the workflow calls the reusable workflow brillout/release-me/.github/workflows/publish.yml (or a fork's) */
 function callsPublish(workflowContent: string) {
   return /^\s*(?:-\s*)?uses:\s*['"]?[\w.-]+\/release-me\/\.github\/workflows\/publish\.ya?ml@/m.test(workflowContent)
-}
-function getWorkflowsDir(monorepoRootDir: string) {
-  return path.join(monorepoRootDir, '.github', 'workflows')
 }
 
 async function getGitHubRepo(cwd: string): Promise<string | null> {
@@ -180,7 +124,7 @@ function parseGitHubRepo(url: string): string | null {
 }
 
 function getWorkflowLink(ciWorkflow: CiWorkflow): string {
-  const { fileName, repo } = ciWorkflow
-  if (!repo) return pc.bold(`.github/workflows/${fileName}`)
-  return pc.underline(`https://github.com/${repo}/actions/workflows/${fileName}`)
+  const { repo } = ciWorkflow
+  if (!repo) return pc.bold(releaseWorkflowPath)
+  return pc.underline(`https://github.com/${repo}/actions/workflows/${releaseWorkflow.fileName}`)
 }

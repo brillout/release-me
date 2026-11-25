@@ -24,7 +24,13 @@ import * as fs from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
 import { runCommand, assertUsage } from './utils.js'
-import { assertCiWorkflowsUpToDate, type CiWorkflow, getCiWorkflow, getWorkflowLink } from './githubAction.js'
+import {
+  assertCiWorkflowsUpToDate,
+  type CiWorkflow,
+  getCiWorkflow,
+  getWorkflowLink,
+  releaseWorkflow,
+} from './githubAction.js'
 import * as path from 'path'
 /*
 //  "js-yaml": "4.1.0",
@@ -199,7 +205,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
     logTitle('npm publish')
     const workflowLink = getWorkflowLink(ciWorkflow)
     console.log(
-      `GitHub Action ${pc.bold(ciWorkflow.fileName)} will publish ${published
+      `GitHub Action ${pc.bold(releaseWorkflow.fileName)} will publish ${published
         .map((p) => pc.cyan(p))
         .join(' and ')} to npm: ${workflowLink}`,
     )
@@ -502,7 +508,8 @@ async function triggerCommitRelease(
   commitHash: string,
 ) {
   logTitle('Trigger commit release')
-  const { fileName, repo } = ciWorkflow
+  const { repo } = ciWorkflow
+  const { fileName } = releaseWorkflow
   assertUsage(
     repo,
     `Couldn't determine the GitHub repository of ${pc.cyan('origin')} ${logDetail('$ git remote get-url origin')}.`,
@@ -923,7 +930,9 @@ function logAnalysis(
   console.log(
     `Publish to npm: ${
       ciWorkflow
-        ? `GitHub Action ${pc.bold(ciWorkflow.fileName)} ${logDetail(`.github/workflows/${ciWorkflow.fileName}`)}`
+        ? `GitHub Action ${pc.bold(releaseWorkflow.fileName)} ${logDetail(
+            `.github/workflows/${releaseWorkflow.fileName}`,
+          )}`
         : `locally ${logDetail('$ pnpm publish')}`
     }`,
   )
