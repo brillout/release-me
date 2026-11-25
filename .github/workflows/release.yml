@@ -4,7 +4,7 @@
 
 # SECURITY:
 # - Only users with write access can trigger this workflow: by pushing a release tag, or by pressing "Run workflow".
-# - No caches: the job `pack` (which runs the released commit's code) could poison a cache restored by another release.
+# - It runs the released commit's code with npm publish rights: only release commits you trust (review a pull request from a fork before commit-releasing it).
 
 name: Release
 on:
@@ -12,7 +12,7 @@ on:
     tags: ['v[0-9]*', '**@[0-9]*'] # v1.2.3, some-package@1.2.3
   workflow_dispatch:
     inputs:
-      ref: { description: 'Commit to commit-release: SHA, branch, or refs/pull/<number>/head (default: the selected branch). To re-publish a stable release, select its tag in "Use workflow from" instead.' }
+      ref: { description: 'Commit to commit-release: SHA, branch, or refs/pull/<number>/head (default: the selected branch). It runs with npm publish rights: review a pull request from a fork first. To re-publish a stable release, select its tag in "Use workflow from" instead.' }
       package: { description: 'Package (commit-release only, default: all)' }
 
 env:
@@ -21,59 +21,22 @@ env:
   TAG: ${{ github.ref_type == 'tag' && !inputs.ref && github.ref_name || '' }}
 
 jobs:
-  # ============
-  # STEP 1: Build & pack the packages to publish
-  # ============
-  pack:
+  publish:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
     steps:
-      # SECURITY: runs the released commit's code, which may be untrusted (e.g. a pull request from a fork), so this job can't publish to npm (it doesn't have `id-token: write`).
-      # Checks out: [UNTRUSTED] released commit
+      # Checks out the released commit
       - uses: actions/checkout@v7
         with:
           # Empty: the pushed tag, or the commit of "Use workflow from"
           ref: ${{ inputs.ref }}
-          # SECURITY: don't store the GitHub token in .git/config, where the released commit's code could read it
-          persist-credentials: false
-      - uses: pnpm/action-setup@v6
-      - run: pnpm install
-      - run: pnpm exec release-me ci-internal-cmd-pack
-        # SECURITY: the inputs are passed as env variables, instead of being inserted into `run:` (shell injection)
-        env:
-          PACKED_PACKAGES_DIR: packed-packages/
-          PACKAGE: ${{ inputs.package }}
-      # SECURITY: the tarballs are the only thing this job passes to the job `publish`
-      - uses: actions/upload-artifact@v7
-        with:
-          name: packed-packages-dir
-          path: packed-packages/
-
-  # ============
-  # STEP 2: Publish the tarballs made by the job `pack`
-  # ============
-  publish:
-    needs: pack
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      # SECURITY: the only job that can publish to npm (`id-token: write`). It never runs untrusted code:
-      # - It runs the release-me installed by the workflow's commit (as trusted as this file), which, for a commit release, isn't necessarily the released commit.
-      # - It only reads the tarballs: it verifies the package.json inside each one, and `$ npm publish <tarball>` runs no scripts.
-      id-token: write
-    steps:
-      # Checks out: [TRUSTED] `main` (the pushed release tag), or commit of "Use workflow from"
-      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
       # Trusted publishing requires npm >= 11.5.1, and removing a dist-tag requires npm >= 11.21.0
       - run: npm install --global npm@latest
-      # SECURITY: [MINOR] runs no install scripts
-      - run: pnpm install --ignore-scripts
-      - uses: actions/download-artifact@v8
-        with:
-          name: packed-packages-dir
-          path: packed-packages/
+      - run: pnpm install
       - run: pnpm exec release-me ci-internal-cmd-publish
+        # SECURITY: the input is passed as env variable, instead of being inserted into `run:` (shell injection)
         env:
-          PACKED_PACKAGES_DIR: packed-packages/
+          PACKAGE: ${{ inputs.package }}

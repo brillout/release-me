@@ -63,7 +63,7 @@ async function triggerCommitRelease(packageName: string, versionNew: string, com
   logWillPublish(
     packageSpec,
     workflowLink,
-    `You can also commit-release any commit, including pull requests from forks: ${getRunWorkflowCta(workflowLink)}.`,
+    `You can also commit-release any commit you trust: ${getRunWorkflowCta(workflowLink)}.`,
   )
 }
 

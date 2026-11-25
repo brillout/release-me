@@ -18,16 +18,13 @@ const helpText = [
   '  $ pnpm exec release-me init                         # create/update .github/workflows/release.yml (GitHub Action that publishes to npm)',
 ].join('\n')
 
-// Each command only loads its own code: the GitHub Action's job `publish` runs as little code as possible
+// Each command only loads its own code
 switch (process.argv[2]) {
   case 'init':
     await cliInit()
     break
-  case 'ci-internal-cmd-pack':
-    await (await import('./ci/ci-internal-cmd-pack.ts')).ciPack()
-    break
   case 'ci-internal-cmd-publish':
-    ;(await import('./ci/ci-internal-cmd-publish.ts')).ciPublish()
+    await (await import('./ci/ci-internal-cmd-publish.ts')).ciPublish()
     break
   default:
     await cli()

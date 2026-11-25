@@ -219,6 +219,7 @@ type PackageJson = {
   devDependencies?: Record<string, string>
   packageManager?: string
   devEngines?: { packageManager?: { name?: string } }
+  publishConfig?: { tag?: string }
 }
 function getPackageJson(dir: string): { packageJson: PackageJson; packageJsonPath: string } {
   const { fileJson, filePath } = readJson('package.json', dir)

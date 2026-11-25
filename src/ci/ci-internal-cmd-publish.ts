@@ -1,107 +1,135 @@
 export { ciPublish }
 
-// `$ release-me ci-internal-cmd-publish`: job `publish` of the GitHub Action, publishes the tarballs made by the job `pack`.
-// The job `pack` runs the repository's code: the package.json inside each tarball (that's what npm publishes) is verified.
+// `$ release-me ci-internal-cmd-publish`: the GitHub Action, builds the released packages and publishes them to npm.
 
 import * as fs from 'node:fs'
+import * as os from 'node:os'
 import * as path from 'node:path'
 import { execFileSync } from 'node:child_process'
-import { isCommitReleaseVersion, parseReleaseTag } from './versions.ts'
+import { logTitle, run } from '../utils.ts'
+import { getCommitReleaseVersion, parseReleaseTag } from './versions.ts'
 import { fail, getEnv } from './utils.ts'
 import { isReleaseWorkflowUpToDate, releaseWorkflowFileName, releaseWorkflowOutdated } from './releaseWorkflow.ts'
+import {
+  build,
+  getCommitHash,
+  getFilesInsideDir,
+  getFilesMonorepoPackageJson,
+  getMonorepoRootDir,
+  getPackageJson,
+  getReleaseMePackages,
+  updatePackageJsonVersion,
+  updateVersionMacro,
+  type ReleaseMePackage,
+} from '../releaseMe.ts'
 
-type Package = { tarball: string; name: string; version: string; hasPublishConfigTag: boolean }
-
-function ciPublish() {
+async function ciPublish() {
   // E.g. after upgrading release-me without re-running `$ pnpm exec release-me init`
   if (!isReleaseWorkflowUpToDate(getEnv('GITHUB_WORKSPACE'))) fail(releaseWorkflowOutdated)
-  const packages = readPackages(getEnv('PACKED_PACKAGES_DIR'))
+  // Stable release: its Git tag (`v1.2.3` or `some-package@1.2.3`). Commit release: empty.
   const tag = getEnv('TAG')
-  if (tag) assertStableRelease(packages, tag)
-  else assertCommitRelease(packages)
+  const monorepoRootDir = await getMonorepoRootDir()
+  const packages = getReleaseMePackages(getFilesMonorepoPackageJson(await getFilesInsideDir(monorepoRootDir)))
 
-  for (const p of packages) {
-    if (isPublished(p)) {
-      console.log(`${getSpec(p)} is already published, skipping it.`)
-    } else if (tag) {
-      publishStableRelease(p)
-    } else {
-      publishCommitRelease(p)
-    }
+  const toPublish = tag ? [getTaggedPackage(tag, packages)] : await prepareCommitRelease(packages, getEnv('PACKAGE'))
+  for (const { packageRootDir } of toPublish) {
+    await build(packageRootDir)
   }
-  writeSummary(packages, !tag)
+  const published: string[] = []
+  for (const pkg of toPublish) {
+    published.push(await publish(pkg, !tag))
+  }
+  writeSummary(published, !tag)
 }
 
-function readPackages(packagesDir: string): Package[] {
-  const packages = fs
-    .readdirSync(packagesDir)
-    .filter((file) => file.endsWith('.tgz'))
-    .map((file) => {
-      const tarball = path.resolve(packagesDir, file)
-      const packageJson = JSON.parse(
-        execFileSync('tar', ['-xzOf', tarball, 'package/package.json'], { encoding: 'utf8' }),
-      )
-      return {
-        tarball,
-        name: packageJson.name,
-        version: packageJson.version,
-        hasPublishConfigTag: !!packageJson.publishConfig?.tag,
-      }
-    })
-  if (packages.length === 0) fail('No package to publish.')
-  return packages
-}
-
-function assertStableRelease(packages: Package[], tag: string) {
+/** The package that the Git tag releases */
+function getTaggedPackage(tag: string, packages: ReleaseMePackage[]): ReleaseMePackage {
   const releaseTag = parseReleaseTag(tag)
-  if (!releaseTag) fail(`${tag} isn't a release tag.`)
-  const { version, packageName } = releaseTag
-  const [p, ...others] = packages
-  if (!p || others.length > 0 || p.version !== version || (packageName && p.name !== packageName)) {
-    const expected = `${packageName ?? '<package>'}@${version}`
-    fail(`The packages ${list(packages)} don't match the Git tag ${tag}: expected ${expected}.`)
-  }
-}
-
-function assertCommitRelease(packages: Package[]) {
-  for (const p of packages) {
-    if (!isCommitReleaseVersion(p.version)) fail(`${getSpec(p)} isn't a commit release version (x.y.z-commit-<hash>).`)
-  }
-}
-
-function publishStableRelease(p: Package) {
-  // - npm requires an explicit tag for pre-release versions and for versions lower than the highest published version: use `latest`, as `$ pnpm publish` does (unless package.json#publishConfig.tag is set).
-  // - Provenance (npm's default with trusted publishing): the workflow runs on the tag's commit (the pushed tag, or the tag selected in "Use workflow from").
-  npm(['publish', p.tarball, ...(p.hasPublishConfigTag ? [] : ['--tag', 'latest'])])
-}
-
-function publishCommitRelease(p: Package) {
-  // - `$ npm publish` always sets a dist-tag: use the dist-tag `commit` and remove it afterwards.
-  // - No provenance: it would point to the commit the workflow run belongs to (the tip of the branch selected in "Use workflow from"), which isn't necessarily the released commit.
-  npm(['publish', p.tarball, '--tag', 'commit'], { NPM_CONFIG_PROVENANCE: 'false' })
-  try {
-    npm(['dist-tag', 'rm', p.name, 'commit'])
-  } catch {
-    console.log(
-      `::warning::Couldn't remove the npm dist-tag commit of ${p.name}: on npmjs.com, enable "Allow npm dist-tag" for the trusted publisher ${releaseWorkflowFileName} of ${p.name}.`,
+  if (!releaseTag) fail(`${tag} isn't a release tag (v1.2.3 or some-package@1.2.3).`)
+  const { packageName, version } = releaseTag
+  if (!packageName && packages.length > 1) {
+    fail(
+      `The Git tag ${tag} is ambiguous: there are several packages (${list(
+        packages,
+      )}) and their release tags are some-package@1.2.3.`,
     )
   }
+  const pkg = packageName ? packages.find((p) => p.packageName === packageName) : packages[0]
+  if (!pkg) fail(`The Git tag ${tag} doesn't match any package released by release-me (packages: ${list(packages)}).`)
+  const versionPackage = getPackageJson(pkg.packageRootDir).packageJson.version
+  if (versionPackage !== version) {
+    fail(`The Git tag ${tag} doesn't match the version of ${pkg.packageName}'s package.json (${versionPackage}).`)
+  }
+  return pkg
+}
+
+/** Sets the commit release version of the package `packageName` (empty: of all packages) */
+async function prepareCommitRelease(packages: ReleaseMePackage[], packageName: string): Promise<ReleaseMePackage[]> {
+  const selected = packageName ? packages.filter((p) => p.packageName === packageName) : packages
+  if (selected.length === 0) fail(`No package ${packageName} is released by release-me (packages: ${list(packages)}).`)
+  const commitHash = await getCommitHash('HEAD')
+  // Set all versions before building, so that packages depending on each other reference the commit release versions
+  for (const { packageRootDir } of selected) {
+    const versionOld = getPackageJson(packageRootDir).packageJson.version!
+    const versionNew = getCommitReleaseVersion(versionOld, commitHash)
+    await updateVersionMacro(versionOld, versionNew, await getFilesInsideDir(packageRootDir))
+    updatePackageJsonVersion(packageRootDir, versionNew)
+  }
+  return selected
+}
+
+/** @returns The published package, e.g. `vike@0.4.271` */
+async function publish({ packageName, packageRootDir }: ReleaseMePackage, isCommitRelease: boolean): Promise<string> {
+  const { packageJson } = getPackageJson(packageRootDir)
+  const spec = `${packageName}@${packageJson.version}`
+  logTitle(`Publish ${spec}`)
+  if (isPublished(packageName, packageJson.version!)) {
+    console.log(`${spec} is already published, skipping it.`)
+    return spec
+  }
+  const tarball = await pack(packageRootDir)
+  if (!isCommitRelease) {
+    // - npm requires an explicit tag for pre-release versions and for versions lower than the highest published version: use `latest`, as `$ pnpm publish` does (unless package.json#publishConfig.tag is set).
+    // - Provenance (npm's default with trusted publishing): the workflow runs on the tag's commit (the pushed tag, or the tag selected in "Use workflow from").
+    npm(['publish', tarball, ...(packageJson.publishConfig?.tag ? [] : ['--tag', 'latest'])])
+  } else {
+    // - `$ npm publish` always sets a dist-tag: use the dist-tag `commit` and remove it afterwards.
+    // - No provenance: it would point to the commit the workflow run belongs to (the tip of the branch selected in "Use workflow from"), which isn't necessarily the released commit.
+    npm(['publish', tarball, '--tag', 'commit'], { NPM_CONFIG_PROVENANCE: 'false' })
+    try {
+      npm(['dist-tag', 'rm', packageName, 'commit'])
+    } catch {
+      console.log(
+        `::warning::Couldn't remove the npm dist-tag commit of ${packageName}: on npmjs.com, enable "Allow npm dist-tag" for the trusted publisher ${releaseWorkflowFileName} of ${packageName}.`,
+      )
+    }
+  }
+  return spec
+}
+
+/** @returns The path of the tarball */
+async function pack(packageRootDir: string): Promise<string> {
+  // `$ pnpm publish` runs prepublishOnly, whereas `$ pnpm pack` doesn't
+  await run('pnpm run --if-present prepublishOnly', { cwd: packageRootDir })
+  // `$ pnpm pack` replaces `workspace:` and `catalog:` dependency versions
+  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'release-me-'))
+  await run(['pnpm', 'pack', '--pack-destination', outDir], { cwd: packageRootDir })
+  const [tarball, ...others] = fs.readdirSync(outDir).filter((file) => file.endsWith('.tgz'))
+  if (!tarball || others.length > 0) fail(`$ pnpm pack didn't create one tarball in ${outDir}.`)
+  return path.join(outDir, tarball)
 }
 
 /** The summary of the GitHub Action run */
-function writeSummary(packages: Package[], isCommitRelease: boolean) {
+function writeSummary(published: string[], isCommitRelease: boolean) {
   const { GITHUB_STEP_SUMMARY } = process.env
   if (!GITHUB_STEP_SUMMARY) return
-  const lines = packages.map((p) => {
-    const spec = getSpec(p)
-    return isCommitRelease ? `- \`${spec}\` — \`npm install ${spec}\`` : `- \`${spec}\``
-  })
+  const lines = published.map((spec) => (isCommitRelease ? `- \`${spec}\` — \`npm install ${spec}\`` : `- \`${spec}\``))
   fs.appendFileSync(GITHUB_STEP_SUMMARY, `### Published to npm\n\n${lines.join('\n')}\n`)
 }
 
-function isPublished({ name, version }: Package): boolean {
+function isPublished(packageName: string, version: string): boolean {
   try {
-    const stdout = execFileSync('npm', ['view', `${name}@${version}`, 'version'], {
+    const stdout = execFileSync('npm', ['view', `${packageName}@${version}`, 'version'], {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     })
@@ -116,9 +144,6 @@ function npm(args: string[], env: Record<string, string> = {}) {
   execFileSync('npm', args, { stdio: 'inherit', env: { ...process.env, ...env } })
 }
 
-function list(packages: Package[]): string {
-  return packages.map(getSpec).join(', ')
-}
-function getSpec(p: Package): string {
-  return `${p.name}@${p.version}`
+function list(packages: ReleaseMePackage[]): string {
+  return packages.map((p) => p.packageName).join(', ')
 }
