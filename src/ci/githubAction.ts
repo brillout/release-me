@@ -45,7 +45,9 @@ async function triggerCommitRelease(packageName: string, versionNew: string, com
   const ghUnavailable = await checkCommitOnGitHub(repo, commitHash, runWorkflow)
   if (ghUnavailable) {
     console.log(`${ghUnavailable}, so release-me can't trigger the GitHub Action ${pc.bold(releaseWorkflowFileName)}.`)
-    console.log(`To commit-release ${pc.cyan(packageSpec)}, ${runWorkflow}.`)
+    console.log(
+      `To commit-release ${pc.cyan(packageSpec)}, push its commit (if it isn't on GitHub yet), then ${runWorkflow}.`,
+    )
     return
   }
   await run([
