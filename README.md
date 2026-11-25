@@ -172,36 +172,16 @@ Instead of publishing from your machine (which requires npm 2FA), a GitHub Actio
 
 - `$ pnpm exec release-me patch` (or `minor`/`major`/`v1.2.3`) does the same as before (`CHANGELOG.md`, confirmation, build, Git commit & tag) but, instead of publishing to npm, it pushes the release commit and its Git tag, which triggers the GitHub Action that publishes to npm.
 - `$ pnpm exec release-me commit` triggers the GitHub Action that builds and publishes the commit release (it requires the [GitHub CLI `gh`](https://cli.github.com)).
-- You can also commit-release any commit from GitHub's UI: go to the workflow page (`https://github.com/${owner}/${repo}/actions/workflows/release.yml`), press **Run workflow**, and enter the commit (a SHA, a branch, or `refs/pull/${number}/head` for a pull request — including pull requests from forks). Leave it empty to release the tip of the selected branch.
+- You can also commit-release any commit in GitHub's UI: go to the workflow page (`https://github.com/${owner}/${repo}/actions/workflows/release.yml`), press **Run workflow**, and enter the commit (a SHA, a branch, or `refs/pull/${number}/head` for a pull request — including pull requests from forks). Leave it empty to release the tip of the selected branch.
 
 ### Setup
 
-1. Add `.github/workflows/release.yml` (`release-me` detects it and stops publishing from your machine):
-   ```yaml
-   name: Release
-   on:
-     push:
-       tags: ['v[0-9]*', '**@[0-9]*'] # v1.2.3, some-package@1.2.3
-     workflow_dispatch:
-       inputs:
-         commit: { description: 'Commit: SHA, branch, or refs/pull/<number>/head (default: the selected branch)' }
-         package: { description: 'Package (default: all)' }
-   permissions:
-     contents: read
-     id-token: write
-   jobs:
-     release:
-       uses: brillout/release-me/.github/workflows/publish.yml@main
-   ```
-   Everything else lives in the reusable workflow [`publish.yml`](.github/workflows/publish.yml), which reads the `commit` and `package` inputs directly. The rest has to be in your repository: GitHub only reads triggers (`on:`) from the repository's own workflow files, and npm checks this file's name (`release.yml`) when publishing.
+1. Run `$ pnpm exec release-me init-github-action`, then commit and push the `.github/workflows/release.yml` it creates. (Once this file exists, `release-me` stops publishing from your machine.) The command also prints the npm settings of the following steps, filled in for your repository and packages.
 
-   Optionally, set the Node.js and pnpm versions used for building (defaults: `lts/*` and `package.json#packageManager`):
-   ```yaml
-       uses: brillout/release-me/.github/workflows/publish.yml@main
-       with:
-         node-version: 24
-         pnpm-version: 10
-   ```
+   > [!NOTE]
+   > Don't modify `.github/workflows/release.yml`: `release-me` (and the GitHub Action) abort the release if the file differs from what `$ pnpm exec release-me init-github-action` generates — for example after updating `@brillout/release-me`. In that case, re-run the command and commit the result.
+
+   The file is short: everything else lives in the reusable workflow [`publish.yml`](.github/workflows/publish.yml), and updates to it apply to every repository without any change on your side. The file can't be shorter, because GitHub only reads triggers (`on:`) from the repository's own workflow files, and npm checks the file name (`release.yml`) when publishing. The build uses the latest Node.js LTS and the pnpm version of `package.json#packageManager` (or the latest pnpm).
 1. On [npmjs.com](https://www.npmjs.com), for each package (including the boilerplate `create-${packageName}` if you have one), go to **Settings** > **Trusted publishing** > **GitHub Actions** and set:
    - **Organization or user** and **Repository**: your GitHub repository (it must match `package.json#repository`).
    - **Workflow filename**: `release.yml`

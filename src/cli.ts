@@ -1,6 +1,7 @@
 import { Command, program } from 'commander'
 import { type CliArgs, releaseMe, type ReleaseType, releaseTypes, type ReleaseTarget } from './releaseMe.js'
 import { ciPack } from './ciPack.js'
+import { initGithubAction } from './initGithubAction.js'
 
 const helpText = [
   '',
@@ -11,14 +12,27 @@ const helpText = [
   '  $ pnpm exec release-me commit                       # out-of-band release (as x.y.z-commit-123456 without npm tag)',
   '  $ pnpm exec release-me v${major}.${minor}.${patch}  # release specific version',
   '',
-  'Used by the GitHub Action that publishes to npm (see https://github.com/brillout/release-me#github-action):',
-  '  $ pnpm exec release-me ci-pack <git-tag|commit> --out <dir> [--package <name>]',
+  'Publish to npm via a GitHub Action (see https://github.com/brillout/release-me#github-action):',
+  '  $ pnpm exec release-me init-github-action           # create/update .github/workflows/release.yml',
+  '  $ pnpm exec release-me ci-pack <git-tag|commit> --out <dir> [--package <name>]  # used by the GitHub Action',
 ].join('\n')
 
 if (process.argv[2] === 'ci-pack') {
   cliCiPack()
+} else if (process.argv[2] === 'init-github-action') {
+  cliInitGithubAction()
 } else {
   cli()
+}
+
+function cliInitGithubAction() {
+  new Command('release-me init-github-action')
+    .description(
+      'Create or update .github/workflows/release.yml, the GitHub Action that publishes to npm (see https://github.com/brillout/release-me#github-action).',
+    )
+    .showHelpAfterError()
+    .parse(process.argv.slice(3), { from: 'user' })
+  initGithubAction()
 }
 
 function cli() {

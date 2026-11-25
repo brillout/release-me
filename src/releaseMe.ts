@@ -24,6 +24,7 @@ import * as fs from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
 import { runCommand, assertUsage } from './utils.js'
+import { assertCiWorkflowUpToDate, type CiWorkflow, getCiWorkflow, getWorkflowLink } from './githubAction.js'
 import * as path from 'path'
 /*
 //  "js-yaml": "4.1.0",
@@ -61,6 +62,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   const monorepoRootDir = await getMonorepoRootDir()
 
   const ciWorkflow = await getCiWorkflow(monorepoRootDir)
+  if (ciWorkflow) assertCiWorkflowUpToDate(monorepoRootDir)
 
   await abortIfUncommitedChanges(monorepoRootDir)
 
@@ -486,50 +488,6 @@ async function build(cwd?: string) {
   await run('pnpm run build', { cwd })
 }
 
-// The GitHub Action that publishes to npm, see https://github.com/brillout/release-me#github-action
-type CiWorkflow = {
-  /** Workflow file name, e.g. `release.yml` */
-  fileName: string
-  /** GitHub repository, e.g. `vikejs/vike` */
-  repo: string | null
-}
-async function getCiWorkflow(monorepoRootDir: string): Promise<CiWorkflow | null> {
-  const workflowsDir = path.join(monorepoRootDir, '.github', 'workflows')
-  let fileNames: string[]
-  try {
-    fileNames = fs.readdirSync(workflowsDir).sort()
-  } catch {
-    return null
-  }
-  // The workflow that calls the reusable workflow brillout/release-me/.github/workflows/publish.yml (or a fork's)
-  const usesReusableWorkflow = /^\s*(?:-\s*)?uses:\s*['"]?[\w.-]+\/release-me\/\.github\/workflows\/publish\.ya?ml@/m
-  const fileName = fileNames.find(
-    (f) => /\.ya?ml$/.test(f) && usesReusableWorkflow.test(fs.readFileSync(path.join(workflowsDir, f), 'utf8')),
-  )
-  if (!fileName) return null
-  return { fileName, repo: await getGitHubRepo() }
-}
-async function getGitHubRepo(): Promise<string | null> {
-  let remoteUrl: string
-  try {
-    remoteUrl = (await run__return('git remote get-url origin')).trim()
-  } catch {
-    return null
-  }
-  return parseGitHubRepo(remoteUrl)
-}
-function parseGitHubRepo(remoteUrl: string): string | null {
-  // git@github.com:vikejs/vike.git
-  // https://github.com/vikejs/vike
-  // ssh://git@github.com/vikejs/vike.git
-  const match = /github\.com[:/]([\w.-]+\/[\w.-]+?)(?:\.git)?\/?$/.exec(remoteUrl)
-  return match?.[1] ?? null
-}
-function getWorkflowLink(ciWorkflow: CiWorkflow): string {
-  const { fileName, repo } = ciWorkflow
-  if (!repo) return pc.bold(`.github/workflows/${fileName}`)
-  return pc.underline(`https://github.com/${repo}/actions/workflows/${fileName}`)
-}
 async function triggerCommitRelease(
   ciWorkflow: CiWorkflow,
   packageName: string,
