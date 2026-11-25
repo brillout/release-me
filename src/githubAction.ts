@@ -5,6 +5,7 @@ export { getWorkflowLink }
 export { initCommand }
 export { parseGitHubRepo }
 export { releaseWorkflow }
+export { releaseWorkflowPath }
 export { writeReleaseWorkflow }
 export type { CiWorkflow }
 
