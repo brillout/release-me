@@ -58,8 +58,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      # SECURITY: the only job that can publish to npm (`id-token: write`). It never runs the released commit's code:
-      # - It runs the release-me installed by the workflow's commit (as trusted as this file), not by the released commit.
+      # SECURITY: the only job that can publish to npm (`id-token: write`). It never runs untrusted code:
+      # - It runs the release-me installed by the workflow's commit (as trusted as this file), which, for a commit release, isn't necessarily the released commit.
       # - It only reads the tarballs: it verifies the package.json inside each one, and `$ npm publish <tarball>` runs no scripts.
       id-token: write
     steps:
