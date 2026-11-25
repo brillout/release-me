@@ -1,8 +1,11 @@
 # Publishes to npm, see https://github.com/brillout/release-me#github-action
-# Don't modify this file: it's a copy of https://github.com/brillout/release-me/blob/main/.github/workflows/release.yml created and updated by `$ pnpm exec release-me init`.
+
+# DON'T MODIFY THIS FILE: it's a copy of https://github.com/brillout/release-me/blob/main/.github/workflows/release.yml created and updated by `$ pnpm exec release-me init`.
+
 # SECURITY:
 # - Only users with write access can trigger this workflow: by pushing a release tag, or by pressing "Run workflow".
 # - No caches: the job `pack` (which runs the released commit's code) could poison a cache restored by another release.
+
 name: Release
 on:
   push:
@@ -24,7 +27,7 @@ jobs:
       tag: ${{ steps.resolve.outputs.tag }}
       provenance: ${{ steps.resolve.outputs.provenance }}
     steps:
-      # Checks out the pushed tag or the "Use workflow from" commit (SAFE)
+      # Checks out: [TRUSTED] `main` (the pushed release tag), or commit of "Use workflow from"
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
       # SECURITY: runs no install scripts (neither the dependencies' nor the root package.json's)
@@ -40,7 +43,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      # Checks out the released commit (UNSAFE)
+      # Checks out: [UNTRUSTED] released commit
       - uses: actions/checkout@v7
         with:
           ref: ${{ needs.resolve.outputs.ref }}
@@ -71,7 +74,7 @@ jobs:
       contents: read
       id-token: write
     steps:
-      # Checks out the pushed tag or the "Use workflow from" commit (SAFE)
+      # Checks out: [TRUSTED] `main` (the pushed release tag), or commit of "Use workflow from"
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
       # Trusted publishing requires npm >= 11.5.1, and removing a dist-tag requires npm >= 11.21.0
