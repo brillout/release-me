@@ -25,7 +25,13 @@ import * as fs from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
 import { runCommand, assertUsage } from './utils.js'
-import { type CiWorkflow, getCiWorkflow, getWorkflowLink, releaseWorkflow } from './githubAction.js'
+import {
+  type CiWorkflow,
+  getCiWorkflow,
+  getWorkflowLink,
+  releaseWorkflow,
+  releaseWorkflowPath,
+} from './githubAction.js'
 import * as path from 'path'
 /*
 //  "js-yaml": "4.1.0",
@@ -191,23 +197,8 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
     await gitPush()
   } else {
     await gitPushReleaseTag(gitTag)
-    const published = [`${packageName}@${versionNew}`]
-    if (boilerplatePackageJson) {
-      const { packageJson } = getPackageJson(path.dirname(boilerplatePackageJson))
-      published.push(`${packageJson.name}@${packageJson.version}`)
-    }
-    logTitle('npm publish')
-    const workflowLink = getWorkflowLink(ciWorkflow)
-    console.log(
-      `GitHub Action ${pc.bold(releaseWorkflow.fileName)} will publish ${published
-        .map((p) => pc.cyan(p))
-        .join(' and ')} to npm: ${workflowLink}`,
-    )
-    console.log(
-      pc.dim(
-        `(If it fails, you can retry it: go to ${workflowLink}, press Run workflow, and enter the tag ${gitTag}.)`,
-      ),
-    )
+    const packageRootDirs = [packageRootDir, ...(boilerplatePackageJson ? [path.dirname(boilerplatePackageJson)] : [])]
+    logCiPublish(ciWorkflow, gitTag, packageRootDirs)
   }
 }
 
@@ -489,6 +480,23 @@ async function gitPushReleaseTag(gitTag: GitTag) {
   // - Push the release commit and its tag atomically: the tag triggers the GitHub Action that publishes to npm.
   // - Only push this one tag: GitHub doesn't trigger any workflow when more than three tags are pushed at once.
   await run(['git', 'push', '--atomic', 'origin', 'HEAD', `refs/tags/${gitTag}`])
+}
+/** The pushed release tag triggers the GitHub Action, which publishes the packages to npm */
+function logCiPublish(ciWorkflow: CiWorkflow, gitTag: GitTag, packageRootDirs: string[]) {
+  const published = packageRootDirs.map((packageRootDir) => {
+    const { packageJson } = getPackageJson(packageRootDir)
+    return pc.cyan(`${packageJson.name}@${packageJson.version}`)
+  })
+  const workflowLink = getWorkflowLink(ciWorkflow)
+  logTitle('npm publish')
+  console.log(
+    `GitHub Action ${pc.bold(releaseWorkflow.fileName)} will publish ${published.join(
+      ' and ',
+    )} to npm: ${workflowLink}`,
+  )
+  console.log(
+    pc.dim(`(If it fails, you can retry it: go to ${workflowLink}, press Run workflow, and enter the tag ${gitTag}.)`),
+  )
 }
 async function build(cwd?: string) {
   logTitle(`Build ${logDetail('$ pnpm run build')}`)
@@ -924,9 +932,7 @@ function logAnalysis(
   console.log(
     `Publish to npm: ${
       ciWorkflow
-        ? `GitHub Action ${pc.bold(releaseWorkflow.fileName)} ${logDetail(
-            `.github/workflows/${releaseWorkflow.fileName}`,
-          )}`
+        ? `GitHub Action ${pc.bold(releaseWorkflow.fileName)} ${logDetail(releaseWorkflowPath)}`
         : `locally ${logDetail('$ pnpm publish')}`
     }`,
   )
