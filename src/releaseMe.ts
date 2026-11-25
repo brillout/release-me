@@ -177,10 +177,10 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   const gitTag = getGitTag(versionNew, gitTagPrefix)
   await makeGitCommit(monorepoRootDir, gitTag)
   await makeGitTag(gitTag)
-  if (!viaGitHubAction) {
-    await gitPush()
-  } else {
+  if (viaGitHubAction) {
     await triggerStableRelease(gitTag, `${packageName}@${versionNew}`)
+  } else {
+    await gitPush()
   }
 }
 
