@@ -13,7 +13,7 @@ const helpText = [
   '  $ pnpm exec release-me v${major}.${minor}.${patch}  # release specific version',
   '',
   'Publish to npm via a GitHub Action (see https://github.com/brillout/release-me#github-action):',
-  '  $ pnpm exec release-me init-github-action           # create/update .github/workflows/release.yml and release-commit.yml',
+  '  $ pnpm exec release-me init-github-action           # create/update .github/workflows/release.yml',
   '  $ pnpm exec release-me ci-pack <git-tag|commit> --out <dir> [--package <name>]  # used by the GitHub Action',
 ].join('\n')
 
@@ -28,7 +28,7 @@ if (process.argv[2] === 'ci-pack') {
 function cliInitGithubAction() {
   new Command('release-me init-github-action')
     .description(
-      'Create or update .github/workflows/release.yml and .github/workflows/release-commit.yml, the GitHub Actions that publish to npm (see https://github.com/brillout/release-me#github-action).',
+      'Create or update .github/workflows/release.yml, the GitHub Action that publishes to npm (see https://github.com/brillout/release-me#github-action).',
     )
     .showHelpAfterError()
     .parse(process.argv.slice(3), { from: 'user' })

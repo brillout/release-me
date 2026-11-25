@@ -62,7 +62,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   const monorepoRootDir = await getMonorepoRootDir()
 
   // The GitHub Action that publishes to npm (if the repository uses it)
-  const ciWorkflow = await getCiWorkflow(monorepoRootDir, args.releaseTarget === 'commit' ? 'commit' : 'stable')
+  const ciWorkflow = await getCiWorkflow(monorepoRootDir)
   if (ciWorkflow) assertCiWorkflowsUpToDate(monorepoRootDir)
 
   await abortIfUncommitedChanges(monorepoRootDir)
@@ -205,7 +205,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
     )
     console.log(
       pc.dim(
-        `(If it fails, you can retry it: go to ${workflowLink}, press Run workflow, and select the tag ${gitTag} in "Use workflow from".)`,
+        `(If it fails, you can retry it: go to ${workflowLink}, press Run workflow, and enter the tag ${gitTag}.)`,
       ),
     )
   }
@@ -559,7 +559,7 @@ async function triggerCommitRelease(
     '--repo',
     repo,
     '-f',
-    `commit=${commitHash}`,
+    `ref=${commitHash}`,
     '-f',
     `package=${packageName}`,
   ])

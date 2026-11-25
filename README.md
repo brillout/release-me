@@ -173,10 +173,11 @@ Instead of publishing from your machine (which requires npm 2FA), a GitHub Actio
 
 ### Setup
 
-1. Run `$ pnpm exec release-me init-github-action` (it creates `.github/workflows/release.yml` and `.github/workflows/release-commit.yml`, and commits them).
-1. On npmjs.com, go to the package's **Settings** (`https://www.npmjs.com/package/${packageName}/access`) and, under **Trusted Publisher**, press **GitHub Actions** to set up two connections:
-   - **Organization or user** / **Repository**: your GitHub repository, **Workflow filename**: `release.yml`, **Allowed actions**: **Allow npm publish**
-   - **Organization or user** / **Repository**: your GitHub repository, **Workflow filename**: `release-commit.yml`, **Allowed actions**: **Allow npm publish** and **Allow npm dist-tag**
+1. Run `$ pnpm exec release-me init-github-action` (it creates `.github/workflows/release.yml` and commits it).
+1. On npmjs.com, go to the package's **Settings** (`https://www.npmjs.com/package/${packageName}/access`) and, under **Trusted Publisher**, press **GitHub Actions** to set up a connection:
+   - **Organization or user** / **Repository**: your GitHub repository
+   - **Workflow filename**: `release.yml`
+   - **Allowed actions**: **Allow npm publish** and **Allow npm dist-tag**
 
    Do this for each package, including the boilerplate `create-${packageName}` if you have one.
 

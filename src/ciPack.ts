@@ -41,9 +41,8 @@ type ReleaseMePackage = { packageName: string; packageRootDir: string }
 async function ciPack({ target, outDir, packageName }: CiPackArgs) {
   outDir = path.resolve(outDir)
   const monorepoRootDir = await getMonorepoRootDir()
-  // Fail on drift also in CI (normally caught earlier, when releasing locally). Skipped if the released commit predates the workflows.
-  if (await getCiWorkflow(monorepoRootDir, target === 'commit' ? 'commit' : 'stable'))
-    assertCiWorkflowsUpToDate(monorepoRootDir)
+  // Fail on drift also in CI (normally caught earlier, when releasing locally). Skipped if the released commit predates the workflow.
+  if (await getCiWorkflow(monorepoRootDir)) assertCiWorkflowsUpToDate(monorepoRootDir)
   const filesMonorepo = await getFilesInsideDir(monorepoRootDir)
   const filesMonorepoPackageJson = getFilesMonorepoPackageJson(filesMonorepo)
   const packages = getReleaseMePackages(filesMonorepoPackageJson)

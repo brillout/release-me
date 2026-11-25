@@ -1,11 +1,11 @@
 export { initGithubAction }
 
-// `$ pnpm exec release-me init-github-action` creates (or updates) .github/workflows/release.yml and .github/workflows/release-commit.yml
+// `$ pnpm exec release-me init-github-action` creates (or updates) .github/workflows/release.yml
 
 import * as path from 'path'
 import pc from '@brillout/picocolors'
 import { getReleaseMePackages } from './ciPack.js'
-import { getGitHubRepo, parseGitHubRepo, workflows, writeWorkflows } from './githubAction.js'
+import { getGitHubRepo, parseGitHubRepo, workflowList, writeWorkflows } from './githubAction.js'
 import {
   findBoilerplatePacakge,
   getFilesInsideDir,
@@ -20,7 +20,7 @@ async function initGithubAction() {
   const monorepoRootDir = await getMonorepoRootDir()
   const filesMonorepoPackageJson = getFilesMonorepoPackageJson(await getFilesInsideDir(monorepoRootDir))
 
-  // Packages published by the GitHub Actions (including boilerplates create-${packageName})
+  // Packages published by the GitHub Action (including boilerplates create-${packageName})
   const packageRootDirs: string[] = []
   for (const { packageName, packageRootDir } of getReleaseMePackages(filesMonorepoPackageJson)) {
     packageRootDirs.push(packageRootDir)
@@ -30,7 +30,7 @@ async function initGithubAction() {
 
   const results = writeWorkflows(monorepoRootDir)
 
-  logTitle('GitHub Actions', true)
+  logTitle('GitHub Action', true)
   for (const { fileName, status } of results) {
     const file = pc.bold(`.github/workflows/${fileName}`)
     console.log(
@@ -44,15 +44,13 @@ async function initGithubAction() {
   const changed = results.filter((r) => r.status !== 'up-to-date')
   if (changed.length === 0) return
   // A new workflow file requires a new trusted publisher on npm
-  const created = Object.values(workflows).filter((w) =>
-    results.some((r) => r.fileName === w.fileName && r.status === 'created'),
-  )
+  const created = workflowList.filter((w) => results.some((r) => r.fileName === w.fileName && r.status === 'created'))
 
   const files = changed.map((r) => `.github/workflows/${r.fileName}`)
   await run(['git', 'add', '--', ...files], { cwd: monorepoRootDir })
   // Only commit the workflow files (`$ git commit -- <files>` ignores other staged changes)
   const commitMessage =
-    created.length > 0 ? 'ci: set up release-me GitHub Actions' : 'ci: update release-me GitHub Actions'
+    created.length > 0 ? 'ci: set up release-me GitHub Action' : 'ci: update release-me GitHub Action'
   await run(['git', 'commit', '--quiet', '-m', commitMessage, '--', ...files], { cwd: monorepoRootDir })
   console.log(`Committed ${pc.dim(`(${commitMessage})`)}`)
 
