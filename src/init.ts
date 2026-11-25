@@ -1,6 +1,6 @@
-export { initGithubAction }
+export { init }
 
-// `$ pnpm exec release-me init-github-action` creates (or updates) .github/workflows/release.yml
+// `$ pnpm exec release-me init` creates (or updates) .github/workflows/release.yml
 
 import * as path from 'path'
 import pc from '@brillout/picocolors'
@@ -16,7 +16,7 @@ import {
   run,
 } from './releaseMe.js'
 
-async function initGithubAction() {
+async function init() {
   const monorepoRootDir = await getMonorepoRootDir()
   const filesMonorepoPackageJson = getFilesMonorepoPackageJson(await getFilesInsideDir(monorepoRootDir))
 
