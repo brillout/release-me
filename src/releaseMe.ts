@@ -88,10 +88,6 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   updatePackageJsonVersion(packageRootDir, versionNew)
 
   await updateDependencies(packageName, versionNew, versionOld, filesMonorepo)
-  const boilerplatePackageJson = await findBoilerplatePacakge(packageName, filesMonorepoPackageJson)
-  if (boilerplatePackageJson) {
-    bumpBoilerplateVersion(boilerplatePackageJson)
-  }
 
   const gitTagPrefix: GitTagPrefix = monorepoInfo.hasMultiplePackages ? `${packageName}@` : 'v'
 
@@ -140,9 +136,6 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   // =============================
 
   await npmPublish(packageRootDir)
-  if (boilerplatePackageJson) {
-    await npmPublishBoilerplates(boilerplatePackageJson)
-  }
 
   // ===================
   // Bump pnpm-lock.yaml
@@ -231,9 +224,6 @@ function readYaml(filePathRelative: string, dir: string): Record<string, unknown
 async function publishCommitRelease(packageRootDir: string, packageName: string) {
   await npmPublish(packageRootDir, 'commit')
   await removeNpmTag(packageRootDir, 'commit', packageName)
-}
-async function npmPublishBoilerplates(boilerplatePackageJson: string) {
-  await npmPublish(path.dirname(boilerplatePackageJson))
 }
 async function npmPublish(dir: string, tag?: string) {
   logTitle('Pnpm publish')
@@ -495,33 +485,9 @@ function updatePackageJsonVersion(packageRootDir: string, versionNew: string) {
   })
 }
 
-async function bumpBoilerplateVersion(packageJsonFile: string) {
-  assert(path.isAbsolute(packageJsonFile))
-  const packageJson = require(packageJsonFile)
-  assert(packageJson.version.startsWith('0.0.'))
-  const versionParts = packageJson.version.split('.')
-  assert(versionParts.length === 3)
-  const newPatch = parseInt(versionParts[2], 10) + 1
-  packageJson.version = `0.0.${newPatch}`
-  writePackageJson(packageJsonFile, packageJson)
-}
-
 function getFilesMonorepoPackageJson(filesMonorepo: Files): Files {
   const filesMonorepoPackageJson = filesMonorepo.filter((f) => f.filePathAbsolute.endsWith('/package.json'))
   return filesMonorepoPackageJson
-}
-
-async function findBoilerplatePacakge(packageName: string, filesMonorepoPackageJson: Files) {
-  for (const { filePathAbsolute } of filesMonorepoPackageJson) {
-    const packageJson = require(filePathAbsolute) as Record<string, unknown>
-    const { name } = packageJson
-    if (!name) continue
-    assert(typeof name === 'string')
-    if (name === `create-${packageName}`) {
-      return filePathAbsolute
-    }
-  }
-  return null
 }
 
 async function bumpPnpmLockFile(monorepoRootDir: string) {
