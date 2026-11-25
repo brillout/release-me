@@ -21,13 +21,13 @@ switch (process.argv[2]) {
     await cliInit()
     break
   case 'ci-resolve':
-    await (await import('./ci/resolve.js')).resolve()
+    ;(await import('./ci/ci-resolve.js')).ciResolve()
     break
   case 'ci-pack':
     await cliCiPack()
     break
   case 'ci-publish':
-    ;(await import('./ci/publish.js')).publish()
+    ;(await import('./ci/ci-publish.js')).ciPublish()
     break
   default:
     await cli()
@@ -65,7 +65,7 @@ async function cliCiPack() {
     .showHelpAfterError()
   command.parse(process.argv.slice(3), { from: 'user' })
   const opts = command.opts<{ out: string; tag?: string; package?: string }>()
-  const { ciPack } = await import('./ciPack.js')
+  const { ciPack } = await import('./ci/ci-pack.js')
   ciPack({ tag: opts.tag ?? '', packageName: opts.package ?? '', outDir: opts.out })
 }
 

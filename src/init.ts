@@ -20,10 +20,13 @@ import {
   getReleaseMePackages,
   logTitle,
   run,
+  thisPackageName,
 } from './releaseMe.js'
+import { assertUsage } from './utils.js'
 
 async function init() {
   const monorepoRootDir = await getMonorepoRootDir()
+  assertRootPackageJson(monorepoRootDir)
   const packages = await getPublishedPackages(monorepoRootDir)
 
   const status = writeReleaseWorkflow(monorepoRootDir)
@@ -40,6 +43,26 @@ async function init() {
   console.log(`1. Push the commit to the default branch ${pc.dim('$ git push')}`)
   // A new workflow requires a trusted publisher on npm
   if (status === 'created') await logNpmSetup(monorepoRootDir, packages)
+}
+
+/** The GitHub Action installs the pnpm version and runs the release-me installed by the root package.json */
+function assertRootPackageJson(monorepoRootDir: string) {
+  const { packageJson, packageJsonPath } = getPackageJson(monorepoRootDir)
+  const { devDependencies, packageManager, devEngines } = packageJson as {
+    devDependencies?: Record<string, string>
+    packageManager?: string
+    devEngines?: { packageManager?: { name?: string } }
+  }
+  assertUsage(
+    devDependencies?.[thisPackageName],
+    `The GitHub Action runs ${thisPackageName} installed at the root: add it to the devDependencies of ${packageJsonPath}.`,
+  )
+  assertUsage(
+    packageManager?.startsWith('pnpm@') || devEngines?.packageManager?.name === 'pnpm',
+    `The GitHub Action installs the pnpm version of ${packageJsonPath}: set its ${pc.bold(
+      'packageManager',
+    )} (e.g. ${pc.bold('"packageManager": "pnpm@x.y.z"')}).`,
+  )
 }
 
 async function commitReleaseWorkflow(monorepoRootDir: string, status: 'created' | 'updated') {

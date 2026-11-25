@@ -1,12 +1,6 @@
 # Publishes to npm, see https://github.com/brillout/release-me#github-action
-# - Stable releases: triggered by `$ pnpm exec release-me patch` (or minor/major/v1.2.3), which pushes the release tag.
-# - Commit releases: triggered by `$ pnpm exec release-me commit`.
-# - "Run workflow" button: enter a commit to commit-release it, or a release tag to (re-)publish it.
-# Don't modify this file: it's a copy of https://github.com/brillout/release-me/blob/main/.github/workflows/release.yml
-# created and updated by `$ pnpm exec release-me init`.
-
+# Don't modify this file: it's a copy of https://github.com/brillout/release-me/blob/main/.github/workflows/release.yml created and updated by `$ pnpm exec release-me init`.
 name: Release
-
 on:
   push:
     tags: ['v[0-9]*', '**@[0-9]*'] # v1.2.3, some-package@1.2.3
@@ -15,13 +9,10 @@ on:
       ref: { description: 'Commit (commit-release) or tag (stable-release). Commit: SHA, branch, or refs/pull/<number>/head (default: the selected branch).' }
       package: { description: 'Package (commit-release only, default: all)' }
 
-permissions: {}
-
 jobs:
   resolve:
-    name: Resolve release
+    # Runs the release-me installed by the workflow's commit, not by the released commit: the other jobs trust its outputs.
     runs-on: ubuntu-latest
-    # Runs release-me installed by the workflow's own commit (as trusted as this file), not by the released commit: the other jobs trust its outputs.
     permissions:
       contents: read
     outputs:
@@ -30,26 +21,18 @@ jobs:
       provenance: ${{ steps.resolve.outputs.provenance }}
     steps:
       - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 'lts/*'
-          package-manager-cache: false
-      # pnpm switches to the version of package.json#packageManager (or devEngines.packageManager), if set
-      - run: npm install --global pnpm@latest
-      - run: pnpm install --frozen-lockfile --ignore-scripts
+          node-version: lts/*
+      - run: pnpm install --ignore-scripts
       - id: resolve
-        # In the directory of the package.json that has @brillout/release-me
-        run: cd "$(dirname "$(git grep -l '"@brillout/release-me"' -- '*package.json' | head -n 1)")" && pnpm exec release-me ci-resolve
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+        run: pnpm exec release-me ci-resolve
 
   pack:
-    name: Build & pack
+    # Runs the released commit's code, which may be untrusted (e.g. a pull request from a fork): this job can't publish to npm.
     needs: resolve
     runs-on: ubuntu-latest
-    # Runs the released commit's code (install scripts, build scripts, ...), which may be untrusted (e.g. a commit release of a pull request from a fork) => it isn't allowed to publish to npm.
     permissions:
       contents: read
     steps:
@@ -57,50 +40,42 @@ jobs:
         with:
           ref: ${{ needs.resolve.outputs.ref }}
           persist-credentials: false
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 'lts/*'
-          # No cache: untrusted code could poison it for subsequent releases.
-          package-manager-cache: false
-      - run: npm install --global pnpm@latest
-      - run: pnpm install --frozen-lockfile
-      - name: Build & pack
-        run: cd "$(dirname "$(git grep -l '"@brillout/release-me"' -- '*package.json' | head -n 1)")" && pnpm exec release-me ci-pack --tag "$TAG" --package "$PACKAGE" --out "$RUNNER_TEMP/release-me-packages"
+          node-version: lts/*
+      - run: pnpm install
+      - run: pnpm exec release-me ci-pack --tag "$TAG" --package "$PACKAGE" --out release-me-packages
         env:
           TAG: ${{ needs.resolve.outputs.tag }}
           PACKAGE: ${{ inputs.package }}
       - uses: actions/upload-artifact@v7
         with:
           name: release-me-packages
-          path: ${{ runner.temp }}/release-me-packages/*.tgz
-          if-no-files-found: error
-          retention-days: 3
+          path: release-me-packages/
 
   publish:
-    name: Publish to npm
+    # The only job that can publish to npm. Like the job `resolve`, it runs the release-me installed by the workflow's commit: it only reads and publishes the tarballs made by the job `pack`.
     needs: [resolve, pack]
     runs-on: ubuntu-latest
-    # The only job allowed to publish to npm (trusted publishing authenticates with the GitHub OIDC token). Like the job `resolve`, it runs release-me installed by the workflow's own commit, without install scripts; it only reads and publishes the tarballs made by the job `pack`.
     permissions:
       contents: read
       id-token: write
     steps:
       - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 'lts/*'
-          package-manager-cache: false
+          node-version: lts/*
       # Trusted publishing requires npm >= 11.5.1, and removing a dist-tag requires npm >= 11.21.0
-      - run: npm install --global npm@latest pnpm@latest
-      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: npm install --global npm@latest
+      - run: pnpm install --ignore-scripts
       - uses: actions/download-artifact@v8
         with:
           name: release-me-packages
-          path: ${{ runner.temp }}/release-me-packages
-      - run: cd "$(dirname "$(git grep -l '"@brillout/release-me"' -- '*package.json' | head -n 1)")" && pnpm exec release-me ci-publish
+          path: release-me-packages
+      - run: pnpm exec release-me ci-publish
         env:
-          PACKAGES_DIR: ${{ runner.temp }}/release-me-packages
+          PACKAGES_DIR: release-me-packages
           TAG: ${{ needs.resolve.outputs.tag }}
           PROVENANCE: ${{ needs.resolve.outputs.provenance }}

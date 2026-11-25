@@ -230,6 +230,7 @@ function getPackageName(packageRootDir: string): { packageName: string; packageJ
 type PackageJson = {
   name?: string
   version?: string
+  private?: boolean
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
 }
@@ -976,7 +977,7 @@ function analyzeMonorepo(filesMonorepoPackageJson: Files, packageRootDir: string
 }
 
 type ReleaseMePackage = ReturnType<typeof getReleaseMePackages>[number]
-/** The packages that use release-me (i.e. that have it in their devDependencies) */
+/** The packages that use release-me (i.e. that have it in their devDependencies), except private ones (e.g. the monorepo root) */
 function getReleaseMePackages(filesMonorepoPackageJson: Files) {
   const packages: { packageName: string; packageRootDir: string; packageRootDirRelative: string }[] = []
   for (const { filePathAbsolute, filePathRelative } of filesMonorepoPackageJson) {
@@ -988,7 +989,7 @@ function getReleaseMePackages(filesMonorepoPackageJson: Files) {
         'dependencies',
       )} as it should be only in package.json#${pc.bold('devDependencies')} instead.`,
     )
-    if (!packageJson.name || !packageJson.devDependencies?.[thisPackageName]) continue
+    if (!packageJson.name || packageJson.private || !packageJson.devDependencies?.[thisPackageName]) continue
     packages.push({
       packageName: packageJson.name,
       packageRootDir,

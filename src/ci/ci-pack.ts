@@ -1,14 +1,12 @@
 export { ciPack }
 
-// `$ release-me ci-pack` is run by the GitHub Action .github/workflows/release.yml, in its job `pack` that isn't allowed to publish to npm:
-// - It builds and packs the packages to publish.
-// - The job `publish` then publishes the tarballs, without running any code of the repository.
+// `$ release-me ci-pack`: job `pack` of the GitHub Action, builds and packs the packages to publish (with the released commit's code, so this job isn't allowed to publish to npm).
 
 import * as fs from 'fs'
 import * as path from 'path'
 import pc from '@brillout/picocolors'
-import { assertUsage } from './utils.js'
-import { getCommitReleaseVersion, parseReleaseTag } from './ci/versions.js'
+import { assertUsage } from '../utils.js'
+import { getCommitReleaseVersion, parseReleaseTag } from './versions.js'
 import {
   build,
   findBoilerplatePacakge,
@@ -24,7 +22,7 @@ import {
   updatePackageJsonVersion,
   updateVersionMacro,
   type ReleaseMePackage,
-} from './releaseMe.js'
+} from '../releaseMe.js'
 
 type CiPackArgs = {
   /** Stable release: its Git tag (`v1.2.3` or `some-package@1.2.3`). Commit release of HEAD: empty. */

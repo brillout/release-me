@@ -1,6 +1,6 @@
-export { publish }
+export { ciPublish }
 
-// Job `publish` of the GitHub Action: publishes the tarballs made by the job `pack`.
+// `$ release-me ci-publish`: job `publish` of the GitHub Action, publishes the tarballs made by the job `pack`.
 // The job `pack` runs the repository's code: the package.json inside each tarball (that's what npm publishes) is verified.
 
 import * as fs from 'node:fs'
@@ -18,7 +18,7 @@ type ToPublish = Package & {
   provenance: boolean
 }
 
-function publish() {
+function ciPublish() {
   const packages = readPackages(getEnv('PACKAGES_DIR'))
   const tag = getEnv('TAG')
   const toPublish = tag ? getStableRelease(packages, tag, getEnv('PROVENANCE') === 'true') : getCommitRelease(packages)
@@ -54,7 +54,7 @@ function readPackages(packagesDir: string): Package[] {
     .readdirSync(packagesDir)
     .filter((file) => file.endsWith('.tgz'))
     .map((file) => {
-      const tarball = path.join(packagesDir, file)
+      const tarball = path.resolve(packagesDir, file)
       const packageJson = JSON.parse(
         execFileSync('tar', ['-xzOf', tarball, 'package/package.json'], { encoding: 'utf8' }),
       )

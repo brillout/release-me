@@ -38,6 +38,7 @@
     "dist/",
     ".github/workflows/release.yml"
   ],
+  "packageManager": "pnpm@12.23.0",
   "license": "MIT",
   "type": "module",
   "publishConfig": {

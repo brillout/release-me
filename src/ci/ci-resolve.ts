@@ -1,7 +1,8 @@
-export { resolve }
+export { ciResolve }
 
-// Job `resolve` of the GitHub Action: decides what to release, from what triggered the workflow.
+// `$ release-me ci-resolve`: job `resolve` of the GitHub Action, decides what to release from what triggered the workflow.
 
+import { execFileSync } from 'node:child_process'
 import { parseReleaseTag } from './versions.js'
 import { fail, getEnv, getInput, notice, setOutputs } from './utils.js'
 import { isReleaseWorkflowUpToDate, releaseWorkflowPath } from '../githubAction.js'
@@ -14,19 +15,19 @@ type Release = {
   provenance: boolean
 }
 
-async function resolve() {
+function ciResolve() {
   // E.g. after upgrading release-me without re-running `$ pnpm exec release-me init`
   if (!isReleaseWorkflowUpToDate(getEnv('GITHUB_WORKSPACE'))) {
     fail(
       `${releaseWorkflowPath} isn't up-to-date (or was modified): run \`$ pnpm exec release-me init\` and push the commit it makes.`,
     )
   }
-  const { ref, tag, provenance } = await getRelease()
+  const { ref, tag, provenance } = getRelease()
   console.log(tag ? `Stable release: ${tag}` : `Commit release: ${ref}`)
   setOutputs({ ref, tag, provenance: String(provenance) })
 }
 
-async function getRelease(): Promise<Release> {
+function getRelease(): Release {
   const sha = getEnv('GITHUB_SHA')
   const refName = getEnv('GITHUB_REF_NAME')
   const isTag = getEnv('GITHUB_REF_TYPE') === 'tag'
@@ -39,7 +40,7 @@ async function getRelease(): Promise<Release> {
   const input = getInput('ref')
   if (!input) return isTag ? stable(refName, sha) : commit(sha)
   if (/\s/.test(input)) fail(`Invalid commit or tag: ${JSON.stringify(input)}`)
-  const tagCommit = parseReleaseTag(input) && (await getTagCommit(input))
+  const tagCommit = parseReleaseTag(input) && getTagCommit(input)
   return tagCommit ? stable(input, tagCommit) : commit(input)
 }
 
@@ -60,20 +61,21 @@ function commit(ref: string): Release {
 }
 
 /** The commit of the Git tag, or `null` if the tag doesn't exist */
-async function getTagCommit(tag: string): Promise<string | null> {
-  const ref = await getGitObject(`git/ref/tags/${tag}`)
-  if (!ref) return null
-  // Annotated tag => the commit it points to
-  if (ref.object.type === 'tag') return (await getGitObject(`git/tags/${ref.object.sha}`))!.object.sha
-  return ref.object.sha
-}
-
-async function getGitObject(apiPath: string): Promise<{ object: { type: string; sha: string } } | null> {
-  const url = `${getEnv('GITHUB_API_URL')}/repos/${getEnv('GITHUB_REPOSITORY')}/${apiPath}`
-  const response = await fetch(url, {
-    headers: { accept: 'application/vnd.github+json', authorization: `Bearer ${getEnv('GITHUB_TOKEN')}` },
-  })
-  if (response.status === 404) return null
-  if (!response.ok) fail(`GET ${url} failed: HTTP ${response.status} ${await response.text()}`)
-  return response.json()
+function getTagCommit(tag: string): string | null {
+  const ref = `refs/tags/${tag}`
+  // An annotated tag is also listed as `refs/tags/<tag>^{}`, with the commit it points to
+  const args = ['ls-remote', 'origin', ref, `${ref}^{}`]
+  let stdout: string
+  try {
+    stdout = execFileSync('git', args, { encoding: 'utf8' })
+  } catch {
+    fail(`Couldn't read the Git tags of the repository: $ git ${args.join(' ')} failed (see its error above).`)
+  }
+  const commits = new Map(
+    stdout
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => line.split('\t').reverse() as [string, string]),
+  )
+  return commits.get(`${ref}^{}`) ?? commits.get(ref) ?? null
 }
