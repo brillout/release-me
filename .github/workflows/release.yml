@@ -18,6 +18,7 @@ on:
 jobs:
   # ============
   # STEP 1: Decide what to release
+  # ============
   resolve:
     # SECURITY: runs the release-me installed by the workflow's commit (as trusted as this file), not by the released commit: the other jobs trust its outputs.
     runs-on: ubuntu-latest
@@ -38,6 +39,7 @@ jobs:
 
   # ============
   # STEP 2: Build & pack the packages to publish
+  # ============
   pack:
     # SECURITY: runs the released commit's code, which may be untrusted (e.g. a pull request from a fork), so this job can't publish to npm (it doesn't have `id-token: write`).
     needs: resolve
@@ -67,6 +69,7 @@ jobs:
 
   # ============
   # STEP 3: Publish the tarballs made by the job `pack`
+  # ============
   publish:
     # SECURITY: the only job that can publish to npm (`id-token: write`). It never runs the released commit's code:
     # - Like the job `resolve`, it runs the release-me installed by the workflow's commit.
