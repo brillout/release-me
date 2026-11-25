@@ -44,14 +44,14 @@ async function cliInit() {
     .showHelpAfterError()
     .parse(process.argv.slice(3), { from: 'user' })
   const { init } = await import('./ci/init.ts')
-  init()
+  await init()
 }
 
 async function cli() {
   const { releaseMe, releaseTypes } = await import('./releaseMe.ts')
   const packageRootDir = process.cwd()
   const args = parseArgs(releaseTypes)
-  releaseMe(args, packageRootDir)
+  await releaseMe(args, packageRootDir)
 }
 
 function parseArgs(releaseTypes: readonly ReleaseType[]): CliArgs {
