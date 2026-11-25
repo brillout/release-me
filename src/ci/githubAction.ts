@@ -48,7 +48,14 @@ async function triggerCommitRelease(packageName: string, versionNew: string, com
     `Couldn't determine the GitHub repository of ${pc.cyan('origin')} ${logDetail('$ git remote get-url origin')}.`,
   )
   const workflowLink = getWorkflowLink(repo)
-  await assertCommitOnGitHub(repo, commitHash, workflowLink)
+  const packageSpec = `${packageName}@${versionNew}`
+  const runWorkflow = getRunWorkflowCta(workflowLink, commitHash, packageName)
+  const ghUnavailable = await checkCommitOnGitHub(repo, commitHash, runWorkflow)
+  if (ghUnavailable) {
+    console.log(`${ghUnavailable}, so release-me can't trigger the GitHub Action ${pc.bold(releaseWorkflowFileName)}.`)
+    console.log(`To commit-release ${pc.cyan(packageSpec)}, ${runWorkflow}.`)
+    return
+  }
   await run([
     'gh',
     'workflow',
@@ -62,36 +69,45 @@ async function triggerCommitRelease(packageName: string, versionNew: string, com
     `package=${packageName}`,
   ])
   logWillPublish(
-    `${packageName}@${versionNew}`,
+    packageSpec,
     workflowLink,
     `You can also commit-release any commit, including pull requests from forks: go to ${workflowLink} and press Run workflow.`,
   )
 }
 
-/** The GitHub Action can only release commits that exist on GitHub (any branch, including pull requests from forks) */
-async function assertCommitOnGitHub(repo: string, commitHash: string, workflowLink: string) {
+/** E.g. `go to https://github.com/vikejs/vike/actions/workflows/release.yml, press Run workflow, and enter the commit 580a94e… and the package vike` */
+function getRunWorkflowCta(workflowLink: string, commitHash: string, packageName: string): string {
+  return `go to ${workflowLink}, press ${pc.bold(pc.cyan('Run workflow'))}, and enter the commit ${pc.bold(
+    commitHash,
+  )} and the package ${pc.bold(packageName)}`
+}
+
+/**
+ * Aborts if GitHub doesn't have the commit: the GitHub Action can only release commits that exist on GitHub (any branch, including pull requests from forks).
+ * @returns Why `$ gh` can't be used (it isn't installed, or isn't logged in), otherwise `null`
+ */
+async function checkCommitOnGitHub(repo: string, commitHash: string, runWorkflow: string): Promise<string | null> {
   const ghArgs = ['api', `repos/${repo}/commits/${commitHash}`, '--silent']
   try {
     await execa('gh', ghArgs, { all: true })
+    return null
   } catch (err) {
-    const { code, all: output } = err as execa.ExecaError & NodeJS.ErrnoException
+    const { code, exitCode, all: output } = err as execa.ExecaError & NodeJS.ErrnoException
+    if (code === 'ENOENT')
+      return `The GitHub CLI ${pc.cyan('gh')} isn't installed ${logDetail('https://cli.github.com')}`
+    // `$ gh` exits with 4 when it requires authentication (`$ gh help exit-codes`), and GitHub replies 401 to an invalid token
+    if (exitCode === 4 || output?.includes('(HTTP 401)')) {
+      return `The GitHub CLI ${pc.cyan('gh')} isn't logged in ${logDetail('$ gh auth login')}`
+    }
     const isMissingCommit = !!output?.includes('(HTTP 422)')
-    const reason =
-      code === 'ENOENT'
-        ? `triggering the GitHub Action ${releaseWorkflowFileName} requires the GitHub CLI ${pc.cyan(
-            'gh',
-          )} (https://cli.github.com)`
-        : isMissingCommit
-          ? `GitHub (${repo}) doesn't have the commit ${commitHash.slice(0, 7)} — push it first`
-          : `${pc.cyan('gh')} failed`
+    const reason = isMissingCommit
+      ? `GitHub (${repo}) doesn't have the commit ${commitHash.slice(0, 7)} — push it first`
+      : `${pc.cyan('gh')} failed`
     throw new Error(
       [
         pc.red(pc.bold(`Release aborted, because ${reason}.`)),
         output && `${pc.dim(`$ gh ${ghArgs.join(' ')}`)}\n${output}`,
-        !isMissingCommit &&
-          `Alternatively, go to ${workflowLink} and press ${pc.bold('Run workflow')} with commit ${pc.bold(
-            commitHash,
-          )}.`,
+        !isMissingCommit && `Alternatively, ${runWorkflow}.`,
       ]
         .filter(Boolean)
         .join('\n'),
