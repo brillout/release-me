@@ -673,7 +673,7 @@ async function bumpPnpmLockFile(monorepoRootDir: string, ciPackageName: string |
   } catch (err) {
     if (!(err as Error).message.includes('ERR_PNPM_PEER_DEP_ISSUES')) {
       if (ciPackageName) {
-        // Previously, pnpm-lock.yaml was updated after publishing to npm
+        // Unlike when publishing locally, the new version isn't on npm yet
         console.log(
           pc.yellow(
             `Hint: the new version of ${ciPackageName} isn't on npm yet (the GitHub Action publishes it after the release is pushed), so the packages of the monorepo that depend on ${ciPackageName} must get it from the workspace (with the ${pc.bold(
