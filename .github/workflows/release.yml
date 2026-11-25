@@ -20,7 +20,6 @@ jobs:
   # STEP 1: Decide what to release
   # ============
   resolve:
-    # SECURITY: runs the release-me installed by the workflow's commit (as trusted as this file), not by the released commit: the other jobs trust its outputs.
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -29,6 +28,7 @@ jobs:
       output_tag: ${{ steps.resolve.outputs.output_tag }}
       output_provenance: ${{ steps.resolve.outputs.output_provenance }}
     steps:
+      # SECURITY: runs the release-me installed by the workflow's commit (as trusted as this file), not by the released commit: the other jobs trust its outputs.
       # Checks out: [TRUSTED] `main` (the pushed release tag), or commit of "Use workflow from"
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -41,12 +41,12 @@ jobs:
   # STEP 2: Build & pack the packages to publish
   # ============
   pack:
-    # SECURITY: runs the released commit's code, which may be untrusted (e.g. a pull request from a fork), so this job can't publish to npm (it doesn't have `id-token: write`).
     needs: resolve
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
+      # SECURITY: runs the released commit's code, which may be untrusted (e.g. a pull request from a fork), so this job can't publish to npm (it doesn't have `id-token: write`).
       # Checks out: [UNTRUSTED] released commit
       - uses: actions/checkout@v7
         with:
@@ -71,13 +71,13 @@ jobs:
   # STEP 3: Publish the tarballs made by the job `pack`
   # ============
   publish:
-    # SECURITY: the only job that can publish to npm (`id-token: write`). It never runs the released commit's code:
-    # - Like the job `resolve`, it runs the release-me installed by the workflow's commit.
-    # - It only reads the tarballs: it verifies the package.json inside each one, and `$ npm publish <tarball>` runs no scripts.
     needs: [resolve, pack]
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      # SECURITY: the only job that can publish to npm (`id-token: write`). It never runs the released commit's code:
+      # - Like the job `resolve`, it runs the release-me installed by the workflow's commit.
+      # - It only reads the tarballs: it verifies the package.json inside each one, and `$ npm publish <tarball>` runs no scripts.
       id-token: write
     steps:
       # Checks out: [TRUSTED] `main` (the pushed release tag), or commit of "Use workflow from"
