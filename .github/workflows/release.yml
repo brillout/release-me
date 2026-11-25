@@ -24,6 +24,7 @@ jobs:
       tag: ${{ steps.resolve.outputs.tag }}
       provenance: ${{ steps.resolve.outputs.provenance }}
     steps:
+      # Checks out the workflow's own commit: the pushed tag, or the branch (or tag) selected in "Use workflow from"
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
@@ -42,6 +43,7 @@ jobs:
     permissions:
       contents: read
     steps:
+      # Checks out the released commit: the release tag (stable release), or the commit, branch or pull request entered in "Run workflow" (commit release, default: the branch selected in "Use workflow from")
       - uses: actions/checkout@v7
         with:
           ref: ${{ needs.resolve.outputs.ref }}
@@ -75,6 +77,7 @@ jobs:
       contents: read
       id-token: write
     steps:
+      # Checks out the workflow's own commit: the pushed tag, or the branch (or tag) selected in "Use workflow from"
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
