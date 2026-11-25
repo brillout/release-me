@@ -8,7 +8,6 @@ export { build }
 export { getCommitHash }
 export { getCommitReleaseVersion }
 export { getFilesInsideDir }
-export { getFilesMonorepoPackageJson }
 export { getMonorepoRootDir }
 export { getPackageJson }
 export { assertInstalledAtRoot }
@@ -78,9 +77,8 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   const filesMonorepo = await getFilesInsideDir(monorepoRootDir)
   const filesPackage = await getFilesInsideDir(packageRootDir)
-  const filesMonorepoPackageJson = getFilesMonorepoPackageJson(filesMonorepo)
 
-  const monorepoInfo = analyzeMonorepo(filesMonorepoPackageJson, packageRootDir, packageName)
+  const monorepoInfo = analyzeMonorepo(filesMonorepo, packageRootDir, packageName)
 
   logAnalysis(monorepoInfo, monorepoRootDir, packageRootDir, viaGitHubAction)
 
@@ -806,8 +804,8 @@ async function clean(err: unknown) {
 }
 
 type MonorepoInfo = ReturnType<typeof analyzeMonorepo>
-function analyzeMonorepo(filesMonorepoPackageJson: Files, packageRootDir: string, packageName: string) {
-  const monorepoPackages = getReleaseMePackages(filesMonorepoPackageJson).map((pkg) => ({
+function analyzeMonorepo(filesMonorepo: Files, packageRootDir: string, packageName: string) {
+  const monorepoPackages = getReleaseMePackages(filesMonorepo).map((pkg) => ({
     ...pkg,
     isCurrentPackage: isSamePath(packageRootDir, pkg.packageRootDir),
   }))
@@ -842,10 +840,10 @@ type ReleaseMePackage = ReturnType<typeof getReleaseMePackages>[number]
  * The packages that release-me releases: the ones with a script that runs release-me (e.g. `"release": "release-me patch"`), except private ones.
  * If no package has such script: the root package (e.g. a repository with a single package, released with `$ pnpm exec release-me patch`).
  */
-function getReleaseMePackages(filesMonorepoPackageJson: Files) {
+function getReleaseMePackages(filesMonorepo: Files) {
   const packages: { packageName: string; packageRootDir: string; packageRootDirRelative: string }[] = []
   let rootPackage: (typeof packages)[number] | null = null
-  for (const { filePathAbsolute, filePathRelative } of filesMonorepoPackageJson) {
+  for (const { filePathAbsolute, filePathRelative } of getFilesMonorepoPackageJson(filesMonorepo)) {
     const packageRootDir = path.dirname(filePathAbsolute)
     const { packageJson } = getPackageJson(packageRootDir)
     assertUsage(

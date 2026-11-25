@@ -13,7 +13,6 @@ import {
   getCommitHash,
   getCommitReleaseVersion,
   getFilesInsideDir,
-  getFilesMonorepoPackageJson,
   getMonorepoRootDir,
   getPackageJson,
   getReleaseMePackages,
@@ -29,7 +28,7 @@ async function ciPublish() {
   // Stable release: its Git tag (`v1.2.3` or `some-package@1.2.3`). Commit release: empty.
   const tag = getEnv('TAG')
   const isCommitRelease = !tag
-  const packages = getReleaseMePackages(getFilesMonorepoPackageJson(await getFilesInsideDir(monorepoRootDir)))
+  const packages = getReleaseMePackages(await getFilesInsideDir(monorepoRootDir))
 
   const toPublish = isCommitRelease
     ? await prepareCommitRelease(packages, getEnv('PACKAGE'))

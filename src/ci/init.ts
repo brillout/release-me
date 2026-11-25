@@ -8,7 +8,6 @@ import { releaseWorkflowFileName, releaseWorkflowPath, writeReleaseWorkflow } fr
 import {
   assertInstalledAtRoot,
   getFilesInsideDir,
-  getFilesMonorepoPackageJson,
   getMonorepoRootDir,
   getPackageJson,
   getReleaseMePackages,
@@ -97,8 +96,7 @@ async function logNpmSetup(monorepoRootDir: string, packages: PublishedPackage[]
 type PublishedPackage = Awaited<ReturnType<typeof getPublishedPackages>>[number]
 /** The packages published by the GitHub Action */
 async function getPublishedPackages(monorepoRootDir: string) {
-  const filesMonorepoPackageJson = getFilesMonorepoPackageJson(await getFilesInsideDir(monorepoRootDir))
-  return getReleaseMePackages(filesMonorepoPackageJson).map(({ packageRootDir }) => {
+  return getReleaseMePackages(await getFilesInsideDir(monorepoRootDir)).map(({ packageRootDir }) => {
     const { packageJson } = getPackageJson(packageRootDir)
     return {
       name: packageJson.name!,
