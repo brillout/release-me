@@ -1,6 +1,6 @@
 export { ciPublish }
 
-// `$ release-me ci-publish`: the GitHub Action, builds the released packages and publishes them to npm.
+// `$ pnpm exec release-me ci-publish`, run by the GitHub Action (see ./releaseWorkflow.ts), builds the released packages and publishes them to npm.
 
 import * as fs from 'node:fs'
 import * as os from 'node:os'
@@ -79,7 +79,7 @@ function parseReleaseTag(tag: string): { packageName: string | null; version: st
   return null
 }
 
-/** Sets the commit release version of the package `packageName` (empty: of all packages) */
+/** Sets the commit release version of the package `packageName` (empty: of all packages), and returns these packages */
 async function prepareCommitRelease(packages: ReleaseMePackage[], packageName: string): Promise<ReleaseMePackage[]> {
   const selected = packageName ? packages.filter((p) => p.packageName === packageName) : packages
   if (selected.length === 0) fail(`No package ${packageName} is released by release-me (packages: ${list(packages)}).`)
