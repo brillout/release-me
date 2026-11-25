@@ -84,7 +84,7 @@ async function prepareCommitRelease(packages: ReleaseMePackage[], packageName: s
   const selected = packageName ? packages.filter((p) => p.packageName === packageName) : packages
   if (selected.length === 0) fail(`No package ${packageName} is released by release-me (packages: ${list(packages)}).`)
   const commitHash = await getCommitHash('HEAD')
-  // Set all versions before building, so that packages depending on each other reference the commit release versions
+  // Set all versions first: builds include them (PROJECT_VERSION.ts), and `$ pnpm pack` uses them to replace `workspace:` dependency versions
   for (const { packageRootDir } of selected) {
     const versionOld = getPackageJson(packageRootDir).packageJson.version!
     const versionNew = getCommitReleaseVersion(versionOld, commitHash)
