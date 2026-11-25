@@ -1,7 +1,5 @@
 import { Command, program } from 'commander'
-import { type CliArgs, releaseMe, type ReleaseType, releaseTypes, type ReleaseTarget } from './releaseMe.js'
-import { ciPack } from './ciPack.js'
-import { init } from './init.js'
+import type { CliArgs, ReleaseType, ReleaseTarget } from './releaseMe.js'
 
 const helpText = [
   '',
@@ -14,34 +12,46 @@ const helpText = [
   '',
   'Publish to npm via a GitHub Action (see https://github.com/brillout/release-me#github-action):',
   '  $ pnpm exec release-me init                         # create/update .github/workflows/release.yml (GitHub Action that publishes to npm)',
-  '  $ pnpm exec release-me ci-pack --out <dir> [--tag <git-tag>] [--package <name>]  # used by the GitHub Action',
+  '  $ pnpm exec release-me ci-resolve|ci-pack|ci-publish  # used by the GitHub Action',
 ].join('\n')
 
-if (process.argv[2] === 'ci-pack') {
-  cliCiPack()
-} else if (process.argv[2] === 'init') {
-  cliInit()
-} else {
-  cli()
+// Each command only loads its own code: the GitHub Action's jobs `resolve` and `publish` run as little code as possible
+switch (process.argv[2]) {
+  case 'init':
+    await cliInit()
+    break
+  case 'ci-resolve':
+    await (await import('./ci/resolve.js')).resolve()
+    break
+  case 'ci-pack':
+    await cliCiPack()
+    break
+  case 'ci-publish':
+    ;(await import('./ci/publish.js')).publish()
+    break
+  default:
+    await cli()
 }
 
-function cliInit() {
+async function cliInit() {
   new Command('release-me init')
     .description(
       'Create or update .github/workflows/release.yml, the GitHub Action that publishes to npm (see https://github.com/brillout/release-me#github-action).',
     )
     .showHelpAfterError()
     .parse(process.argv.slice(3), { from: 'user' })
+  const { init } = await import('./init.js')
   init()
 }
 
-function cli() {
+async function cli() {
+  const { releaseMe, releaseTypes } = await import('./releaseMe.js')
   const packageRootDir = process.cwd()
-  const args = parseArgs()
+  const args = parseArgs(releaseTypes)
   releaseMe(args, packageRootDir)
 }
 
-function cliCiPack() {
+async function cliCiPack() {
   const command = new Command('release-me ci-pack')
     .description(
       'Build and pack the packages that the GitHub Action .github/workflows/release.yml publishes to npm (run by its job `pack`).',
@@ -55,10 +65,11 @@ function cliCiPack() {
     .showHelpAfterError()
   command.parse(process.argv.slice(3), { from: 'user' })
   const opts = command.opts<{ out: string; tag?: string; package?: string }>()
+  const { ciPack } = await import('./ciPack.js')
   ciPack({ tag: opts.tag ?? '', packageName: opts.package ?? '', outDir: opts.out })
 }
 
-function parseArgs(): CliArgs {
+function parseArgs(releaseTypes: readonly ReleaseType[]): CliArgs {
   program
     .name('release-me')
     .option(
@@ -83,7 +94,7 @@ function parseArgs(): CliArgs {
     program.outputHelp()
     process.exit(0)
   }
-  if (!isValidReleaseTarget(releaseTarget)) {
+  if (!isValidReleaseTarget(releaseTarget, releaseTypes)) {
     console.error('Wrong CLI usage: argument is invalid.')
     program.outputHelp()
     process.exit(0)
@@ -96,6 +107,9 @@ function parseArgs(): CliArgs {
   }
 }
 
-function isValidReleaseTarget(releaseTarget: string): releaseTarget is ReleaseTarget {
+function isValidReleaseTarget(
+  releaseTarget: string,
+  releaseTypes: readonly ReleaseType[],
+): releaseTarget is ReleaseTarget {
   return releaseTarget.startsWith('v') || releaseTypes.includes(releaseTarget as ReleaseType)
 }

@@ -1,6 +1,8 @@
+export { assertReleaseWorkflowUpToDate }
 export { getCiWorkflow }
 export { getGitHubRepo }
 export { getWorkflowLink }
+export { isReleaseWorkflowUpToDate }
 export { parseGitHubRepo }
 export { releaseWorkflow }
 export { releaseWorkflowPath }
@@ -9,8 +11,8 @@ export type { CiWorkflow }
 
 // The GitHub Action that publishes to npm, see https://github.com/brillout/release-me#github-action
 // - The repository's .github/workflows/release.yml is a copy of release-me's own .github/workflows/release.yml (shipped
-//   in the npm package), with the release-me version that runs the jobs set to the installed one.
-// - `$ pnpm exec release-me init` creates it, and stable releases update it (e.g. after upgrading release-me).
+//   in the npm package): `$ pnpm exec release-me init` creates and updates it.
+// - Releases fail if it isn't a copy of the installed release-me's (e.g. after upgrading release-me).
 
 import * as fs from 'fs'
 import * as path from 'path'
@@ -28,21 +30,31 @@ const releaseWorkflow = {
 const releaseWorkflowPath = `.github/workflows/${releaseWorkflow.fileName}`
 
 const thisPackageRootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
-// Read when this module is loaded, because releasing release-me itself bumps the version of this package.json
-const thisVersion: string = JSON.parse(fs.readFileSync(path.join(thisPackageRootDir, 'package.json'), 'utf8')).version
-
-// `RELEASE_ME: '@brillout/release-me@1.2.3'`
-const versionLine = /^(\s*RELEASE_ME: '@brillout\/release-me@)[^']+(')$/m
 
 type CiWorkflow = {
   /** GitHub repository, e.g. `vikejs/vike` */
   repo: string | null
 }
 
-/** Whether the repository publishes to npm via the GitHub Action (instead of locally) */
+/** Whether the repository publishes to npm via the GitHub Action (instead of locally). Throws if release.yml is outdated. */
 async function getCiWorkflow(monorepoRootDir: string): Promise<CiWorkflow | null> {
   if (!isReleaseMeWorkflow(readReleaseWorkflow(monorepoRootDir))) return null
+  assertReleaseWorkflowUpToDate(monorepoRootDir)
   return { repo: await getGitHubRepo(monorepoRootDir) }
+}
+
+function assertReleaseWorkflowUpToDate(monorepoRootDir: string) {
+  if (isReleaseWorkflowUpToDate(monorepoRootDir)) return
+  throw new Error(
+    [
+      pc.red(pc.bold(`Release aborted, because ${releaseWorkflowPath} isn't up-to-date (or was modified).`)),
+      `Run ${pc.bold(initCommand)} and push the commit it makes.`,
+    ].join(' '),
+  )
+}
+
+function isReleaseWorkflowUpToDate(monorepoRootDir: string): boolean {
+  return readReleaseWorkflow(monorepoRootDir) === getReleaseWorkflowExpected()
 }
 
 /** Create or update .github/workflows/release.yml */
@@ -66,11 +78,11 @@ function writeReleaseWorkflow(monorepoRootDir: string): 'created' | 'updated' | 
   return content === null ? 'created' : 'updated'
 }
 
-/** release-me's own release.yml, with the installed release-me version */
+/** The release.yml of the installed release-me */
 function getReleaseWorkflowExpected(): string {
   const content = readFile(path.join(thisPackageRootDir, releaseWorkflowPath))
   assert(content && isReleaseMeWorkflow(content))
-  return content.replace(versionLine, `$1${thisVersion}$2`)
+  return content
 }
 
 function readReleaseWorkflow(monorepoRootDir: string): string | null {
@@ -86,7 +98,7 @@ function readFile(filePath: string): string | null {
 }
 
 function isReleaseMeWorkflow(releaseWorkflowContent: string | null): releaseWorkflowContent is string {
-  return releaseWorkflowContent !== null && versionLine.test(releaseWorkflowContent)
+  return releaseWorkflowContent !== null && releaseWorkflowContent.includes('pnpm exec release-me ci-publish')
 }
 
 async function getGitHubRepo(cwd: string): Promise<string | null> {

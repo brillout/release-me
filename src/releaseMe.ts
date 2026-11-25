@@ -30,7 +30,6 @@ import {
   getWorkflowLink,
   releaseWorkflow,
   releaseWorkflowPath,
-  writeReleaseWorkflow,
 } from './githubAction.js'
 import { getCommitReleaseVersion } from './ci/versions.js'
 import * as path from 'path'
@@ -126,9 +125,6 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
     bumpBoilerplateVersion(boilerplatePackageJson)
   }
 
-  // E.g. after upgrading release-me: release.yml sets the release-me version that runs the GitHub Action
-  const isReleaseWorkflowUpdated = !!ciWorkflow && writeReleaseWorkflow(monorepoRootDir) === 'updated'
-
   const gitTagPrefix: GitTagPrefix = monorepoInfo.hasMultiplePackages ? `${packageName}@` : 'v'
 
   const { changeLogFilePath, changeLogFileAlreadyExisted } = getChangelogPath(
@@ -144,12 +140,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
     packageName,
   )
 
-  await showPreview(
-    packageJsonPath,
-    changeLogFilePath,
-    changeLogFileAlreadyExisted,
-    isReleaseWorkflowUpdated ? path.join(monorepoRootDir, releaseWorkflowPath) : null,
-  )
+  await showPreview(packageJsonPath, changeLogFilePath, changeLogFileAlreadyExisted)
 
   if (isMissingChangeLog && !args.force) {
     assert(changeLogFileAlreadyExisted)
@@ -427,17 +418,11 @@ function getChangelogPath(packageRootDir: string, monorepoRootDir: string, hasMu
   return { changeLogFilePath, changeLogFileAlreadyExisted }
 }
 
-async function showPreview(
-  packageJsonPath: string,
-  changeLogFilePath: string,
-  changeLogFileAlreadyExisted: boolean,
-  releaseWorkflowFilePath: string | null,
-) {
+async function showPreview(packageJsonPath: string, changeLogFilePath: string, changeLogFileAlreadyExisted: boolean) {
   logTitle('Confirm changes')
   await logCmd('git status')
   await logDiff(changeLogFilePath, changeLogFileAlreadyExisted)
   await logDiff(packageJsonPath, true)
-  if (releaseWorkflowFilePath) await logDiff(releaseWorkflowFilePath, true)
 
   return
 
