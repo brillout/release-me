@@ -11,45 +11,25 @@ import { fail, getEnv } from './utils.ts'
 import { isReleaseWorkflowUpToDate, releaseWorkflowFileName, releaseWorkflowOutdated } from './releaseWorkflow.ts'
 
 type Package = { tarball: string; name: string; version: string; hasPublishConfigTag: boolean }
-type ToPublish = Package & {
-  /** `$ npm publish --tag` (`null` => npm's default, i.e. package.json#publishConfig.tag) */
-  tag: string | null
-  /** Remove the dist-tag after publishing */
-  removeTag?: true
-  provenance: boolean
-}
 
 function ciPublish() {
   // E.g. after upgrading release-me without re-running `$ pnpm exec release-me init`
   if (!isReleaseWorkflowUpToDate(getEnv('GITHUB_WORKSPACE'))) fail(releaseWorkflowOutdated)
   const packages = readPackages(getEnv('PACKED_PACKAGES_DIR'))
   const tag = getEnv('TAG')
-  const toPublish = tag ? getStableRelease(packages, tag) : getCommitRelease(packages)
+  if (tag) assertStableRelease(packages, tag)
+  else assertCommitRelease(packages)
 
-  const summary: string[] = []
-  for (const p of toPublish) {
-    const spec = `${p.name}@${p.version}`
+  for (const p of packages) {
     if (isPublished(p)) {
-      console.log(`${spec} is already published, skipping it.`)
+      console.log(`${getSpec(p)} is already published, skipping it.`)
+    } else if (tag) {
+      publishStableRelease(p)
     } else {
-      npm(
-        ['publish', p.tarball, ...(p.tag ? ['--tag', p.tag] : [])],
-        p.provenance ? {} : { NPM_CONFIG_PROVENANCE: 'false' },
-      )
-      if (p.removeTag) {
-        try {
-          npm(['dist-tag', 'rm', p.name, p.tag!])
-        } catch {
-          console.log(
-            `::warning::Couldn't remove the npm dist-tag ${p.tag} of ${p.name}: on npmjs.com, enable "Allow npm dist-tag" for the trusted publisher ${releaseWorkflowFileName} of ${p.name}.`,
-          )
-        }
-      }
+      publishCommitRelease(p)
     }
-    summary.push(tag ? `- \`${spec}\`` : `- \`${spec}\` — \`npm install ${spec}\``)
   }
-  const { GITHUB_STEP_SUMMARY } = process.env
-  if (GITHUB_STEP_SUMMARY) fs.appendFileSync(GITHUB_STEP_SUMMARY, `### Published to npm\n\n${summary.join('\n')}\n`)
+  writeSummary(packages, !tag)
 }
 
 function readPackages(packagesDir: string): Package[] {
@@ -72,29 +52,51 @@ function readPackages(packagesDir: string): Package[] {
   return packages
 }
 
-function getStableRelease(packages: Package[], tag: string): ToPublish[] {
+function assertStableRelease(packages: Package[], tag: string) {
   const releaseTag = parseReleaseTag(tag)
   if (!releaseTag) fail(`${tag} isn't a release tag.`)
   const { version, packageName } = releaseTag
   const [p, ...others] = packages
-  if (!p || others.length > 0 || p.version !== version || p.name !== (packageName ?? p.name)) {
+  if (!p || others.length > 0 || p.version !== version || (packageName && p.name !== packageName)) {
     const expected = `${packageName ?? '<package>'}@${version}`
     fail(`The packages ${list(packages)} don't match the Git tag ${tag}: expected ${expected}.`)
   }
-  // npm requires an explicit tag for pre-release versions and for versions lower than the highest published version: use `latest`, as `$ pnpm publish` does (unless package.json#publishConfig.tag is set).
-  // Provenance: the workflow runs on the tag's commit (the pushed tag, or the tag selected in "Use workflow from")
-  return [{ ...p, tag: p.hasPublishConfigTag ? null : 'latest', provenance: true }]
 }
 
-function getCommitRelease(packages: Package[]): ToPublish[] {
-  return packages.map((p) => {
-    if (!isCommitReleaseVersion(p.version)) {
-      fail(`${p.name}@${p.version} isn't a commit release version (x.y.z-commit-<hash>).`)
-    }
-    // - `$ npm publish` always sets a dist-tag: use the dist-tag `commit` and remove it afterwards.
-    // - No provenance: it would point to the commit the workflow run belongs to (the tip of the branch selected in "Use workflow from"), which isn't necessarily the released commit.
-    return { ...p, tag: 'commit', removeTag: true, provenance: false }
+function assertCommitRelease(packages: Package[]) {
+  for (const p of packages) {
+    if (!isCommitReleaseVersion(p.version)) fail(`${getSpec(p)} isn't a commit release version (x.y.z-commit-<hash>).`)
+  }
+}
+
+function publishStableRelease(p: Package) {
+  // - npm requires an explicit tag for pre-release versions and for versions lower than the highest published version: use `latest`, as `$ pnpm publish` does (unless package.json#publishConfig.tag is set).
+  // - Provenance (npm's default with trusted publishing): the workflow runs on the tag's commit (the pushed tag, or the tag selected in "Use workflow from").
+  npm(['publish', p.tarball, ...(p.hasPublishConfigTag ? [] : ['--tag', 'latest'])])
+}
+
+function publishCommitRelease(p: Package) {
+  // - `$ npm publish` always sets a dist-tag: use the dist-tag `commit` and remove it afterwards.
+  // - No provenance: it would point to the commit the workflow run belongs to (the tip of the branch selected in "Use workflow from"), which isn't necessarily the released commit.
+  npm(['publish', p.tarball, '--tag', 'commit'], { NPM_CONFIG_PROVENANCE: 'false' })
+  try {
+    npm(['dist-tag', 'rm', p.name, 'commit'])
+  } catch {
+    console.log(
+      `::warning::Couldn't remove the npm dist-tag commit of ${p.name}: on npmjs.com, enable "Allow npm dist-tag" for the trusted publisher ${releaseWorkflowFileName} of ${p.name}.`,
+    )
+  }
+}
+
+/** The summary of the GitHub Action run */
+function writeSummary(packages: Package[], isCommitRelease: boolean) {
+  const { GITHUB_STEP_SUMMARY } = process.env
+  if (!GITHUB_STEP_SUMMARY) return
+  const lines = packages.map((p) => {
+    const spec = getSpec(p)
+    return isCommitRelease ? `- \`${spec}\` — \`npm install ${spec}\`` : `- \`${spec}\``
   })
+  fs.appendFileSync(GITHUB_STEP_SUMMARY, `### Published to npm\n\n${lines.join('\n')}\n`)
 }
 
 function isPublished({ name, version }: Package): boolean {
@@ -115,5 +117,8 @@ function npm(args: string[], env: Record<string, string> = {}) {
 }
 
 function list(packages: Package[]): string {
-  return packages.map((p) => `${p.name}@${p.version}`).join(', ')
+  return packages.map(getSpec).join(', ')
+}
+function getSpec(p: Package): string {
+  return `${p.name}@${p.version}`
 }
