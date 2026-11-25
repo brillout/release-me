@@ -16,8 +16,9 @@ on:
       package: { description: 'Package (commit-release only, default: all)' }
 
 jobs:
+  # ============
+  # STEP 1: Decide what to release
   resolve:
-    # Decides what to release.
     # SECURITY: runs the release-me installed by the workflow's commit (as trusted as this file), not by the released commit: the other jobs trust its outputs.
     runs-on: ubuntu-latest
     permissions:
@@ -35,8 +36,9 @@ jobs:
       - id: resolve
         run: pnpm exec release-me ci-internal-cmd-resolve
 
+  # ============
+  # STEP 2: Build & pack the packages to publish
   pack:
-    # Builds and packs the packages to publish.
     # SECURITY: runs the released commit's code, which may be untrusted (e.g. a pull request from a fork), so this job can't publish to npm (it doesn't have `id-token: write`).
     needs: resolve
     runs-on: ubuntu-latest
@@ -63,8 +65,9 @@ jobs:
           name: packed-packages-dir
           path: packed-packages/
 
+  # ============
+  # STEP 3: Publish the tarballs made by the job `pack`
   publish:
-    # Publishes the tarballs made by the job `pack`.
     # SECURITY: the only job that can publish to npm (`id-token: write`). It never runs the released commit's code:
     # - Like the job `resolve`, it runs the release-me installed by the workflow's commit.
     # - It only reads the tarballs: it verifies the package.json inside each one, and `$ npm publish <tarball>` runs no scripts.
