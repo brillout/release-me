@@ -517,43 +517,28 @@ async function triggerCommitRelease(
     `Couldn't determine the GitHub repository of ${pc.cyan('origin')} ${logDetail('$ git remote get-url origin')}.`,
   )
   const workflowLink = getWorkflowLink(ciWorkflow)
-  const hintManual = `Alternatively, go to ${workflowLink} and press ${pc.bold('Run workflow')} with commit ${pc.bold(
-    commitHash,
-  )}.`
-
-  try {
-    await execa('gh', ['--version'])
-  } catch {
-    throw new Error(
-      [
-        pc.red(
-          pc.bold(
-            `Release aborted, because triggering the GitHub Action ${fileName} requires the GitHub CLI ${pc.cyan(
-              'gh',
-            )} (https://cli.github.com).`,
-          ),
-        ),
-        hintManual,
-      ].join(' '),
-    )
-  }
 
   // The GitHub Action can only release commits that exist on GitHub (any branch, including pull requests from forks)
+  const ghArgs = ['api', `repos/${repo}/commits/${commitHash}`, '--silent']
   try {
-    await execa('gh', ['api', `repos/${repo}/commits/${commitHash}`, '--silent'], { all: true })
+    await execa('gh', ghArgs, { all: true })
   } catch (err) {
-    const output = (err as execa.ExecaError).all ?? ''
+    const { code, all: output } = err as execa.ExecaError & NodeJS.ErrnoException
+    const isMissingCommit = !!output?.includes('(HTTP 422)')
+    const reason =
+      code === 'ENOENT'
+        ? `triggering the GitHub Action ${fileName} requires the GitHub CLI ${pc.cyan('gh')} (https://cli.github.com)`
+        : isMissingCommit
+          ? `GitHub (${repo}) doesn't have the commit ${commitHash.slice(0, 7)} — push it first`
+          : `${pc.cyan('gh')} failed`
     throw new Error(
       [
-        pc.red(
-          pc.bold(
-            `Release aborted, because GitHub (${repo}) doesn't have the commit ${commitHash.slice(
-              0,
-              7,
-            )} — push it first.`,
-          ),
-        ),
-        output && `${pc.dim(`$ gh api repos/${repo}/commits/${commitHash}`)}\n${output}`,
+        pc.red(pc.bold(`Release aborted, because ${reason}.`)),
+        output && `${pc.dim(`$ gh ${ghArgs.join(' ')}`)}\n${output}`,
+        !isMissingCommit &&
+          `Alternatively, go to ${workflowLink} and press ${pc.bold('Run workflow')} with commit ${pc.bold(
+            commitHash,
+          )}.`,
       ]
         .filter(Boolean)
         .join('\n'),
