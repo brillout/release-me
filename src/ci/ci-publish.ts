@@ -7,7 +7,6 @@ import * as os from 'node:os'
 import * as path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { logTitle, run } from '../utils.ts'
-import { fail, getEnv } from './utils.ts'
 import { isReleaseWorkflowUpToDate, releaseWorkflowFileName, releaseWorkflowOutdated } from './releaseWorkflow.ts'
 import {
   build,
@@ -161,4 +160,16 @@ function npm(args: string[], env: Record<string, string> = {}) {
 
 function list(packages: ReleaseMePackage[]): string {
   return packages.map((p) => p.packageName).join(', ')
+}
+
+function getEnv(name: string): string {
+  const value = process.env[name]
+  if (value === undefined) fail(`The environment variable ${name} is missing.`)
+  return value
+}
+
+/** Fails the GitHub Action, with the message shown as an error annotation */
+function fail(msg: string): never {
+  console.log(`::error::${msg}`)
+  process.exit(1)
 }
