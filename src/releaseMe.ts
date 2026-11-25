@@ -24,13 +24,7 @@ import * as fs from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
 import { runCommand, assertUsage } from './utils.js'
-import {
-  assertCiWorkflowsUpToDate,
-  type CiWorkflow,
-  getCiWorkflow,
-  getWorkflowLink,
-  releaseWorkflow,
-} from './githubAction.js'
+import { type CiWorkflow, getCiWorkflow, getWorkflowLink, releaseWorkflow } from './githubAction.js'
 import * as path from 'path'
 /*
 //  "js-yaml": "4.1.0",
@@ -69,7 +63,6 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   // The GitHub Action that publishes to npm (if the repository uses it)
   const ciWorkflow = await getCiWorkflow(monorepoRootDir)
-  if (ciWorkflow) assertCiWorkflowsUpToDate(monorepoRootDir)
 
   await abortIfUncommitedChanges(monorepoRootDir)
 

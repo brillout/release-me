@@ -1,4 +1,4 @@
-export { assertCiWorkflowsUpToDate }
+export { assertCiWorkflowUpToDate }
 export { getCiWorkflow }
 export { getGitHubRepo }
 export { getWorkflowLink }
@@ -53,15 +53,17 @@ type CiWorkflow = {
   repo: string | null
 }
 
-/** Whether the repository publishes to npm via the GitHub Action (instead of locally) */
+/** Whether the repository publishes to npm via the GitHub Action (instead of locally). Throws if release.yml drifted. */
 async function getCiWorkflow(monorepoRootDir: string): Promise<CiWorkflow | null> {
-  const content = readReleaseWorkflow(monorepoRootDir)
-  if (content === null || !callsPublish(content)) return null
+  if (!usesCiWorkflow(readReleaseWorkflow(monorepoRootDir))) return null
+  assertCiWorkflowUpToDate(monorepoRootDir)
   return { repo: await getGitHubRepo(monorepoRootDir) }
 }
 
-function assertCiWorkflowsUpToDate(monorepoRootDir: string) {
-  if (readReleaseWorkflow(monorepoRootDir) === releaseWorkflow.content) return
+/** Throws if release.yml isn't what `$ pnpm exec release-me init` generates (no-op if the repository doesn't use the GitHub Action) */
+function assertCiWorkflowUpToDate(monorepoRootDir: string) {
+  const content = readReleaseWorkflow(monorepoRootDir)
+  if (!usesCiWorkflow(content) || content === releaseWorkflow.content) return
   throw new Error(
     [
       pc.red(pc.bold(`Release aborted, because ${releaseWorkflowPath} isn't up-to-date (or was modified).`)),
@@ -75,7 +77,7 @@ function writeReleaseWorkflow(monorepoRootDir: string): 'created' | 'updated' | 
   const content = readReleaseWorkflow(monorepoRootDir)
   if (content === releaseWorkflow.content) return 'up-to-date'
   const filePath = path.join(monorepoRootDir, releaseWorkflowPath)
-  if (content !== null && !callsPublish(content)) {
+  if (content !== null && !usesCiWorkflow(content)) {
     // Don't overwrite a release.yml that has nothing to do with release-me
     throw new Error(
       pc.red(
@@ -100,9 +102,12 @@ function readReleaseWorkflow(monorepoRootDir: string): string | null {
   }
 }
 
-/** Whether the workflow calls the reusable workflow brillout/release-me/.github/workflows/publish.yml (or a fork's) */
-function callsPublish(workflowContent: string) {
-  return /^\s*(?:-\s*)?uses:\s*['"]?[\w.-]+\/release-me\/\.github\/workflows\/publish\.ya?ml@/m.test(workflowContent)
+/** Whether release.yml calls the reusable workflow brillout/release-me/.github/workflows/publish.yml (or a fork's) */
+function usesCiWorkflow(releaseWorkflowContent: string | null): releaseWorkflowContent is string {
+  if (releaseWorkflowContent === null) return false
+  return /^\s*(?:-\s*)?uses:\s*['"]?[\w.-]+\/release-me\/\.github\/workflows\/publish\.ya?ml@/m.test(
+    releaseWorkflowContent,
+  )
 }
 
 async function getGitHubRepo(cwd: string): Promise<string | null> {
