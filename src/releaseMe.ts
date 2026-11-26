@@ -43,7 +43,7 @@ import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
 
 const thisPackageName = '@brillout/release-me'
-const readmeMonorepo = 'https://github.com/brillout/release-me#monorepo'
+const readmeGetStarted = 'https://github.com/brillout/release-me#get-started'
 const thisCommand = '$ pnpm exec release-me'
 
 process.on('uncaughtException', clean)
@@ -826,7 +826,7 @@ function analyzeMonorepo(filesMonorepo: Files, packageRootDir: string, packageNa
       thisPackageName,
     )} — add a script that runs release-me to ${packageJsonPath} (e.g. ${pc.bold(
       '"release": "release-me patch"',
-    )}), see ${pc.underline(readmeMonorepo)}`,
+    )}), see ${pc.underline(readmeGetStarted)}`,
   )
   assert(currentPackages[0]!.packageName === packageName)
   return {
@@ -866,7 +866,7 @@ function getReleaseMePackages(filesMonorepo: Files) {
     const packageRootDirRelative = path.dirname(filePathRelative)
     if (hasReleaseScript(packageJson)) {
       // A script that runs release-me means the package is released: it must be releasable
-      const seeReadme = `see ${pc.underline(readmeMonorepo)}`
+      const seeReadme = `see ${pc.underline(readmeGetStarted)}`
       assertUsage(
         packageJson.name,
         `${packageJsonPath} has a script that runs release-me but no name — add a name, or remove the script, ${seeReadme}`,
@@ -887,7 +887,7 @@ function getReleaseMePackages(filesMonorepo: Files) {
     packages.length > 0,
     `No package to release — add a script that runs release-me to the package.json of each package to release (e.g. ${pc.bold(
       '"release": "release-me patch"',
-    )}), see ${pc.underline(readmeMonorepo)}`,
+    )}), see ${pc.underline(readmeGetStarted)}`,
   )
   return packages
 }
