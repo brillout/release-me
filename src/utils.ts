@@ -1,2 +1,4 @@
-export * from './utils/assertUsage.js'
-export * from './utils/runCommand.js'
+export * from './utils/assertUsage.ts'
+export * from './utils/runCommand.ts'
+export * from './utils/log.ts'
+export * from './utils/run.ts'

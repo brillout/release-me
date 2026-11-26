@@ -3,12 +3,32 @@ export { releaseTypes }
 export type { CliArgs }
 export type { ReleaseType }
 export type { ReleaseTarget }
+// Used by ./ci/
+export { build }
+export { getCommitHash }
+export { getCommitReleaseVersion }
+export { getFilesInsideDir }
+export { getMonorepoRootDir }
+export { getPackageJson }
+export { assertInstalledAtRoot }
+export { getReleaseMePackages }
+export { updatePackageJsonVersion }
+export { updateVersionMacro }
+export type { PackageJson }
+export type { ReleaseMePackage }
 
 import execa from 'execa'
 import * as fs from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
-import { runCommand, assertUsage } from './utils.js'
+import { runCommand, assertUsage, logDetail, logTitle, run, run__return } from './utils.ts'
+import {
+  abortIfNotOnNpm,
+  abortIfRepositoryMismatch,
+  triggerCommitRelease,
+  triggerStableRelease,
+} from './ci/githubAction.ts'
+import { publishesViaGitHubAction, releaseWorkflowFileName, releaseWorkflowFilePath } from './ci/releaseWorkflowFile.ts'
 import * as path from 'path'
 /*
 //  "js-yaml": "4.1.0",
@@ -21,6 +41,7 @@ import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
 
 const thisPackageName = '@brillout/release-me'
+const readmeMonorepo = 'https://github.com/brillout/release-me#monorepo'
 const thisCommand = '$ pnpm exec release-me'
 
 process.on('uncaughtException', clean)
@@ -44,6 +65,9 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   // =======
 
   const monorepoRootDir = await getMonorepoRootDir()
+  assertInstalledAtRoot(monorepoRootDir)
+
+  const viaGitHubAction = publishesViaGitHubAction(monorepoRootDir)
 
   await abortIfUncommitedChanges(monorepoRootDir)
 
@@ -59,13 +83,24 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   const filesMonorepo = await getFilesInsideDir(monorepoRootDir)
   const filesPackage = await getFilesInsideDir(packageRootDir)
-  const filesMonorepoPackageJson = getFilesMonorepoPackageJson(filesMonorepo)
 
-  const monorepoInfo = analyzeMonorepo(filesMonorepoPackageJson, packageRootDir, packageName)
+  const monorepoInfo = analyzeMonorepo(filesMonorepo, packageRootDir, packageName)
 
-  logAnalysis(monorepoInfo, monorepoRootDir, packageRootDir)
+  logAnalysis(monorepoInfo, monorepoRootDir, packageRootDir, viaGitHubAction)
+
+  if (viaGitHubAction) {
+    // Before abortIfNotOnNpm(), so that the manual first publish it asks for has the right package.json#repository
+    await abortIfRepositoryMismatch(packageName, getPackageJson(packageRootDir).packageJson.repository)
+    await abortIfNotOnNpm(packageName)
+  }
 
   if (!isCommitRelease && !args.force) await abortIfNotLatestMainCommit()
+
+  if (isCommitRelease && viaGitHubAction) {
+    // The GitHub Action builds & publishes the commit release: there is nothing to do locally.
+    await triggerCommitRelease(packageName, versionNew, commitHashBegin)
+    return
+  }
 
   // No uncommitted changes => we can safely use `$ git reset` => we can enable cleaning (i.e. reverting the release).
   cleanEnabled = commitHashBegin
@@ -129,19 +164,21 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   // Build
   // =============================
 
+  // With a GitHub Action, the build only checks that the release builds before pushing it (the GitHub Action builds it again).
   await build()
 
   // =============================
   // npm publish
   // =============================
 
-  await npmPublish(packageRootDir)
+  // With a GitHub Action, it publishes to npm upon `git push` (see below).
+  if (!viaGitHubAction) await npmPublish(packageRootDir)
 
   // ===================
   // Bump pnpm-lock.yaml
   // ===================
 
-  await bumpPnpmLockFile(monorepoRootDir)
+  await bumpPnpmLockFile(monorepoRootDir, viaGitHubAction ? packageName : null)
 
   // =============================
   // Git commit & push
@@ -150,7 +187,11 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   const gitTag = getGitTag(versionNew, gitTagPrefix)
   await makeGitCommit(monorepoRootDir, gitTag)
   await makeGitTag(gitTag)
-  await gitPush()
+  if (viaGitHubAction) {
+    await triggerStableRelease(gitTag, `${packageName}@${versionNew}`)
+  } else {
+    await gitPush()
+  }
 }
 
 function getPackageName(packageRootDir: string): { packageName: string; packageJsonPath: string } {
@@ -181,8 +222,14 @@ function getPackageName(packageRootDir: string): { packageName: string; packageJ
 type PackageJson = {
   name?: string
   version?: string
+  private?: boolean
+  repository?: string | { url?: string }
+  scripts?: Record<string, string>
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
+  packageManager?: string
+  devEngines?: { packageManager?: { name?: string; version?: string } }
+  publishConfig?: { tag?: string }
 }
 function getPackageJson(dir: string): { packageJson: PackageJson; packageJsonPath: string } {
   const { fileJson, filePath } = readJson('package.json', dir)
@@ -423,9 +470,9 @@ async function gitPush() {
   await run('git push')
   await run('git push --tags')
 }
-async function build() {
+async function build(cwd?: string) {
   logTitle(`Build ${logDetail('$ pnpm run build')}`)
-  await run('pnpm run build')
+  await run('pnpm run build', { cwd })
 }
 
 async function getVersion(
@@ -439,9 +486,7 @@ async function getVersion(
   let isCommitRelease = false
   let versionNew: string
   if (releaseTarget === 'commit') {
-    // Align with GitHub: GitHub (always?) picks the first 7 characters.
-    const hash = commitHashBegin.slice(0, 7)
-    versionNew = `${versionOld}-commit-${hash}`
+    versionNew = getCommitReleaseVersion(versionOld, commitHashBegin)
     isCommitRelease = true
   } else if (releaseTarget === 'patch' || releaseTarget === 'minor' || releaseTarget === 'major') {
     versionNew = semver.inc(versionOld, releaseTarget) as string
@@ -450,6 +495,11 @@ async function getVersion(
     versionNew = releaseTarget.slice(1)
   }
   return { versionNew, versionOld, isCommitRelease }
+}
+/** `1.2.3` => `1.2.3-commit-1234567`: a pre-release version, so that semver ranges such as `^1.2.3` never match it */
+function getCommitReleaseVersion(version: string, commitHash: string): string {
+  // Align with GitHub: GitHub (always?) picks the first 7 characters.
+  return `${version}-commit-${commitHash.slice(0, 7)}`
 }
 async function updateVersionMacro(versionOld: string, versionNew: string, filesPackage: Files) {
   filesPackage
@@ -490,19 +540,33 @@ function getFilesMonorepoPackageJson(filesMonorepo: Files): Files {
   return filesMonorepoPackageJson
 }
 
-async function bumpPnpmLockFile(monorepoRootDir: string) {
+/** @param unpublishedPackageName The released package, if it isn't on npm yet (the GitHub Action publishes it after the push) */
+async function bumpPnpmLockFile(monorepoRootDir: string, unpublishedPackageName: string | null) {
   logTitle('Bump pnpm-lock.yaml')
-  await run(
-    [
-      'pnpm install',
-      // Only update pnpm-lock.yaml (which is what we commit) and leave node_modules untouched:
-      // - A full `$ pnpm install` may show an interactive prompt (e.g. `The modules directory at "..." will be removed and reinstalled from scratch. Proceed?`) which stalls the release right after the npm package was published.
-      // - There is no pnpm setting to skip that prompt (`--force` skips it but it also forces a full reinstall).
-      // - `--lockfile-only` skips the node_modules validation altogether, and it's also faster (nothing is downloaded, no lifecycle script is run).
-      '--lockfile-only',
-    ].join(' '),
-    { cwd: monorepoRootDir, timeout: 10 * 60 * 1000 },
-  )
+  try {
+    await run(
+      [
+        'pnpm install',
+        // Only update pnpm-lock.yaml (which is what we commit) and leave node_modules untouched:
+        // - A full `$ pnpm install` may show an interactive prompt (e.g. `The modules directory at "..." will be removed and reinstalled from scratch. Proceed?`) which stalls the release right after the npm package was published.
+        // - There is no pnpm setting to skip that prompt (`--force` skips it but it also forces a full reinstall).
+        // - `--lockfile-only` skips the node_modules validation altogether, and it's also faster (nothing is downloaded, no lifecycle script is run).
+        '--lockfile-only',
+      ].join(' '),
+      { cwd: monorepoRootDir, timeout: 10 * 60 * 1000 },
+    )
+  } catch (err) {
+    if (unpublishedPackageName) {
+      console.log(
+        pc.yellow(
+          `Hint: the new version of ${unpublishedPackageName} isn't on npm yet (the GitHub Action publishes it after the release is pushed), so the packages of the monorepo that depend on ${unpublishedPackageName} must get it from the workspace (with the ${pc.bold(
+            'workspace:',
+          )} protocol, or with the pnpm setting ${pc.bold('link-workspace-packages')}).`,
+        ),
+      )
+    }
+    throw err
+  }
 }
 
 type Files = {
@@ -591,29 +655,6 @@ function modifyPackageJson(pkgPath: string, updater: (pkg: PackageJson) => void 
 
 function writePackageJson(pkgPath: string, pkg: object) {
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
-}
-
-async function run(
-  cmd: string | string[],
-  {
-    cwd,
-    env = process.env,
-    swallowError,
-    timeout,
-  }: { cwd?: string; env?: NodeJS.ProcessEnv; swallowError?: boolean; timeout?: number } = {},
-) {
-  const stdio = 'inherit'
-  const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
-  try {
-    await execa(command!, args, { cwd, stdio, env, timeout })
-  } catch (err) {
-    if (!swallowError) throw err
-  }
-}
-async function run__return(cmd: string | string[], cwd?: string): Promise<string> {
-  const [command, ...args] = Array.isArray(cmd) ? cmd : cmd.split(' ')
-  const { stdout } = await execa(command!, args, { cwd })
-  return stdout
 }
 
 async function abortIfUncommitedChanges(monorepoRootDir: string) {
@@ -724,9 +765,21 @@ async function getMonorepoRootDir() {
   return monorepoRootDir
 }
 
-function logAnalysis(monorepoInfo: MonorepoInfo, monorepoRootDir: string, packageRootDir: string) {
+function logAnalysis(
+  monorepoInfo: MonorepoInfo,
+  monorepoRootDir: string,
+  packageRootDir: string,
+  viaGitHubAction: boolean,
+) {
   logTitle('Analysis result', true)
   console.log(`Package root directory: ${pc.bold(packageRootDir)} ${logDetail('process.cwd()')}`)
+  console.log(
+    `Publish to npm: ${
+      viaGitHubAction
+        ? `GitHub Action ${pc.bold(releaseWorkflowFileName)} ${logDetail(releaseWorkflowFilePath)}`
+        : `locally ${logDetail('$ pnpm publish')}`
+    }`,
+  )
   const isMonorepo = !isSamePath(packageRootDir, monorepoRootDir) || monorepoInfo.hasMultiplePackages
   console.log(`Monorepo: ${logBoolean(isMonorepo)}`)
   if (isMonorepo) {
@@ -739,15 +792,6 @@ function logAnalysis(monorepoInfo: MonorepoInfo, monorepoRootDir: string, packag
       console.log(line)
     })
   }
-}
-
-function logTitle(title: string, noMargin?: true) {
-  const titleLine = `==== ${title} ====`
-  const titleLength = pc.rm(titleLine).length
-  const borderLine = '='.repeat(titleLength)
-  let lines = [borderLine, titleLine, borderLine]
-  if (!noMargin) lines = ['', '', ...lines]
-  console.log(lines.join('\n'))
 }
 
 let cleanRootDir = process.cwd()
@@ -769,46 +813,91 @@ async function clean(err: unknown) {
 }
 
 type MonorepoInfo = ReturnType<typeof analyzeMonorepo>
-function analyzeMonorepo(filesMonorepoPackageJson: Files, packageRootDir: string, packageName: string) {
-  let currentPackageFound = false
-  const monorepoPackages: {
-    packageName: string
-    packageRootDirRelative: string
-    isCurrentPackage: boolean
-  }[] = []
-  filesMonorepoPackageJson.forEach((packageJsonFile) => {
-    const packageJsonDir = path.dirname(packageJsonFile.filePathAbsolute)
-    const { packageJson } = getPackageJson(packageJsonDir)
-    assertUsage(
-      !packageJson.dependencies?.[thisPackageName],
-      `${pc.cyan('@brillout/release-me')} shouldn't be inside ${pc.gray(packageJsonDir)}/package.json#${pc.bold(
-        'dependencies',
-      )} as it should be only in package.json#${pc.bold('devDependencies')} instead.`,
-    )
-    if (!packageJson?.name || !packageJson.devDependencies?.[thisPackageName]) return
-    const isCurrentPackage = isSamePath(packageRootDir, packageJsonDir)
-    if (isCurrentPackage) {
-      assert(!currentPackageFound)
-      currentPackageFound = true
-      assert(packageJson.name === packageName)
-    }
-    monorepoPackages.push({
-      packageName: packageJson.name,
-      packageRootDirRelative: path.dirname(packageJsonFile.filePathRelative),
-      isCurrentPackage,
-    })
-  })
-
-  assert(currentPackageFound)
+function analyzeMonorepo(filesMonorepo: Files, packageRootDir: string, packageName: string) {
+  const monorepoPackages = getReleaseMePackages(filesMonorepo).map((pkg) => ({
+    ...pkg,
+    isCurrentPackage: isSamePath(packageRootDir, pkg.packageRootDir),
+  }))
+  const currentPackages = monorepoPackages.filter((pkg) => pkg.isCurrentPackage)
+  const packageJsonPath = path.join(packageRootDir, 'package.json')
+  assertUsage(
+    currentPackages.length === 1,
+    `${pc.cyan(packageName)} isn't enabled for ${pc.cyan(
+      thisPackageName,
+    )} — add a script that runs release-me to ${packageJsonPath} (e.g. ${pc.bold(
+      '"release": "release-me patch"',
+    )}), see ${pc.underline(readmeMonorepo)}`,
+  )
+  assert(currentPackages[0]!.packageName === packageName)
   return {
     hasMultiplePackages: monorepoPackages.length > 1,
     monorepoPackages,
   }
 }
 
-function logDetail(msg: string): string {
-  return `(${pc.dim(msg)})`
+/** release-me must be in the devDependencies of the root package.json (e.g. the GitHub Action runs it from there) */
+function assertInstalledAtRoot(monorepoRootDir: string) {
+  const packageJsonPath = path.join(monorepoRootDir, 'package.json')
+  const isInstalled =
+    fs.existsSync(packageJsonPath) && !!getPackageJson(monorepoRootDir).packageJson.devDependencies?.[thisPackageName]
+  assertUsage(
+    isInstalled,
+    `${pc.cyan(thisPackageName)} should be installed at the root: add it to the devDependencies of ${packageJsonPath}.`,
+  )
 }
+
+type ReleaseMePackage = ReturnType<typeof getReleaseMePackages>[number]
+/**
+ * The packages that release-me releases: the ones with a script that runs release-me (e.g. `"release": "release-me patch"`).
+ * If no package has such script: the root package (e.g. a repository with a single package, released with `$ pnpm exec release-me patch`).
+ */
+function getReleaseMePackages(filesMonorepo: Files) {
+  const packages: { packageName: string; packageRootDir: string; packageRootDirRelative: string }[] = []
+  let rootPackage: (typeof packages)[number] | null = null
+  for (const { filePathAbsolute, filePathRelative } of getFilesMonorepoPackageJson(filesMonorepo)) {
+    const packageRootDir = path.dirname(filePathAbsolute)
+    const { packageJson, packageJsonPath } = getPackageJson(packageRootDir)
+    assertUsage(
+      !packageJson.dependencies?.[thisPackageName],
+      `${pc.cyan('@brillout/release-me')} shouldn't be inside ${pc.gray(packageRootDir)}/package.json#${pc.bold(
+        'dependencies',
+      )} as it should be only in package.json#${pc.bold('devDependencies')} instead.`,
+    )
+    const packageRootDirRelative = path.dirname(filePathRelative)
+    if (hasReleaseScript(packageJson)) {
+      // A script that runs release-me means the package is released: it must be releasable
+      const seeReadme = `see ${pc.underline(readmeMonorepo)}`
+      assertUsage(
+        packageJson.name,
+        `${packageJsonPath} has a script that runs release-me but no name — add a name, or remove the script, ${seeReadme}`,
+      )
+      assertUsage(
+        !packageJson.private,
+        `${pc.cyan(
+          packageJson.name,
+        )} has a script that runs release-me but it's private — make it public (remove package.json#private), or remove the script, ${seeReadme}`,
+      )
+      packages.push({ packageName: packageJson.name, packageRootDir, packageRootDirRelative })
+    } else if (packageRootDirRelative === '.' && packageJson.name && !packageJson.private) {
+      rootPackage = { packageName: packageJson.name, packageRootDir, packageRootDirRelative }
+    }
+  }
+  if (packages.length === 0 && rootPackage) packages.push(rootPackage)
+  assertUsage(
+    packages.length > 0,
+    `No package to release — add a script that runs release-me to the package.json of each package to release (e.g. ${pc.bold(
+      '"release": "release-me patch"',
+    )}), see ${pc.underline(readmeMonorepo)}`,
+  )
+  return packages
+}
+/** Whether one of the scripts runs release-me, e.g. `"release": "release-me patch"` */
+function hasReleaseScript(packageJson: PackageJson): boolean {
+  return Object.values(packageJson.scripts ?? {}).some(
+    (script) => typeof script === 'string' && script.split(/[\s;&|()]+/).includes('release-me'),
+  )
+}
+
 function logBoolean(bool: boolean): 'yes' | 'no' {
   return pc.bold(bool ? 'yes' : 'no')
 }

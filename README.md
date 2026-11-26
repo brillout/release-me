@@ -12,6 +12,7 @@ Used by:
 [Get started](#get-started)  
 [Usage](#usage)  
 [Monorepo](#monorepo)  
+[GitHub Action](#github-action)  
 
 > [!WARNING]
 > Don't use this: it's only meant for Vike's team & friends. That said, feel free to fork this project.
@@ -24,6 +25,7 @@ Used by:
 - Monorepo support.
 - Generates Git release tags.
 - Pre-release support. (For example [`0.4.177-commit-ff3d6cd`](https://www.npmjs.com/package/vike/v/0.4.177-commit-ff3d6cd).)
+- Can publish via a GitHub Action instead of your machine: no npm login/2FA/token needed. (See [GitHub Action](#github-action).)
 - Asks for confirmation before publishing, and shows a preview of the changes made to `package.json` and `CHANGELOG.md`, enabling you to double check before publishing.
 
 <br/>
@@ -32,7 +34,7 @@ Used by:
 
 ### Installation
 
-Run `$ pnpm -D @brillout/release-me` and make sure you have the following:
+Run `$ pnpm add -D @brillout/release-me` and make sure you have the following:
 
 ```json5
 // package.json
@@ -131,6 +133,27 @@ pnpm exec release-me commit
 
 ## Monorepo
 
+### Installation
+
+1. Add `@brillout/release-me` to the `devDependencies` of the monorepo root's `package.json`
+2. For each package you want to release via `@brillout/release-me`, add scripts that run `release-me`
+   ```diff
+    // packages/my-package/package.json
+    {
+      "name": "my-package",
+      "version": "0.1.2",
+      "scripts": {
+   +    "release": "release-me patch",
+   +    "release:minor": "release-me minor",
+   +    "release:major": "release-me major",
+   +    "release:commit": "release-me commit"
+      }
+    }
+   ```
+
+> [!NOTE]
+> A package is considered by `@brillout/release-me` if and only if it defines a script that runs `release-me`.
+
 ### `CHANGELOG.md` & commit scope
 
 When releasing a package from a monorepo, the following commits are added to the `CHANGELOG.md` of the package:
@@ -159,3 +182,20 @@ Consider adding `release` scripts to the monorepo root's `package.json`:
 
 > [!NOTE]
 > The `--yes` argument makes the release proceed without prompting for confirmation.
+
+<br/>
+
+## GitHub Action
+
+Instead of publishing from your machine (which requires npm 2FA), you can let `@brillout/release-me`'s GitHub Action publish releases to npm (without 2FA and without an npm secret token):
+
+```shell
+# Run then follow the steps it prints
+pnpm exec release-me init
+```
+
+> [!NOTE]
+> It uses [npm's trusted publishing](https://docs.npmjs.com/trusted-publishers).
+
+> [!NOTE]
+> Stable releases get npm [provenance](https://docs.npmjs.com/generating-provenance-statements), commit releases don't.
