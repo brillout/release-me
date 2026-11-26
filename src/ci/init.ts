@@ -77,9 +77,9 @@ async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[]
     ['Organization or user', owner ?? '<owner>'],
     ['Repository', repoName ?? '<repo>'],
     ['Workflow filename', releaseWorkflowFileName],
-    ['Allow npm publish', '✓'],
+    ['Allow npm publish', '✅'],
     // `$ npm dist-tag rm` removes the dist-tag that `$ npm publish` requires for commit releases (see ./ci-publish.ts)
-    ['Allow npm dist-tag', '✓'],
+    ['Allow npm dist-tag', '✅'],
   ] as const
   for (const [label, value] of fields) {
     console.log(`        ${label.padEnd(22)}${pc.bold(value)}`)
