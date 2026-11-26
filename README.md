@@ -10,12 +10,12 @@ Used by:
 
 [Features](#features)  
 [Get started](#get-started)  
-[CLI](#cli)  
 [Conventional Commits](#conventional-commits)  
 &nbsp;&nbsp;&nbsp;&nbsp;[Monorepo](#monorepo)  
 [GitHub Actions](#github-actions)  
 &nbsp;&nbsp;&nbsp;&nbsp;[Npm Release](#npm-release)  
 &nbsp;&nbsp;&nbsp;&nbsp;[GitHub Release](#github-release)  
+[CLI](#cli)  
 
 > [!WARNING]
 > Don't use this: it's only meant for Vike's team & friends. That said, feel free to fork this project.
@@ -92,23 +92,6 @@ Used by:
 
 > [!NOTE]
 > Make sure to follow [Conventional Commits](#conventional-commits): `@brillout/release-me` generates `CHANGELOG.md` from your commits.
-
-<br/>
-
-## CLI
-
-```shell
-pnpm exec release-me patch           # Release a new patch version (0.1.2 => 0.1.3)
-pnpm exec release-me minor           # Release a new minor version (0.1.2 => 0.2.0)
-pnpm exec release-me major           # Release a new major version (0.1.2 => 1.0.0)
-pnpm exec release-me v0.1.5          # Release a specific version
-pnpm exec release-me commit          # Release the current commit (0.1.2-commit-ff3d6cd)
-pnpm exec release-me patch --yes     # Skip the confirmation
-pnpm exec release-me patch --force   # Release even in unexpected situations (e.g. from another branch than main, or without CHANGELOG.md entry)
-```
-
-> [!NOTE]
-> A commit release doesn't change your repository (no release commit, no Git tag), and it has no npm dist-tag: installing it requires its exact version, e.g. `$ pnpm add my-package@0.1.2-commit-ff3d6cd`.
 
 <br/>
 
@@ -214,3 +197,20 @@ Run locally, these commands use the environment variable `GITHUB_TOKEN`, or else
 
 > [!NOTE]
 > To sync manually, press the **Run workflow** button of the GitHub Action `release-github.yml`.
+
+<br/>
+
+## CLI
+
+```shell
+pnpm exec release-me patch           # Release a new patch version (0.1.2 => 0.1.3)
+pnpm exec release-me minor           # Release a new minor version (0.1.2 => 0.2.0)
+pnpm exec release-me major           # Release a new major version (0.1.2 => 1.0.0)
+pnpm exec release-me v0.1.5          # Release a specific version
+pnpm exec release-me commit          # Release the current commit (0.1.2-commit-ff3d6cd)
+pnpm exec release-me patch --yes     # Skip the confirmation
+pnpm exec release-me patch --force   # Release even in unexpected situations (e.g. from another branch than main, or without CHANGELOG.md entry)
+```
+
+> [!NOTE]
+> A commit release doesn't change your repository (no release commit, no Git tag), and it has no npm dist-tag: installing it requires its exact version, e.g. `$ pnpm add my-package@0.1.2-commit-ff3d6cd`.
