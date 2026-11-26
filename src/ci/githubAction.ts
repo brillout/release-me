@@ -1,3 +1,4 @@
+export { abortIfNotOnNpm }
 export { getGitHubRepo }
 export { parseGitHubRepo }
 export { triggerCommitRelease }
@@ -66,6 +67,23 @@ async function triggerCommitRelease(packageName: string, versionNew: string, com
     packageSpec,
     workflowLink,
     `You can also commit-release any commit you trust: ${getRunWorkflowCta(workflowLink)}.`,
+  )
+}
+
+/** The GitHub Action can't publish a package that isn't on npm yet: npm can't set up a trusted publisher for it */
+async function abortIfNotOnNpm(packageName: string) {
+  // The registry of trusted publishing. Offline or behind a proxy => no response => let the release proceed.
+  const response = await fetch(`https://registry.npmjs.org/${packageName.replace('/', '%2F')}`, {
+    method: 'HEAD',
+    signal: AbortSignal.timeout(10_000),
+  }).catch(() => null)
+  if (response?.status !== 404) return
+  throw new Error(
+    pc.red(
+      pc.bold(
+        `Release aborted, because ${packageName} isn't on npm yet, and npm can't set up a trusted publisher for it until it is: publish its first version manually ($ pnpm publish), then set up its trusted publisher (see https://github.com/brillout/release-me#github-action).`,
+      ),
+    ),
   )
 }
 

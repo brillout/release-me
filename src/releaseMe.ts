@@ -22,7 +22,7 @@ import * as fs from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
 import { runCommand, assertUsage, logDetail, logTitle, run, run__return } from './utils.ts'
-import { triggerCommitRelease, triggerStableRelease } from './ci/githubAction.ts'
+import { abortIfNotOnNpm, triggerCommitRelease, triggerStableRelease } from './ci/githubAction.ts'
 import { publishesViaGitHubAction, releaseWorkflowFileName, releaseWorkflowPath } from './ci/releaseWorkflow.ts'
 import * as path from 'path'
 /*
@@ -81,6 +81,8 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   const monorepoInfo = analyzeMonorepo(filesMonorepo, packageRootDir, packageName)
 
   logAnalysis(monorepoInfo, monorepoRootDir, packageRootDir, viaGitHubAction)
+
+  if (viaGitHubAction) await abortIfNotOnNpm(packageName)
 
   if (!isCommitRelease && !args.force) await abortIfNotLatestMainCommit()
 
