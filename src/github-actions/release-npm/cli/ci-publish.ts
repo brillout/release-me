@@ -140,8 +140,9 @@ async function publish({ packageName, packageRootDir }: ReleaseMePackage, isComm
       npm(['dist-tag', 'rm', packageName, 'commit'])
     } catch {
       const npmVersion = execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim()
+      // Info, not a warning: the release succeeded and the dist-tag `commit` is harmless (`$ npm install` uses `latest`)
       console.log(
-        `::warning::Couldn't remove the npm dist-tag commit of ${packageName}: with trusted publishing, it requires npm >= 11.21.0 (this run uses npm ${npmVersion}) and, on npmjs.com, "Allow npm dist-tag" enabled for the trusted publisher ${releaseNpmWorkflowFile.fileName} of ${packageName}.`,
+        `(The npm dist-tag commit of ${packageName} wasn't removed: with trusted publishing, it requires npm >= 11.21.0 (this run uses npm ${npmVersion}) and, on npmjs.com, "Allow npm dist-tag" enabled for the trusted publisher ${releaseNpmWorkflowFile.fileName} of ${packageName}.)`,
       )
     }
   }
