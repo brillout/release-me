@@ -69,7 +69,7 @@ Used by:
     }
    ```
 
-   In a monorepo, add them to each package you want to release (a package is released by `@brillout/release-me` if and only if it defines a script that runs `release-me`). To release all packages at once, add `release` scripts to the monorepo root's `package.json`:
+   In a monorepo, add them (and a `build` script) to each package you want to release (a package is released by `@brillout/release-me` if and only if it defines a script that runs `release-me`). To release all packages at once, add `release` scripts to the monorepo root's `package.json`:
 
    ```diff
     // package.json
