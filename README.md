@@ -138,7 +138,7 @@ To release all packages at once, add `release` scripts to the monorepo root's `p
 
 ## Conventional Commits
 
-It generates `CHANGELOG.md` from your commits: follow [Conventional Commits](https://www.conventionalcommits.org).
+`@brillout/release-me` generates `CHANGELOG.md` from your commits: follow [Conventional Commits](https://www.conventionalcommits.org).
 
 - `fix:` => bug fix or some polishing (e.g. improved error message).
 - `feat:` => new feature, i.e. new functionality.
@@ -184,16 +184,16 @@ pnpm exec release-me init --npm
 ```
 
 > [!NOTE]
-> To commit-release any commit, press the **Run workflow** button of the GitHub Action `release-npm.yml` (`$ pnpm exec release-me commit` does it for the current commit, which must be pushed).
+> `$ pnpm exec release-me commit` commit-releases the current commit (which must be pushed to GitHub). To commit-release any other commit, press the **Run workflow** button of the GitHub Action `release-npm.yml`.
 
 > [!NOTE]
-> It uses [npm's trusted publishing](https://docs.npmjs.com/trusted-publishers).
+> The GitHub Action `release-npm.yml` uses [npm's trusted publishing](https://docs.npmjs.com/trusted-publishers).
 
 > [!NOTE]
 > Stable releases get npm [provenance](https://docs.npmjs.com/generating-provenance-statements), commit releases don't.
 
 > [!WARNING]
-> Anyone with write access to the repository can publish: only give it to people you trust, and only commit-release commits you trust (e.g. review a pull request before commit-releasing it).
+> Anyone with write access to the repository can publish: only give write access to people you trust, and only commit-release commits you trust (e.g. review a pull request before commit-releasing it).
 
 ### GitHub Release
 
@@ -230,7 +230,7 @@ Run locally, these commands use the environment variable `GITHUB_TOKEN`, or else
 </details>
 
 > [!NOTE]
-> `CHANGELOG.md` is the source of truth: upon each push of a `CHANGELOG.md` change to `main` (e.g. a release commit), GitHub Releases are created, updated, and deleted to match it. Edit `CHANGELOG.md` instead of a GitHub Release (the next sync overwrites it).
+> `CHANGELOG.md` is the source of truth: upon each push of a `CHANGELOG.md` change to `main` (e.g. a release commit), GitHub Releases are created, updated, and deleted to match `CHANGELOG.md`. Edit `CHANGELOG.md` instead of a GitHub Release: the next sync overwrites any edit made to a GitHub Release.
 
 > [!NOTE]
 > The first sync creates A LOT of GitHub Releases: one for every version in `CHANGELOG.md`.
