@@ -81,21 +81,21 @@ Used by:
 
 ### Monorepo
 
-1. Add `@brillout/release-me` to the `devDependencies` of the monorepo root's `package.json`.
-2. Add the `release` scripts to each package you want to release:
-   ```diff
-    // packages/my-package/package.json
-    {
-      "name": "my-package",
-      "version": "0.1.2",
-      "scripts": {
-   +    "release": "release-me patch",
-   +    "release:minor": "release-me minor",
-   +    "release:major": "release-me major",
-   +    "release:commit": "release-me commit"
-      }
-    }
-   ```
+Add the `release` scripts to each package you want to release:
+
+```diff
+ // packages/my-package/package.json
+ {
+   "name": "my-package",
+   "version": "0.1.2",
+   "scripts": {
++    "release": "release-me patch",
++    "release:minor": "release-me minor",
++    "release:major": "release-me major",
++    "release:commit": "release-me commit"
+   }
+ }
+```
 
 > [!NOTE]
 > A package is released by `@brillout/release-me` if and only if it defines a script that runs `release-me`.
