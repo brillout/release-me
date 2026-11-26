@@ -13,6 +13,8 @@ program
   .usage('[options] <release-target>')
   .showHelpAfterError()
   .allowExcessArguments(false)
+  // The options after a command are the command's (e.g. `$ release-me github-release-delete-all --yes`), not the program's
+  .enablePositionalOptions()
   .addArgument(new Argument('<release-target>').argParser(parseReleaseTarget))
   .option(
     '--force',
