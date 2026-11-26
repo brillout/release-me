@@ -36,7 +36,7 @@ Used by:
 
 ## Get started
 
-1. Add `@brillout/release-me` to the `devDependencies` of your repository's root `package.json`, and add a `build` script (release-me runs it before releasing):
+1. Add `@brillout/release-me` to the `devDependencies` of your repository's root `package.json`, and add the following scripts (release-me runs the `build` script before releasing):
 
    ```shell
    pnpm add -D @brillout/release-me
@@ -59,8 +59,6 @@ Used by:
       }
     }
    ```
-
-   The `release` scripts are optional: we recommend them, as they show anyone discovering your project how new versions are released.
 
 2. Set up the GitHub Actions of release-me (see [GitHub Actions](#github-actions)):
 
