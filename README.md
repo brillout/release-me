@@ -199,7 +199,7 @@ To trigger the first sync, manually trigger the action by running `$ pnpm exec r
 > The first sync creates A LOT of GitHub Releases: one for every version listed in `CHANGELOG.md`.
 
 > [!NOTE]
-> `CHANGELOG.md` is the source of truth: upon each push of a `CHANGELOG.md` change to `main`, GitHub Releases are created, updated, and deleted to match exactly `CHANGELOG.md`. Always edit `CHANGELOG.md` instead of a GitHub Release: the next sync overwrites any edit made to a GitHub Release.
+> `CHANGELOG.md` is the source of truth: **upon each push of a `CHANGELOG.md` change to `main`, GitHub Releases are created, updated, and deleted to match exactly `CHANGELOG.md`**. Always edit `CHANGELOG.md` instead of a GitHub Release: the next sync overwrites any edit made to a GitHub Release.
 
 <br/>
 
