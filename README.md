@@ -192,8 +192,11 @@ Run locally, these commands use the environment variable `GITHUB_TOKEN`, or else
 
 </details>
 
+To trigger the first sync, manually trigger the action by running:
 
-To trigger the first sync, manually trigger the action by running `$ pnpm exec release-me github-release-sync`.
+```shell
+pnpm exec release-me github-release-sync
+```
 
 > [!NOTE]
 > The first sync creates A LOT of GitHub Releases: one for every version listed in `CHANGELOG.md`.
