@@ -64,10 +64,14 @@ async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[]
   const repo = await getGitHubRepo(monorepoRootDir)
   const [owner, repoName] = repo ? repo.split('/') : []
   console.log(`${intro} ${packages.length === 1 ? "the package's" : "each package's"} trusted publisher:`)
-  for (const { packageName } of packages) {
-    console.log(`   ${pc.underline(`https://www.npmjs.com/package/${packageName}/access`)}`)
+  const links = packages.map(({ packageName }) => pc.underline(`https://www.npmjs.com/package/${packageName}/access`))
+  if (links.length === 1) {
+    console.log(`   1. Go to ${links[0]}`)
+  } else {
+    console.log('   1. Go to:')
+    for (const link of links) console.log(`        ${link}`)
   }
-  console.log(`   Under ${pc.bold('Trusted Publisher')}, press ${pc.bold('GitHub Actions')} and fill in:`)
+  console.log(`   2. Under ${pc.bold('Trusted Publisher')}, click ${pc.bold('GitHub Actions')} and fill in:`)
   // The fields of npm's form
   const fields = [
     ['Organization or user', owner ?? '<owner>'],
@@ -78,9 +82,10 @@ async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[]
     ['Allow npm dist-tag', '✓'],
   ] as const
   for (const [label, value] of fields) {
-    console.log(`     ${label.padEnd(22)}${pc.bold(value)}`)
+    console.log(`        ${label.padEnd(22)}${pc.bold(value)}`)
   }
-  console.log(`    ${pc.bold(' ⚠️  Make sure to publish within 2 days (otherwise the connection expires).')}`)
+  console.log(`   3. Click ${pc.bold('Set up connection')}`)
+  console.log(`   ${pc.bold('⚠️  Make sure to publish within 2 days (otherwise the connection expires).')}`)
 
   for (const { packageName, packageRootDir } of packages) {
     const { repository } = getPackageJson(packageRootDir).packageJson
