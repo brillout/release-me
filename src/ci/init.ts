@@ -24,7 +24,7 @@ async function init() {
   const status = writeReleaseWorkflowFile(monorepoRootDir)
   logTitle('GitHub Action', true)
   if (status === 'up-to-date') {
-    await logNpmSetup(monorepoRootDir, packages, "If you didn't already, go to")
+    await logNpmSetup(monorepoRootDir, packages, "If you didn't already, set up")
     // Last: CLI output is read bottom to top
     console.log()
     console.log(`${pc.bold(releaseWorkflowFilePath)} is up-to-date`)
@@ -36,7 +36,7 @@ async function init() {
   console.log()
   console.log('Next steps:')
   console.log(`1. Push the commit to the default branch ${pc.dim('$ git push')}`)
-  await logNpmSetup(monorepoRootDir, packages, status === 'created' ? '2. Go to' : "2. If you didn't already, go to")
+  await logNpmSetup(monorepoRootDir, packages, status === 'created' ? '2. Set up' : "2. If you didn't already, set up")
 }
 
 /** The GitHub Action installs the pnpm version of the root package.json (pnpm/action-setup reads it) */
@@ -61,25 +61,27 @@ async function commitReleaseWorkflowFile(monorepoRootDir: string, status: 'creat
   console.log(`Committed ${pc.dim(`(${commitMessage})`)}`)
 }
 
-/** The steps to set up npm's trusted publishing, e.g. `intro` = `2. Go to` */
+/** The steps to set up npm's trusted publishing, e.g. `intro` = `2. Set up` */
 async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[], intro: string) {
   const repo = await getGitHubRepo(monorepoRootDir)
   const [owner, repoName] = repo ? repo.split('/') : []
-  console.log(
-    `${intro} ${packages.length === 1 ? "the package's" : "each package's"} ${pc.bold('Settings')} on npmjs.com:`,
-  )
+  console.log(`${intro} ${packages.length === 1 ? "the package's" : "each package's"} trusted publisher on npmjs.com:`)
   for (const { packageName } of packages) {
     console.log(`   ${pc.underline(`https://www.npmjs.com/package/${packageName}/access`)}`)
   }
-  console.log(
-    `   and, under ${pc.bold('Trusted Publisher')}, press ${pc.bold('GitHub Actions')} to set up a connection:`,
-  )
-  // `$ npm dist-tag rm` removes the dist-tag that `$ npm publish` requires for commit releases (see ./ci-publish.ts)
-  console.log(
-    `   - ${pc.bold(owner ?? '<owner>')} / ${pc.bold(repoName ?? '<repo>')}, workflow filename ${pc.bold(
-      releaseWorkflowFileName,
-    )}, ${pc.bold('Allow npm publish')} and ${pc.bold('Allow npm dist-tag')}`,
-  )
+  console.log(`   Under ${pc.bold('Trusted Publisher')}, press ${pc.bold('GitHub Actions')} and fill in:`)
+  // The fields of npm's form
+  const fields = [
+    ['Organization or user', owner ?? '<owner>'],
+    ['Repository', repoName ?? '<repo>'],
+    ['Workflow filename', releaseWorkflowFileName],
+    ['Allow npm publish', '✓'],
+    // `$ npm dist-tag rm` removes the dist-tag that `$ npm publish` requires for commit releases (see ./ci-publish.ts)
+    ['Allow npm dist-tag', '✓'],
+  ] as const
+  for (const [label, value] of fields) {
+    console.log(`     ${label.padEnd(22)}${pc.bold(value)}`)
+  }
   console.log(`   ${pc.dim("(A new connection expires if it isn't used within 2 days.)")}`)
 
   for (const { packageName, packageRootDir } of packages) {
