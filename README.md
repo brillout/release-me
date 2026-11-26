@@ -222,6 +222,9 @@ pnpm exec release-me init
 > [!NOTE]
 > To sync manually, press the **Run workflow** button of the GitHub Action `release-github.yml`.
 
+<details>
+<summary>Debug</summary>
+
 Preview the changes without making them:
 
 ```shell
@@ -242,3 +245,5 @@ pnpm exec release-me delete-all-github-releases
 
 > [!NOTE]
 > Run locally, these commands use the environment variable `GITHUB_TOKEN`, or else the token of the GitHub CLI `gh` (`$ gh auth login`). Without `--dry-run`, the token needs write access to the repository's contents.
+
+</details>
