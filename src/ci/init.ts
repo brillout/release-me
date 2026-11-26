@@ -85,8 +85,7 @@ async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[]
     console.log(`        ${label.padEnd(22)}${pc.bold(value)}`)
   }
   console.log(`   3. Click ${pc.bold('Set up connection')}`)
-  // https://docs.npmjs.com/trusted-publishers: "must complete its first successful publish within 2 days"
-  console.log(`   ${pc.bold('⚠️  Make sure to publish within 2 days, or this trusted publisher expires')}`)
+  console.log(`   ${pc.bold('⚠️  Make sure to use the connection within 2 days (e.g. publish commit-release) after creating it, otherwise the connection creation is canclled')}`)
 
   for (const { packageName, packageRootDir } of packages) {
     const { repository } = getPackageJson(packageRootDir).packageJson
