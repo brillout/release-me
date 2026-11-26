@@ -34,7 +34,7 @@
     "typescript": "^7.0.2"
   },
   "// ./src/cli.ts — For @brillout/release-me's own releases, `$ release-me` runs the source (Node.js strips its types)": "",
-  "// ./dist/cli.ts — For @brillout/release-me users": "",
+  "// ./dist/cli.js — For @brillout/release-me users": "",
   "bin": "./src/cli.ts",
   "publishConfig": {
     "bin": "./dist/cli.js",
