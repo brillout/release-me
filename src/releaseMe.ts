@@ -323,15 +323,10 @@ async function writeChangeLog(
     })
 
   generator.commits(
-    {
-      // Filter commits.
-      // - Equivalent to CLI argument `--commit-path`.
-      // - https://github.com/conventional-changelog/conventional-changelog/issues/556#issuecomment-555539998
-      path: !hasMultiplePackages
-        ? // Set to `undefined` in order to enable empty release commits (e.g. `fix: `).
-          undefined
-        : packageRootDir,
-    },
+    // No `path` filter (CLI argument `--commit-path`): it would filter out the commits scoped to the package that don't
+    // modify a file within its root directory, such as empty release commits (`fix(my-package): `). transformCommit()
+    // below filters the commits instead.
+    {},
     {
       // Skip revert commits.
       // - Modify revertPattern set by node_modules/conventional-changelog-angular/parserOpts.js to skip the default commit message upon `$ git revert`.
@@ -339,13 +334,22 @@ async function writeChangeLog(
     },
   )
 
+  // With several packages: the commits that modify a file within the package's root directory
+  const commitsOfPackageRootDir = hasMultiplePackages ? await getCommitsModifying(packageRootDir) : null
+
   generator.options({
+    // Which commits the package's CHANGELOG.md includes:
+    // - A commit with a scope (e.g. `fix(some-package): some commit`): only if the scope is the package's name.
+    // - A commit without scope (e.g. `fix: some commit`), with several packages: only if it modifies a file within the
+    //   package's root directory.
     transformCommit(commit, params) {
       assert(params!.package!.name === packageName)
       const { scope } = commit
       assert(scope === null || scope === undefined || typeof scope === 'string')
       if (scope) {
         if (scope !== packageName) return null
+      } else if (commitsOfPackageRootDir && !commitsOfPackageRootDir.has(commit.hash!)) {
+        return null
       }
       return { ...commit, scope: null } as any as typeof commit
     },
@@ -382,6 +386,11 @@ async function writeChangeLog(
 
   const isMissingChangeLog = !changeLogNewContent.includes('*') && !changeLogFileWasEmpty
   return { isMissingChangeLog }
+}
+
+async function getCommitsModifying(dir: string): Promise<Set<string>> {
+  const stdout = await run__return(['git', 'log', '--format=%H', '--', dir])
+  return new Set(stdout.split('\n').filter(Boolean))
 }
 
 function prependFile(filePath: string, str: string) {
