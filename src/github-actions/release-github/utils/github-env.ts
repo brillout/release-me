@@ -1,6 +1,8 @@
 export { createReleasesClientFromEnv }
 export { getDefaultBranch }
+export { getGitHubToken }
 export { getPushedFiles }
+export { getRepo }
 
 import { readFileSync } from 'node:fs'
 import execa from 'execa'
@@ -17,24 +19,25 @@ import { assertUsage, logDetail } from '../../../utils.ts'
 async function createReleasesClientFromEnv(dryRun: boolean): Promise<{ client: ReleasesClient; repo: string }> {
   const repo = await getRepo()
   const token = await getGitHubToken()
+  assertUsage(
+    token,
+    `Set the environment variable ${pc.bold('GITHUB_TOKEN')}, or log in the GitHub CLI ${pc.cyan('gh')} ${logDetail(
+      '$ gh auth login',
+    )}.`,
+  )
   const client = createReleasesClient({ repo, token, dryRun })
   return { client, repo }
 }
 
 // GitHub Actions: the token of the run (see release-github.yml). Locally: GITHUB_TOKEN, or else the token of the GitHub CLI.
-async function getGitHubToken(): Promise<string> {
+async function getGitHubToken(): Promise<string | null> {
   const token = process.env.GITHUB_TOKEN
   if (token) return token
   try {
     const { stdout } = await execa('gh', ['auth', 'token'])
     if (stdout.trim()) return stdout.trim()
   } catch {}
-  assertUsage(
-    false,
-    `Set the environment variable ${pc.bold('GITHUB_TOKEN')}, or log in the GitHub CLI ${pc.cyan('gh')} ${logDetail(
-      '$ gh auth login',
-    )}.`,
-  )
+  return null
 }
 
 function getDefaultBranch(): string {
