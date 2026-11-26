@@ -9,7 +9,6 @@ export { releaseWorkflowFileName }
 export { releaseWorkflowFileOutdated }
 export { releaseWorkflowFilePath }
 export { releaseGitHubWorkflowFile }
-export { workflowFiles }
 export { writeWorkflowFiles }
 export type { WorkflowFile }
 export type { WorkflowFileOptions }
