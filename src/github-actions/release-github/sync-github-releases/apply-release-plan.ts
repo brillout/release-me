@@ -20,7 +20,7 @@ async function applyReleasePlan({
     } catch (err) {
       // Only a missing tag (`targetCommitish` is set) is created by the request
       if (targetCommitish === undefined || !isTagCreationForbidden(err)) throw err
-      // Skip it, so that the other releases are still synced (the caller fails the run once everything else is synced)
+      // Skip it, so that the other releases are still synced (the caller then warns about the skipped ones)
       console.warn(`Skipped release ${release.tag_name}: the token isn't allowed to create its git tag`)
       skippedReleaseTags.push(release.tag_name)
     }
