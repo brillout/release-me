@@ -117,7 +117,10 @@ BREAKING CHANGE: Replace `someFunction(someArg)` with `someFunction({ someArg })
 
 ### Monorepo
 
-Each package has its own `CHANGELOG.md` (`packages/my-package/CHANGELOG.md`). A commit is included only if it modifies a file within the package's root directory (i.e. the directory where the package's `package.json` lives), and, if the commit has a scope (e.g. `fix(some-package): some commit`), only if the scope matches the package's `package.json#name`.
+Each package has its own `CHANGELOG.md` (`packages/my-package/CHANGELOG.md`), with the following commits:
+
+- If the commit has a scope (e.g. `fix(some-package): some commit`), it is included only if the scope matches the package's `package.json#name`.
+- If the commit has no scope (e.g. `fix: some commit`), it is included only if it modifies a file within the package's root directory (i.e. the directory where the package's `package.json` lives).
 
 > [!NOTE]
 > If the repository has only one package and `CHANGELOG.md` already exists at the monorepo root, then `CHANGELOG.md` lives at the monorepo root.
