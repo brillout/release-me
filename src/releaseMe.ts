@@ -810,12 +810,14 @@ function analyzeMonorepo(filesMonorepo: Files, packageRootDir: string, packageNa
     isCurrentPackage: isSamePath(packageRootDir, pkg.packageRootDir),
   }))
   const currentPackages = monorepoPackages.filter((pkg) => pkg.isCurrentPackage)
+  const packageJsonPath = path.join(packageRootDir, 'package.json')
   assertUsage(
     currentPackages.length === 1,
-    `${pc.cyan(packageName)} isn't enabled for @brillout/release-me — add a script that runs release-me to ${path.join(
-      packageRootDir,
-      'package.json',
-    )} (e.g. ${pc.bold('"release": "release-me patch"')}), see ${pc.underline(readmeMonorepo)}`,
+    `${pc.cyan(packageName)} isn't enabled for ${pc.cyan(
+      thisPackageName,
+    )} — add a script that runs release-me to ${packageJsonPath} (e.g. ${pc.bold(
+      '"release": "release-me patch"',
+    )}), see ${pc.underline(readmeMonorepo)}`,
   )
   assert(currentPackages[0]!.packageName === packageName)
   return {
@@ -864,7 +866,7 @@ function getReleaseMePackages(filesMonorepo: Files) {
   if (packages.length === 0 && rootPackage) packages.push(rootPackage)
   assertUsage(
     packages.length > 0,
-    `No package to release: add a script that runs release-me to the package.json of each package to release (e.g. ${pc.bold(
+    `No package to release — add a script that runs release-me to the package.json of each package to release (e.g. ${pc.bold(
       '"release": "release-me patch"',
     )}), see ${pc.underline(readmeMonorepo)}`,
   )
