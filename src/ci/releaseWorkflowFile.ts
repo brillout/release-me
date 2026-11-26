@@ -1,4 +1,5 @@
 // TODO/after-merge: rename file and exports
+// TODO/after-merge: rename dir src/ci/ to src/github-actions/
 
 export { getWorkflowFilesToInit }
 export { isReleaseWorkflowFileUpToDate }
