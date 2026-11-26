@@ -546,18 +546,16 @@ async function bumpPnpmLockFile(monorepoRootDir: string, unpublishedPackageName:
       { cwd: monorepoRootDir, timeout: 10 * 60 * 1000 },
     )
   } catch (err) {
-    if (!(err as Error).message.includes('ERR_PNPM_PEER_DEP_ISSUES')) {
-      if (unpublishedPackageName) {
-        console.log(
-          pc.yellow(
-            `Hint: the new version of ${unpublishedPackageName} isn't on npm yet (the GitHub Action publishes it after the release is pushed), so the packages of the monorepo that depend on ${unpublishedPackageName} must get it from the workspace (with the ${pc.bold(
-              'workspace:',
-            )} protocol, or with the pnpm setting ${pc.bold('link-workspace-packages')}).`,
-          ),
-        )
-      }
-      throw err
+    if (unpublishedPackageName) {
+      console.log(
+        pc.yellow(
+          `Hint: the new version of ${unpublishedPackageName} isn't on npm yet (the GitHub Action publishes it after the release is pushed), so the packages of the monorepo that depend on ${unpublishedPackageName} must get it from the workspace (with the ${pc.bold(
+            'workspace:',
+          )} protocol, or with the pnpm setting ${pc.bold('link-workspace-packages')}).`,
+        ),
+      )
     }
+    throw err
   }
 }
 
