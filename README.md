@@ -92,7 +92,7 @@ Options:
 > A commit release (`$ pnpm exec release-me commit`) doesn't change your repository (no release commit, no Git tag), and it has no npm dist-tag: installing it requires its exact version, e.g. `$ pnpm add my-package@0.1.2-commit-ff3d6cd`.
 
 > [!NOTE]
-> If your package has a `PROJECT_VERSION.ts` file, it must contain `const PROJECT_VERSION = '0.1.2'` (the current version): `@brillout/release-me` updates it as well.
+> `@brillout/release-me` also updates the `const PROJECT_VERSION = '0.1.2'` of your package's `PROJECT_VERSION.ts` file, if any.
 
 <br/>
 
@@ -179,12 +179,6 @@ Each package has its own `CHANGELOG.md` (`packages/my-package/CHANGELOG.md`), wi
 
 To set up only one of them, use `--npm` or `--github`.
 
-> [!NOTE]
-> The workflow files are copies of the ones of `@brillout/release-me`: don't modify them. After upgrading `@brillout/release-me`, run `$ pnpm exec release-me init` again (releases abort while the workflow files are outdated).
-
-> [!NOTE]
-> The GitHub Actions install the pnpm version of the root `package.json#packageManager` (e.g. `"packageManager": "pnpm@10.0.0"`), which `$ pnpm exec release-me init` requires.
-
 ### Npm Release
 
 Instead of publishing from your machine (which requires npm 2FA), you can let `@brillout/release-me`'s GitHub Action publish to npm (without 2FA and without an npm secret token):
@@ -198,7 +192,7 @@ pnpm exec release-me init --npm
 > To commit-release any commit, press the **Run workflow** button of the GitHub Action `release-npm.yml` (`$ pnpm exec release-me commit` does it for the current commit, which must be pushed).
 
 > [!NOTE]
-> It uses [npm's trusted publishing](https://docs.npmjs.com/trusted-publishers): each package needs a trusted publisher on npmjs.com (`$ pnpm exec release-me init` prints the steps), and its `package.json#repository` must match the GitHub repository. npm can't set up a trusted publisher for a package that isn't on npm yet: publish its first version manually (`$ pnpm publish`).
+> It uses [npm's trusted publishing](https://docs.npmjs.com/trusted-publishers).
 
 > [!NOTE]
 > Stable releases get npm [provenance](https://docs.npmjs.com/generating-provenance-statements), commit releases don't.
