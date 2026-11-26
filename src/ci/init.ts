@@ -23,7 +23,11 @@ async function init() {
 
   const status = writeReleaseWorkflowFile(monorepoRootDir)
   logTitle('GitHub Action', true)
+  // The npm steps also when release.yml already exists: each package requires a trusted publisher on npm (e.g. also a package added since the previous init)
   if (status === 'up-to-date') {
+    await logNpmSetup(monorepoRootDir, packages, "If you didn't already, go to")
+    // Last: CLI output is read bottom to top
+    console.log()
     console.log(`${pc.bold(releaseWorkflowFilePath)} is already up-to-date`)
     return
   }
@@ -33,8 +37,7 @@ async function init() {
   console.log()
   console.log('Next steps:')
   console.log(`1. Push the commit to the default branch ${pc.dim('$ git push')}`)
-  // A new workflow requires a trusted publisher on npm
-  if (status === 'created') await logNpmSetup(monorepoRootDir, packages)
+  await logNpmSetup(monorepoRootDir, packages, status === 'created' ? '2. Go to' : "2. If you didn't already, go to")
 }
 
 /** The GitHub Action installs the pnpm version of the root package.json (pnpm/action-setup reads it) */
@@ -59,12 +62,12 @@ async function commitReleaseWorkflowFile(monorepoRootDir: string, status: 'creat
   console.log(`Committed ${pc.dim(`(${commitMessage})`)}`)
 }
 
-/** The steps to set up npm's trusted publishing */
-async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[]) {
+/** The steps to set up npm's trusted publishing, e.g. `intro` = `2. Go to` */
+async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[], intro: string) {
   const repo = await getGitHubRepo(monorepoRootDir)
   const [owner, repoName] = repo ? repo.split('/') : []
   console.log(
-    `2. On npmjs.com, go to ${packages.length === 1 ? "the package's" : "each package's"} ${pc.bold('Settings')}:`,
+    `${intro} ${packages.length === 1 ? "the package's" : "each package's"} ${pc.bold('Settings')} on npmjs.com:`,
   )
   for (const { packageName } of packages) {
     console.log(`   ${pc.underline(`https://www.npmjs.com/package/${packageName}/access`)}`)
