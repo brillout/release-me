@@ -443,19 +443,27 @@ async function showPreview(packageJsonPath: string, changeLogFilePath: string, c
   }
 }
 
+/** Resolves upon <ENTER>. Otherwise (any other answer such as `n`, <CTRL-C>, or the end of stdin): reverts the changes and exits. */
 function askConfirmation(): Promise<void> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    })
+    let answer: string | null = null
+    rl.question(pc.blue(pc.bold('Press <ENTER> to confirm release, or <CTRL-C> to abort.')), (a) => {
+      answer = a
+      rl.close()
+    })
+    rl.on('SIGINT', () => rl.close()) // https://github.com/nodejs/node/issues/4758#issuecomment-231155557
+    rl.on('close', () => {
+      if (answer?.trim() === '') return resolve()
+      // The prompt's line doesn't end upon <CTRL-C> or the end of stdin
+      if (answer === null) console.log()
+      console.log(pc.red(pc.bold('Release aborted.')))
+      clean(null)
+    })
   })
-  let resolve: () => void
-  const promise = new Promise<void>((r) => (resolve = r))
-  rl.question(pc.blue(pc.bold('Press <ENTER> to confirm release, or <CTRL-C> to abort.')), () => {
-    resolve()
-    rl.close()
-  })
-  rl.on('SIGINT', clean) // https://github.com/nodejs/node/issues/4758#issuecomment-231155557
-  return promise
 }
 
 async function makeGitCommit(monorepoRootDir: string, gitTag: GitTag) {
