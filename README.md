@@ -119,7 +119,7 @@ BREAKING CHANGE: Replace `someFunction(someArg)` with `someFunction({ someArg })
 
 Each package has its own `CHANGELOG.md` (`packages/my-package/CHANGELOG.md`), with the following commits:
 
-- If the commit has a scope (e.g. `fix(some-package): some commit`), it is included only if the scope matches the package's `package.json#name` and the commit modifies a file within the package's root directory.
+- If the commit has a scope (e.g. `fix(some-package): some commit`), it is included only if the scope matches the package's `package.json#name`.
 - If the commit has no scope (e.g. `fix: some commit`), it is included only if it modifies a file within the package's root directory (i.e. the directory where the package's `package.json` lives).
 
 > [!NOTE]
