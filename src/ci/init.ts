@@ -22,21 +22,19 @@ async function init() {
   const packages = getReleaseMePackages(await getFilesInsideDir(monorepoRootDir))
 
   const status = writeReleaseWorkflowFile(monorepoRootDir)
-  logTitle('GitHub Action', true)
+
+  // CLI output is read bottom to top: release.yml last
+  logTitle('npm trusted publisher', true)
+  await logNpmSetup(monorepoRootDir, packages, status === 'created' ? 'Set up' : "If you didn't already, set up")
+
+  logTitle('GitHub Action')
   if (status === 'up-to-date') {
-    await logNpmSetup(monorepoRootDir, packages, "If you didn't already, go to")
-    // Last: CLI output is read bottom to top
-    console.log()
     console.log(`${pc.bold(releaseWorkflowFilePath)} is up-to-date`)
     return
   }
   console.log(`${status === 'created' ? 'Created' : 'Updated'} ${pc.bold(releaseWorkflowFilePath)}`)
   await commitReleaseWorkflowFile(monorepoRootDir, status)
-
-  console.log()
-  console.log('Next steps:')
-  console.log(`1. Push the commit to the default branch ${pc.dim('$ git push')}`)
-  await logNpmSetup(monorepoRootDir, packages, status === 'created' ? '2. Go to' : "2. If you didn't already, go to")
+  console.log(`Push the commit to the default branch ${pc.dim('$ git push')}`)
 }
 
 /** The GitHub Action installs the pnpm version of the root package.json (pnpm/action-setup reads it) */
@@ -61,26 +59,37 @@ async function commitReleaseWorkflowFile(monorepoRootDir: string, status: 'creat
   console.log(`Committed ${pc.dim(`(${commitMessage})`)}`)
 }
 
-/** The steps to set up npm's trusted publishing, e.g. `intro` = `2. Go to` */
+/** The steps to set up npm's trusted publishing, e.g. `intro` = `Set up` */
 async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[], intro: string) {
   const repo = await getGitHubRepo(monorepoRootDir)
   const [owner, repoName] = repo ? repo.split('/') : []
-  console.log(
-    `${intro} ${packages.length === 1 ? "the package's" : "each package's"} ${pc.bold('Settings')} on npmjs.com:`,
-  )
-  for (const { packageName } of packages) {
-    console.log(`   ${pc.underline(`https://www.npmjs.com/package/${packageName}/access`)}`)
+  console.log(`${intro} ${packages.length === 1 ? "the package's" : "each package's"} trusted publisher:`)
+  const links = packages.map(({ packageName }) => pc.underline(`https://www.npmjs.com/package/${packageName}/access`))
+  if (links.length === 1) {
+    console.log(`   1. Go to ${links[0]}`)
+  } else {
+    console.log('   1. Go to:')
+    for (const link of links) console.log(`        ${link}`)
   }
+  console.log(`   2. Under ${pc.bold('Trusted Publisher')}, click ${pc.bold('GitHub Actions')} and fill in:`)
+  // The fields of npm's form
+  const fields = [
+    ['Organization or user', owner ?? '<owner>'],
+    ['Repository', repoName ?? '<repo>'],
+    ['Workflow filename', releaseWorkflowFileName],
+    ['Allow npm publish', '✅'],
+    // `$ npm dist-tag rm` removes the dist-tag that `$ npm publish` requires for commit releases (see ./ci-publish.ts)
+    ['Allow npm dist-tag', '✅'],
+  ] as const
+  for (const [label, value] of fields) {
+    console.log(`        ${label.padEnd(22)}${pc.bold(value)}`)
+  }
+  console.log(`   3. Click ${pc.bold('Set up connection')}`)
   console.log(
-    `   and, under ${pc.bold('Trusted Publisher')}, press ${pc.bold('GitHub Actions')} to set up a connection:`,
+    `   ${pc.bold(
+      '⚠️  Use it within 2 days',
+    )} to persist the connection (e.g. make a commit release) after creating it (otherwise the connection creation is cancelled)`,
   )
-  // `$ npm dist-tag rm` removes the dist-tag that `$ npm publish` requires for commit releases (see ./ci-publish.ts)
-  console.log(
-    `   - ${pc.bold(owner ?? '<owner>')} / ${pc.bold(repoName ?? '<repo>')}, workflow filename ${pc.bold(
-      releaseWorkflowFileName,
-    )}, ${pc.bold('Allow npm publish')} and ${pc.bold('Allow npm dist-tag')}`,
-  )
-  console.log(`   ${pc.dim("(A new connection expires if it isn't used within 2 days.)")}`)
 
   for (const { packageName, packageRootDir } of packages) {
     const { repository } = getPackageJson(packageRootDir).packageJson
