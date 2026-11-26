@@ -48,13 +48,9 @@ async function init(options: WorkflowFileOptions) {
     if (status === 'up-to-date') console.log(`${filePath} is up-to-date`)
     else console.log(`${status === 'created' ? 'Created' : 'Updated'} ${filePath}`)
   }
-  const filePathsChanged = results.filter(({ status }) => status !== 'up-to-date').map((r) => r.workflowFile.filePath)
-  if (filePathsChanged.length === 0) return
-  await commitWorkflowFiles(
-    monorepoRootDir,
-    filePathsChanged,
-    results.some(({ status }) => status === 'created'),
-  )
+  const changes = results.filter(({ status }) => status !== 'up-to-date')
+  if (changes.length === 0) return
+  await commitWorkflowFiles(monorepoRootDir, changes)
   console.log(`Push the commit to the default branch ${pc.dim('$ git push')}`)
 }
 
@@ -71,7 +67,9 @@ function assertPackageManager(monorepoRootDir: string) {
   )
 }
 
-async function commitWorkflowFiles(monorepoRootDir: string, filePaths: string[], isSetup: boolean) {
+async function commitWorkflowFiles(monorepoRootDir: string, changes: ReturnType<typeof writeWorkflowFiles>) {
+  const filePaths = changes.map(({ workflowFile }) => workflowFile.filePath)
+  const isSetup = changes.some(({ status }) => status === 'created')
   const commitMessage = isSetup ? 'ci: set up release-me GitHub Action' : 'ci: update release-me GitHub Action'
   await run(['git', 'add', '--', ...filePaths], { cwd: monorepoRootDir })
   // Only commit the workflow files (`$ git commit -- <file>` ignores other staged changes)
