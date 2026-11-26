@@ -7,6 +7,7 @@ export { syncGitHubReleases }
 
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import pc from '@brillout/picocolors'
 import { getPackagesToSync, syncPackage, type SyncContext, type SyncPackage } from './sync/sync-package.ts'
 import { createReleasesClientFromEnv, getDefaultBranch, getPushedFiles } from './utils/github-env.ts'
 import { isWorkflowFileUpToDate, syncWorkflowFile } from '../releaseWorkflowFile.ts'
@@ -20,7 +21,8 @@ async function syncGitHubReleases({ packageArgs, dryRun }: { packageArgs: string
   process.chdir(monorepoRootDir)
   // E.g. after upgrading release-me without re-running `$ pnpm exec release-me init`
   if (process.env.GITHUB_ACTIONS && !isWorkflowFileUpToDate(monorepoRootDir, syncWorkflowFile)) {
-    console.log(`::error::${syncWorkflowFile.outdated}`)
+    // Annotations don't render colors (picocolors enables them in CI)
+    console.log(`::error::${pc.rm(syncWorkflowFile.outdated)}`)
     process.exit(1)
   }
 

@@ -6,6 +6,7 @@ import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import { execFileSync } from 'node:child_process'
+import pc from '@brillout/picocolors'
 import { logTitle, run } from '../utils.ts'
 import {
   isReleaseWorkflowFileUpToDate,
@@ -185,6 +186,7 @@ function getEnv(name: string): string {
 
 /** Fails the GitHub Action, with the message shown as an error annotation */
 function fail(msg: string): never {
-  console.log(`::error::${msg}`)
+  // Annotations don't render colors (picocolors enables them in CI)
+  console.log(`::error::${pc.rm(msg)}`)
   process.exit(1)
 }

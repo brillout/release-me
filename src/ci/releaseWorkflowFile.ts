@@ -22,7 +22,7 @@ import { fileURLToPath } from 'url'
 import assert from 'assert'
 import pc from '@brillout/picocolors'
 
-const initCommand = '$ pnpm exec release-me init'
+const initCommand = pc.bold('$ pnpm exec release-me init')
 
 type WorkflowFile = {
   fileName: string
@@ -35,7 +35,9 @@ type WorkflowFile = {
 function getWorkflowFile(fileName: string, command: string): WorkflowFile {
   const filePath = `.github/workflows/${fileName}`
   // `$ pnpm install` first: if node_modules/ has an older release-me than the lockfile (e.g. after `$ git pull`), `$ pnpm exec release-me init` would downgrade the workflow file
-  const outdated = `${filePath} doesn't match the installed release-me's (e.g. after upgrading release-me, or if it was modified): run $ pnpm install and ${initCommand}, then push the commit it makes (if any).`
+  const outdated = `${filePath} doesn't match the installed release-me's (e.g. after upgrading release-me, or if it was modified): run ${pc.bold(
+    '$ pnpm install',
+  )} and ${initCommand}, then push the commit it makes (if any).`
   return { fileName, filePath, command, outdated }
 }
 const releaseWorkflowFile = getWorkflowFile('release.yml', 'pnpm exec release-me ci-publish')
