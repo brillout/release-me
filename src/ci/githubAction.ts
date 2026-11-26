@@ -38,7 +38,7 @@ async function triggerCommitRelease(packageName: string, versionNew: string, com
     `Couldn't determine the GitHub repository of ${pc.cyan('origin')} ${logDetail('$ git remote get-url origin')}.`,
   )
   const workflowLink = getWorkflowLink(repo)
-  const packageSpec = `${packageName}@${versionNew}`
+  const packageSpec = `${packageName}@${versionNew}` as const
   const runWorkflow = getRunWorkflowCta(
     workflowLink,
     `enter the commit ${pc.bold(commitHash)} and the package ${pc.bold(packageName)}`,
@@ -89,16 +89,18 @@ async function abortIfNotOnNpm(packageName: string) {
 }
 
 /** E.g. `go to https://github.com/vikejs/vike/actions/workflows/release.yml, press Run workflow, and ${nextStep}` */
-function getRunWorkflowCta(workflowLink: string, nextStep?: string): string {
-  const press = `press ${pc.bold(pc.cyan('Run workflow'))}`
-  return nextStep ? `go to ${workflowLink}, ${press}, and ${nextStep}` : `go to ${workflowLink} and ${press}`
+function getRunWorkflowCta(workflowLink: string, nextStep?: string) {
+  const press = `press ${pc.bold(pc.cyan('Run workflow'))}` as const
+  return nextStep
+    ? (`go to ${workflowLink}, ${press}, and ${nextStep}` as const)
+    : (`go to ${workflowLink} and ${press}` as const)
 }
 
 /**
  * Aborts if GitHub doesn't have the commit: the GitHub Action can only release commits that exist on GitHub (any branch, including pull requests from forks).
  * @returns Why `$ gh` can't be used (it isn't installed, or isn't logged in), otherwise `null`
  */
-async function checkCommitOnGitHub(repo: string, commitHash: string, runWorkflow: string): Promise<string | null> {
+async function checkCommitOnGitHub(repo: string, commitHash: string, runWorkflow: string) {
   const ghArgs = ['api', `repos/${repo}/commits/${commitHash}`, '--silent']
   try {
     await execa('gh', ghArgs, { all: true })
@@ -106,10 +108,10 @@ async function checkCommitOnGitHub(repo: string, commitHash: string, runWorkflow
   } catch (err) {
     const { code, exitCode, all: output } = err as execa.ExecaError & NodeJS.ErrnoException
     if (code === 'ENOENT')
-      return `The GitHub CLI ${pc.cyan('gh')} isn't installed ${logDetail('https://cli.github.com')}`
+      return `The GitHub CLI ${pc.cyan('gh')} isn't installed ${logDetail('https://cli.github.com')}` as const
     // `$ gh` exits with 4 when it requires authentication (`$ gh help exit-codes`), and GitHub replies 401 to an invalid token
     if (exitCode === 4 || output?.includes('(HTTP 401)')) {
-      return `The GitHub CLI ${pc.cyan('gh')} isn't logged in ${logDetail('$ gh auth login')}`
+      return `The GitHub CLI ${pc.cyan('gh')} isn't logged in ${logDetail('$ gh auth login')}` as const
     }
     const isMissingCommit = !!output?.includes('(HTTP 422)')
     const reason = isMissingCommit
@@ -153,7 +155,7 @@ function parseGitHubRepo(url: string): string | null {
   return match?.[1] ?? null
 }
 
-function getWorkflowLink(repo: string | null): string {
+function getWorkflowLink(repo: string | null) {
   if (!repo) return pc.bold(releaseWorkflowPath)
   return pc.underline(`https://github.com/${repo}/actions/workflows/${releaseWorkflowFileName}`)
 }
