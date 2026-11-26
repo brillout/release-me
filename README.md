@@ -52,6 +52,13 @@ Run `$ pnpm add -D @brillout/release-me` and make sure you have the following:
 }
 ```
 
+Then set up the GitHub Actions of release-me (see [GitHub Action](#github-action) and [GitHub Releases](#github-releases)):
+
+```shell
+# Run then follow the steps it prints
+pnpm exec release-me init
+```
+
 That's it: you can now use `pnpm exec release-me patch` to release a new patch version.
 
 We recommend adding the following scripts:
@@ -193,7 +200,7 @@ Instead of publishing from your machine (which requires npm 2FA), you can let `@
 
 ```shell
 # Run then follow the steps it prints
-pnpm exec release-me init
+pnpm exec release-me init --npm
 ```
 
 > [!NOTE]
@@ -209,8 +216,8 @@ pnpm exec release-me init
 You can let `@brillout/release-me`'s GitHub Action synchronize your GitHub Releases with `CHANGELOG.md`:
 
 ```shell
-# Creates .github/workflows/release-github.yml and .github/workflows/release.yml (see GitHub Action)
-pnpm exec release-me init
+# Creates .github/workflows/release-github.yml
+pnpm exec release-me init --github
 ```
 
 > [!NOTE]

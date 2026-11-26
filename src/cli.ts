@@ -38,11 +38,18 @@ program
 program
   .command('init')
   .description(
-    `Create or update .github/workflows/release.yml, the GitHub Action that publishes to npm (see ${pc.underline(
+    `Create or update the GitHub Actions of release-me (default: the ones already set up, or else both), see ${pc.underline(
       'https://github.com/brillout/release-me#github-action',
-    )}).`,
+    )}.`,
   )
-  .action(init)
+  .option('--npm', 'the GitHub Action .github/workflows/release.yml that publishes to npm')
+  .option(
+    '--github',
+    'the GitHub Action .github/workflows/release-github.yml that syncs GitHub Releases with CHANGELOG.md',
+  )
+  .action(async (options: { npm?: true; github?: true }) => {
+    await init(options)
+  })
 
 // Run by the GitHub Action (see ./ci/releaseWorkflowFile.ts)
 program.command('ci-publish', { hidden: true }).action(ciPublish)
