@@ -164,11 +164,6 @@ Each package has its own `CHANGELOG.md` (`packages/my-package/CHANGELOG.md`), wi
 > [!NOTE]
 > If the repository has only one package and `CHANGELOG.md` already exists at the monorepo root, then `CHANGELOG.md` lives at the monorepo root.
 
-### Git tags & dependencies
-
-- With several packages, the Git tags include the package name, e.g. `my-package@0.1.3` (instead of `v0.1.3`).
-- The packages of the monorepo that depend on the released package get its new version (except for `workspace:` and `link:` dependencies).
-
 <br/>
 
 ## GitHub Actions
