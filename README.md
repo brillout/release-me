@@ -162,6 +162,8 @@ You can let `@brillout/release-me`'s GitHub Action synchronize your GitHub Relea
 pnpm exec release-me init --github
 ```
 
+For the first sync, press the **Run workflow** button of the GitHub Action `release-github.yml`.
+
 <details>
 <summary>Debug commands</summary>
 
@@ -192,9 +194,6 @@ Run locally, these commands use the environment variable `GITHUB_TOKEN`, or else
 
 > [!NOTE]
 > The first sync creates A LOT of GitHub Releases: one for every version listed in `CHANGELOG.md`.
-
-> [!NOTE]
-> To sync manually, press the **Run workflow** button of the GitHub Action `release-github.yml`.
 
 <br/>
 
