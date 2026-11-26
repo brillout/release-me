@@ -85,7 +85,7 @@ async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[]
     console.log(`        ${label.padEnd(22)}${pc.bold(value)}`)
   }
   console.log(`   3. Click ${pc.bold('Set up connection')}`)
-  console.log(`   ${pc.bold('⚠️  Make sure to publish within 2 days (otherwise the connection expires).')}`)
+  console.log(`   ${pc.bold('⚠️  Make sure to publish within 2 days (otherwise the connection expires)')}`)
 
   for (const { packageName, packageRootDir } of packages) {
     const { repository } = getPackageJson(packageRootDir).packageJson
