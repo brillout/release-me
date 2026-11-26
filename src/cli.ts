@@ -47,9 +47,7 @@ program
     '--github',
     'the GitHub Action .github/workflows/release-github.yml that syncs GitHub Releases with CHANGELOG.md',
   )
-  .action(async (options: { npm?: true; github?: true }) => {
-    await init(options)
-  })
+  .action(init)
 
 // Run by the GitHub Action (see ./ci/releaseWorkflowFile.ts)
 program.command('ci-publish', { hidden: true }).action(ciPublish)
