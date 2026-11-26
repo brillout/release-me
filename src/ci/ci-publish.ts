@@ -31,7 +31,7 @@ async function ciPublish() {
   const packages = getReleaseMePackages(await getFilesInsideDir(monorepoRootDir))
 
   const toPublish = isCommitRelease
-    ? await prepareCommitRelease(packages, getEnv('PACKAGE'))
+    ? await prepareCommitRelease(packages, getEnv('SELECTED_PACKAGE'))
     : [getTaggedPackage(tag, packages)]
   for (const { packageRootDir } of toPublish) {
     await build(packageRootDir)
