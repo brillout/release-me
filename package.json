@@ -33,10 +33,10 @@
     "prettier": "^2.8.7",
     "typescript": "^7.0.2"
   },
-  "// TODO/ai: add comment": "",
+  "// In release-me's own repository, `$ release-me` runs the source (Node.js strips its types), so that a checkout can run it without building it first (e.g. in the GitHub Action)": "",
   "bin": "./src/cli.ts",
+  "// The npm package runs the build: `$ pnpm pack` replaces `bin` with `publishConfig.bin`. (This comment isn't inside `publishConfig` because `$ npm publish` warns about unknown `publishConfig` keys.)": "",
   "publishConfig": {
-    "// TODO/ai: add comment": "",
     "bin": "./dist/cli.js",
     "access": "public"
   },
