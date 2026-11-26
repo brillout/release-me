@@ -8,7 +8,12 @@ export { syncGitHubReleases }
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import pc from '@brillout/picocolors'
-import { getPackagesToSync, syncPackage, type SyncContext, type SyncPackage } from './sync/sync-package.ts'
+import {
+  getPackagesToSync,
+  syncPackage,
+  type SyncContext,
+  type SyncPackage,
+} from './sync-github-releases/sync-package.ts'
 import { createReleasesClientFromEnv, getDefaultBranch, getPushedFiles } from './utils/github-env.ts'
 import { isWorkflowFileUpToDate, syncWorkflowFile } from '../releaseWorkflowFile.ts'
 import { getChangelogPath, getFilesInsideDir, getMonorepoRootDir, getReleaseMePackages } from '../../releaseMe.ts'
