@@ -11,7 +11,7 @@ Used by:
 [Features](#features)  
 [Get started](#get-started)  
 &nbsp;&nbsp;&nbsp;&nbsp;[Monorepo](#monorepo)  
-[Options](#options)  
+[CLI](#cli)  
 [Conventional Commits](#conventional-commits)  
 [GitHub Actions](#github-actions)  
 &nbsp;&nbsp;&nbsp;&nbsp;[Npm Release](#npm-release)  
@@ -68,18 +68,7 @@ Used by:
    pnpm exec release-me init
    ```
 
-3. Release:
-
-   ```shell
-   pnpm run release              # Release a new patch version (0.1.2 => 0.1.3)
-   pnpm run release:minor        # Release a new minor version (0.1.2 => 0.2.0)
-   pnpm run release:major        # Release a new major version (0.1.2 => 1.0.0)
-   pnpm run release:commit       # Release the current commit (0.1.2-commit-ff3d6cd)
-   pnpm exec release-me v0.1.5   # Release a specific version
-   ```
-
-> [!NOTE]
-> A commit release doesn't change your repository (no release commit, no Git tag), and it has no npm dist-tag: installing it requires its exact version, e.g. `$ pnpm add my-package@0.1.2-commit-ff3d6cd`.
+That's it: `$ pnpm run release` releases a new patch version (see [CLI](#cli)).
 
 ### Monorepo
 
@@ -118,12 +107,20 @@ To release all packages at once, add `release` scripts to the monorepo root's `p
 
 <br/>
 
-## Options
+## CLI
 
 ```shell
-pnpm run release --yes     # Skip the confirmation
-pnpm run release --force   # Release even in unexpected situations (e.g. from another branch than main, or without CHANGELOG.md entry)
+pnpm exec release-me patch           # Release a new patch version (0.1.2 => 0.1.3)
+pnpm exec release-me minor           # Release a new minor version (0.1.2 => 0.2.0)
+pnpm exec release-me major           # Release a new major version (0.1.2 => 1.0.0)
+pnpm exec release-me v0.1.5          # Release a specific version
+pnpm exec release-me commit          # Release the current commit (0.1.2-commit-ff3d6cd)
+pnpm exec release-me patch --yes     # Skip the confirmation
+pnpm exec release-me patch --force   # Release even in unexpected situations (e.g. from another branch than main, or without CHANGELOG.md entry)
 ```
+
+> [!NOTE]
+> A commit release doesn't change your repository (no release commit, no Git tag), and it has no npm dist-tag: installing it requires its exact version, e.g. `$ pnpm add my-package@0.1.2-commit-ff3d6cd`.
 
 <br/>
 
