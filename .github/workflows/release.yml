@@ -42,8 +42,14 @@ jobs:
       - uses: pnpm/action-setup@v6
       - run: pnpm install
       - run: pnpm exec release-me ci-publish
+        id: ci-publish
         env:
           # - Stable release: the release tag (pushed, or selected in "Use workflow from" with an empty input `ref`)
           # - Commit release: empty
           RELEASE_TAG: ${{ github.ref_type == 'tag' && !inputs.ref && github.ref_name || '' }}
           SELECTED_PACKAGE: ${{ inputs.package }}
+      # A release-me older than ci-publish (e.g. on a pull request opened before upgrading release-me) exits without error and without publishing
+      - if: steps.ci-publish.outputs.done != 'true'
+        run: |
+          echo "::error::Nothing was published, because this commit's release-me is too old to know ci-publish. Merge the default branch into it, then run the workflow again."
+          exit 1
