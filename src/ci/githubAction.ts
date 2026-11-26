@@ -10,7 +10,7 @@ export { triggerStableRelease }
 import execa from 'execa'
 import pc from '@brillout/picocolors'
 import { assertUsage, logDetail, logTitle, run } from '../utils.ts'
-import { releaseWorkflowFileName, releaseWorkflowPath } from './releaseWorkflowFile.ts'
+import { releaseWorkflowFileName, releaseWorkflowFilePath } from './releaseWorkflowFile.ts'
 
 /** @param packageSpec The released package, e.g. `vike@0.4.271` */
 async function triggerStableRelease(gitTag: string, packageSpec: string) {
@@ -160,6 +160,6 @@ function parseGitHubRepo(url: string): string | null {
 }
 
 function getWorkflowLink(repo: string | null) {
-  if (!repo) return pc.bold(releaseWorkflowPath)
+  if (!repo) return pc.bold(releaseWorkflowFilePath)
   return pc.underline(`https://github.com/${repo}/actions/workflows/${releaseWorkflowFileName}`)
 }

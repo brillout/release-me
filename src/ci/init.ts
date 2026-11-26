@@ -4,7 +4,7 @@ export { init }
 
 import pc from '@brillout/picocolors'
 import { getGitHubRepo, parseGitHubRepo } from './githubAction.ts'
-import { releaseWorkflowFileName, releaseWorkflowPath, writeReleaseWorkflow } from './releaseWorkflowFile.ts'
+import { releaseWorkflowFileName, releaseWorkflowFilePath, writeReleaseWorkflowFile } from './releaseWorkflowFile.ts'
 import {
   assertInstalledAtRoot,
   getFilesInsideDir,
@@ -22,14 +22,14 @@ async function init() {
   assertPackageManager(monorepoRootDir)
   const packages = getReleaseMePackages(await getFilesInsideDir(monorepoRootDir))
 
-  const status = writeReleaseWorkflow(monorepoRootDir)
+  const status = writeReleaseWorkflowFile(monorepoRootDir)
   logTitle('GitHub Action', true)
   if (status === 'up-to-date') {
-    console.log(`${pc.bold(releaseWorkflowPath)} is already up-to-date`)
+    console.log(`${pc.bold(releaseWorkflowFilePath)} is already up-to-date`)
     return
   }
-  console.log(`${status === 'created' ? 'Created' : 'Updated'} ${pc.bold(releaseWorkflowPath)}`)
-  await commitReleaseWorkflow(monorepoRootDir, status)
+  console.log(`${status === 'created' ? 'Created' : 'Updated'} ${pc.bold(releaseWorkflowFilePath)}`)
+  await commitReleaseWorkflowFile(monorepoRootDir, status)
 
   console.log()
   console.log('Next steps:')
@@ -51,12 +51,12 @@ function assertPackageManager(monorepoRootDir: string) {
   )
 }
 
-async function commitReleaseWorkflow(monorepoRootDir: string, status: 'created' | 'updated') {
+async function commitReleaseWorkflowFile(monorepoRootDir: string, status: 'created' | 'updated') {
   const commitMessage =
     status === 'created' ? 'ci: set up release-me GitHub Action' : 'ci: update release-me GitHub Action'
-  await run(['git', 'add', '--', releaseWorkflowPath], { cwd: monorepoRootDir })
+  await run(['git', 'add', '--', releaseWorkflowFilePath], { cwd: monorepoRootDir })
   // Only commit the workflow file (`$ git commit -- <file>` ignores other staged changes)
-  await run(['git', 'commit', '--quiet', '-m', commitMessage, '--', releaseWorkflowPath], { cwd: monorepoRootDir })
+  await run(['git', 'commit', '--quiet', '-m', commitMessage, '--', releaseWorkflowFilePath], { cwd: monorepoRootDir })
   console.log(`Committed ${pc.dim(`(${commitMessage})`)}`)
 }
 

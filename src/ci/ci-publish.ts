@@ -7,7 +7,11 @@ import * as os from 'node:os'
 import * as path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { logTitle, run } from '../utils.ts'
-import { isReleaseWorkflowUpToDate, releaseWorkflowFileName, releaseWorkflowOutdated } from './releaseWorkflowFile.ts'
+import {
+  isReleaseWorkflowFileUpToDate,
+  releaseWorkflowFileName,
+  releaseWorkflowFileOutdated,
+} from './releaseWorkflowFile.ts'
 import {
   build,
   getCommitHash,
@@ -24,7 +28,7 @@ import {
 async function ciPublish() {
   const monorepoRootDir = await getMonorepoRootDir()
   // E.g. after upgrading release-me without re-running `$ pnpm exec release-me init`
-  if (!isReleaseWorkflowUpToDate(monorepoRootDir)) fail(releaseWorkflowOutdated)
+  if (!isReleaseWorkflowFileUpToDate(monorepoRootDir)) fail(releaseWorkflowFileOutdated)
   // Stable release: its Git tag (`v1.2.3` or `some-package@1.2.3`). Commit release: empty.
   const releaseTag = getEnv('RELEASE_TAG')
   const isCommitRelease = !releaseTag
