@@ -8,8 +8,9 @@ import type { TagScheme } from './tag-scheme.ts'
 
 type ReleasePlan = {
   releasesToCreate: ReleaseToCreate[]
-  releasesToUpdate: ReleaseToUpdate[]
-  releasesToDelete: ReleaseToDelete[]
+  /** With their new body */
+  releasesToUpdate: (Release & { body: string })[]
+  releasesToDelete: Release[]
 }
 type ReleaseToCreate = {
   tag_name: string
@@ -18,15 +19,6 @@ type ReleaseToCreate = {
   // when its tag is missing, and isLatest decides the GitHub "Latest" badge.
   version: string
   isLatest: boolean
-}
-type ReleaseToUpdate = {
-  release_id: number
-  tag_name: string
-  body: string
-}
-type ReleaseToDelete = {
-  release_id: number
-  tag_name: string
 }
 
 function getReleasePlan({
@@ -43,7 +35,7 @@ function getReleasePlan({
   const releaseByTag = new Map(githubReleases.map((release) => [release.tag_name, release]))
   const expectedTags = new Set<string>()
   const releasesToCreate: ReleaseToCreate[] = []
-  const releasesToUpdate: ReleaseToUpdate[] = []
+  const releasesToUpdate: ReleasePlan['releasesToUpdate'] = []
 
   // releaseBodyByVersion is newest-first; the newest version is the one eligible to be the repo's
   // "Latest". Capture it before reversing.
@@ -62,14 +54,14 @@ function getReleasePlan({
       releasesToCreate.push({ tag_name: releaseTag, body, version, isLatest: version === latestVersion })
     } else if (existingRelease.body?.trim() !== body) {
       // GitHub can return the body padded with whitespace: without trim(), every sync would update it
-      releasesToUpdate.push({ release_id: existingRelease.id, tag_name: releaseTag, body })
+      releasesToUpdate.push({ ...existingRelease, body })
     }
   }
 
   // Delete this package's releases whose version is no longer in the changelog (the source of truth).
-  const releasesToDelete: ReleaseToDelete[] = githubReleases
-    .filter((release) => tagScheme.owns(release.tag_name) && !expectedTags.has(release.tag_name))
-    .map((release) => ({ release_id: release.id, tag_name: release.tag_name }))
+  const releasesToDelete = githubReleases.filter(
+    (release) => tagScheme.owns(release.tag_name) && !expectedTags.has(release.tag_name),
+  )
 
   return { releasesToCreate, releasesToUpdate, releasesToDelete }
 }

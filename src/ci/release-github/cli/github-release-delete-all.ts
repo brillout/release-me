@@ -36,9 +36,7 @@ async function githubReleaseDeleteAll({ dryRun, yes }: { dryRun: boolean; yes: b
 
   // The client logs each deletion (`Deleted release <tag>`).
   console.log(`Starting delete of ${githubReleases.length} releases …`)
-  for (const release of githubReleases) {
-    await client.delete({ release_id: release.id, tag_name: release.tag_name })
-  }
+  for (const release of githubReleases) await client.delete(release)
 
   if (!dryRun) console.log(`Deleted ${githubReleases.length} releases.`)
 }

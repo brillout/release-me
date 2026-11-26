@@ -23,7 +23,7 @@ describe('getReleasePlan()', () => {
         { tag_name: 'v0.8.0', body: 'Missing past notes', version: '0.8.0', isLatest: false },
         { tag_name: 'v1.0.1', body: 'New release notes', version: '1.0.1', isLatest: true },
       ],
-      releasesToUpdate: [{ release_id: 1, tag_name: 'v1.0.0', body: 'Updated old notes' }],
+      releasesToUpdate: [{ id: 1, tag_name: 'v1.0.0', body: 'Updated old notes' }],
       releasesToDelete: [],
     })
   })
@@ -39,7 +39,7 @@ describe('getReleasePlan()', () => {
 
     expect(plan).toEqual({
       releasesToCreate: [],
-      releasesToUpdate: [{ release_id: 3, tag_name: 'v1.0.1', body: 'Fresh release notes' }],
+      releasesToUpdate: [{ id: 3, tag_name: 'v1.0.1', body: 'Fresh release notes' }],
       releasesToDelete: [],
     })
   })
@@ -71,7 +71,7 @@ describe('getReleasePlan()', () => {
     expect(plan).toEqual({
       releasesToCreate: [],
       releasesToUpdate: [],
-      releasesToDelete: [{ release_id: 2, tag_name: 'v0.9.0' }],
+      releasesToDelete: [{ id: 2, tag_name: 'v0.9.0', body: 'Removed from changelog' }],
     })
   })
 

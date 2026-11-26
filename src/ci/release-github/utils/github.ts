@@ -20,16 +20,14 @@ type NewRelease = {
   make_latest: 'true' | 'false'
 }
 
-// An existing GitHub Release: release_id for the API, tag_name for the log line
-type ReleaseRef = { release_id: number; tag_name: string }
-
 // The GitHub Releases of one repository. The writes log what they do — or, under --dry-run, what they would do
 // (instead of doing it).
 type ReleasesClient = {
   list(): Promise<Release[]>
   create(release: NewRelease): Promise<void>
-  update(release: ReleaseRef & { body: string }): Promise<void>
-  delete(release: ReleaseRef): Promise<void>
+  /** Sets the body of the release to `release.body` */
+  update(release: Release & { body: string }): Promise<void>
+  delete(release: Release): Promise<void>
 }
 
 // Pause between write requests so bursts (e.g. backfilling many releases) stay under GitHub's
@@ -110,14 +108,12 @@ function createReleasesClient({
     // https://docs.github.com/en/rest/releases/releases#update-a-release
     update(release): Promise<void> {
       return write('update', release.tag_name, () =>
-        request(`${releasesPath}/${release.release_id}`, { method: 'PATCH', body: { body: release.body } }),
+        request(`${releasesPath}/${release.id}`, { method: 'PATCH', body: { body: release.body } }),
       )
     },
     // https://docs.github.com/en/rest/releases/releases#delete-a-release
     delete(release): Promise<void> {
-      return write('delete', release.tag_name, () =>
-        request(`${releasesPath}/${release.release_id}`, { method: 'DELETE' }),
-      )
+      return write('delete', release.tag_name, () => request(`${releasesPath}/${release.id}`, { method: 'DELETE' }))
     },
   }
 }
