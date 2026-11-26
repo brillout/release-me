@@ -7,7 +7,6 @@ export { githubReleaseSync }
 
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import pc from '@brillout/picocolors'
 import {
   getPackagesToSync,
   syncPackage,
@@ -16,6 +15,7 @@ import {
 } from '../sync-github-releases/sync-package.ts'
 import { createReleasesClientFromEnv, getDefaultBranch, getPushedFiles } from '../utils/github-env.ts'
 import { isWorkflowFileUpToDate, releaseGitHubWorkflowFile } from '../../releaseWorkflowFile.ts'
+import { fail } from '../../fail.ts'
 import { getChangelogPath, getFilesInsideDir, getMonorepoRootDir, getReleaseMePackages } from '../../../releaseMe.ts'
 
 async function githubReleaseSync({ packageArgs, dryRun }: { packageArgs: string[]; dryRun: boolean }): Promise<void> {
@@ -26,9 +26,7 @@ async function githubReleaseSync({ packageArgs, dryRun }: { packageArgs: string[
   process.chdir(monorepoRootDir)
   // E.g. after upgrading release-me without re-running `$ pnpm exec release-me init`
   if (process.env.GITHUB_ACTIONS && !isWorkflowFileUpToDate(monorepoRootDir, releaseGitHubWorkflowFile)) {
-    // Annotations don't render colors (picocolors enables them in CI)
-    console.log(`::error::${pc.rm(releaseGitHubWorkflowFile.outdated)}`)
-    process.exit(1)
+    fail(releaseGitHubWorkflowFile.outdated)
   }
 
   // The packages released by release-me. When there are several, they share the repository's tags, so their release
