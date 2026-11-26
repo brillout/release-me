@@ -10,8 +10,8 @@ Used by:
 
 [Features](#features)  
 [Get started](#get-started)  
-[Usage](#usage)  
 &nbsp;&nbsp;&nbsp;&nbsp;[Monorepo](#monorepo)  
+[Options](#options)  
 [Conventional Commits](#conventional-commits)  
 [GitHub Actions](#github-actions)  
 &nbsp;&nbsp;&nbsp;&nbsp;[Npm Release](#npm-release)  
@@ -26,6 +26,7 @@ Used by:
 
 - Generates `CHANGELOG.md` from your commits. (See [Conventional Commits](#conventional-commits).)
 - Creates the release commit and its Git tag.
+- Updates the `const PROJECT_VERSION = '0.1.2'` of `PROJECT_VERSION.ts` files.
 - Shows a preview of the changes made to `package.json` and `CHANGELOG.md`, and asks for confirmation before releasing.
 - Commit releases: publish any commit as a pre-release, e.g. [`0.4.177-commit-ff3d6cd`](https://www.npmjs.com/package/vike/v/0.4.177-commit-ff3d6cd).
 - Monorepo support. (See [Monorepo](#monorepo).)
@@ -67,32 +68,18 @@ Used by:
    pnpm exec release-me init
    ```
 
-That's it: `$ pnpm run release` (or `$ pnpm exec release-me patch`) releases a new patch version.
+3. Release:
 
-<br/>
-
-## Usage
-
-```shell
-pnpm exec release-me patch    # Release a new patch version (0.1.2 => 0.1.3)
-pnpm exec release-me minor    # Release a new minor version (0.1.2 => 0.2.0)
-pnpm exec release-me major    # Release a new major version (0.1.2 => 1.0.0)
-pnpm exec release-me v0.1.5   # Release a specific version
-pnpm exec release-me commit   # Release the current commit (0.1.2-commit-ff3d6cd)
-```
+   ```shell
+   pnpm run release              # Release a new patch version (0.1.2 => 0.1.3)
+   pnpm run release:minor        # Release a new minor version (0.1.2 => 0.2.0)
+   pnpm run release:major        # Release a new major version (0.1.2 => 1.0.0)
+   pnpm run release:commit       # Release the current commit (0.1.2-commit-ff3d6cd)
+   pnpm exec release-me v0.1.5   # Release a specific version
+   ```
 
 > [!NOTE]
-> With the `release` scripts (see [Get started](#get-started)), use `$ pnpm run release`, `$ pnpm run release:minor`, etc.
-
-Options:
-- `--yes`: skip the confirmation.
-- `--force`: release even in unexpected situations, e.g. from another branch than `main`, or without `CHANGELOG.md` entry.
-
-> [!NOTE]
-> A commit release (`$ pnpm exec release-me commit`) doesn't change your repository (no release commit, no Git tag), and it has no npm dist-tag: installing it requires its exact version, e.g. `$ pnpm add my-package@0.1.2-commit-ff3d6cd`.
-
-> [!NOTE]
-> `@brillout/release-me` also updates the `const PROJECT_VERSION = '0.1.2'` of your package's `PROJECT_VERSION.ts` file, if any.
+> A commit release doesn't change your repository (no release commit, no Git tag), and it has no npm dist-tag: installing it requires its exact version, e.g. `$ pnpm add my-package@0.1.2-commit-ff3d6cd`.
 
 ### Monorepo
 
@@ -129,8 +116,14 @@ To release all packages at once, add `release` scripts to the monorepo root's `p
   }
 ```
 
-> [!NOTE]
-> The `--yes` argument makes the release proceed without prompting for confirmation.
+<br/>
+
+## Options
+
+```shell
+pnpm run release --yes     # Skip the confirmation
+pnpm run release --force   # Release even in unexpected situations (e.g. from another branch than main, or without CHANGELOG.md entry)
+```
 
 <br/>
 
