@@ -33,8 +33,10 @@
     "prettier": "^2.8.7",
     "typescript": "^7.0.2"
   },
+  "// TODO/ai: add comment": "",
   "bin": "./src/cli.ts",
   "publishConfig": {
+    "// TODO/ai: add comment": "",
     "bin": "./dist/cli.js",
     "access": "public"
   },

@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-// In release-me's own repository, `$ release-me` runs this file directly (Node.js strips its types). The npm package runs its build dist/cli.js instead (package.json#publishConfig.bin).
-
 import { Command, program } from 'commander'
 import { type CliArgs, releaseMe, type ReleaseType, releaseTypes, type ReleaseTarget } from './releaseMe.ts'
 import { init } from './ci/init.ts'
