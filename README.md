@@ -243,7 +243,6 @@ Delete all GitHub Releases of the repository (`CHANGELOG.md` and Git tags are ke
 pnpm exec release-me delete-all-github-releases
 ```
 
-> [!NOTE]
-> Run locally, these commands use the environment variable `GITHUB_TOKEN`, or else the token of the GitHub CLI `gh` (`$ gh auth login`). Without `--dry-run`, the token needs write access to the repository's contents.
+Run locally, these commands use the environment variable `GITHUB_TOKEN`, or else the token of the GitHub CLI `gh` (`$ gh auth login`). Without `--dry-run`, the token needs write access to the repository's contents.
 
 </details>
