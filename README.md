@@ -11,7 +11,7 @@ Used by:
 [Features](#features)  
 [Get started](#get-started)  
 [Usage](#usage)  
-[Monorepo](#monorepo)  
+&nbsp;&nbsp;&nbsp;&nbsp;[Monorepo](#monorepo)  
 [Conventional Commits](#conventional-commits)  
 [GitHub Actions](#github-actions)  
 &nbsp;&nbsp;&nbsp;&nbsp;[Npm Release](#npm-release)  
@@ -94,9 +94,7 @@ Options:
 > [!NOTE]
 > `@brillout/release-me` also updates the `const PROJECT_VERSION = '0.1.2'` of your package's `PROJECT_VERSION.ts` file, if any.
 
-<br/>
-
-## Monorepo
+### Monorepo
 
 1. Add `@brillout/release-me` to the `devDependencies` of the monorepo root's `package.json`.
 2. Add the `release` scripts to each package you want to release:
