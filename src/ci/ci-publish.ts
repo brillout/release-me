@@ -28,10 +28,18 @@ async function ciPublish() {
   // Stable release: its Git tag (`v1.2.3` or `some-package@1.2.3`). Commit release: empty.
   const releaseTag = getEnv('RELEASE_TAG')
   const isCommitRelease = !releaseTag
+  // The input `package` (commit release only, empty: all packages)
+  const selectedPackage = getEnv('SELECTED_PACKAGE')
+  if (!isCommitRelease && selectedPackage) {
+    // Only possible with "Run workflow": a tag selected in "Use workflow from" and an empty input `ref`
+    fail(
+      `The input package (${selectedPackage}) is only used by commit releases, but this run is the stable release ${releaseTag} (the tag selected in "Use workflow from"). To re-publish ${releaseTag}, run the workflow again with an empty package. To commit-release ${selectedPackage} instead, run the workflow again with the input ref set to ${releaseTag}.`,
+    )
+  }
   const packages = getReleaseMePackages(await getFilesInsideDir(monorepoRootDir))
 
   const toPublish = isCommitRelease
-    ? await prepareCommitRelease(packages, getEnv('SELECTED_PACKAGE'))
+    ? await prepareCommitRelease(packages, selectedPackage)
     : [getTaggedPackage(releaseTag, packages)]
   for (const { packageRootDir } of toPublish) {
     await build(packageRootDir)
