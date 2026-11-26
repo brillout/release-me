@@ -90,7 +90,8 @@ Used by:
    pnpm exec release-me init
    ```
 
-5. Make sure to follow [Conventional Commits](#conventional-commits) (`@brillout/release-me` generates `CHANGELOG.md` from your commits).
+> [!NOTE]
+> Make sure to follow [Conventional Commits](#conventional-commits): `@brillout/release-me` generates `CHANGELOG.md` from your commits.
 
 <br/>
 
