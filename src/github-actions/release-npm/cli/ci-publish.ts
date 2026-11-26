@@ -13,11 +13,13 @@ import { fail } from '../../utils/fail.ts'
 import { isWorkflowFileUpToDate, releaseNpmWorkflowFile } from '../../workflowFiles.ts'
 import { getNotOnNpmReason, isMissingOnNpm } from '../githubAction.ts'
 import { getTrustedPublisherSteps } from '../trustedPublisher.ts'
+import { getPackagesToBuild, type WorkspacePackage } from '../buildOrder.ts'
 import {
   build,
   getCommitHash,
   getCommitReleaseVersion,
   getFilesInsideDir,
+  getFilesMonorepoPackageJson,
   getMonorepoRootDir,
   getPackageJson,
   getReleaseMePackages,
@@ -40,12 +42,14 @@ async function ciPublish() {
       `The field "Package" (${selectedPackage}) is only for commit releases, but this run re-publishes the stable release ${releaseTag} (the tag selected in "Use workflow from"). To re-publish ${releaseTag}, run the workflow again with an empty "Package" field. To commit-release ${selectedPackage} instead, run it again with ${releaseTag} in the field "Commit to commit-release".`,
     )
   }
-  const packages = getReleaseMePackages(await getFilesInsideDir(monorepoRootDir))
+  const filesMonorepo = await getFilesInsideDir(monorepoRootDir)
+  const packages = getReleaseMePackages(filesMonorepo)
 
   const toPublish = isCommitRelease
     ? await prepareCommitRelease(packages, selectedPackage)
     : [getTaggedPackage(releaseTag, packages)]
-  for (const { packageRootDir } of toPublish) {
+  // Also the workspace packages they depend on, first: this fresh checkout has no build output yet
+  for (const packageRootDir of getPackagesToBuild(toPublish, getWorkspacePackages(filesMonorepo))) {
     await build(packageRootDir)
   }
   const published: string[] = []
@@ -53,6 +57,13 @@ async function ciPublish() {
     published.push(await publish(pkg, isCommitRelease))
   }
   writeSummary(published, isCommitRelease)
+}
+
+function getWorkspacePackages(filesMonorepo: Awaited<ReturnType<typeof getFilesInsideDir>>): WorkspacePackage[] {
+  return getFilesMonorepoPackageJson(filesMonorepo).map(({ filePathAbsolute }) => {
+    const packageRootDir = path.dirname(filePathAbsolute)
+    return { packageRootDir, packageJson: getPackageJson(packageRootDir).packageJson }
+  })
 }
 
 /** The package that the Git tag releases */

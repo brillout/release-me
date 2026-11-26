@@ -9,6 +9,7 @@ export { getCommitHash }
 export { getCommitReleaseVersion }
 export { getChangelogPath }
 export { getFilesInsideDir }
+export { getFilesMonorepoPackageJson }
 export { getMonorepoRootDir }
 export { getPackageJson }
 export { assertInstalledAtRoot }
@@ -224,6 +225,8 @@ type PackageJson = {
   scripts?: Record<string, string>
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
+  peerDependencies?: Record<string, string>
+  optionalDependencies?: Record<string, string>
   packageManager?: string
   devEngines?: { packageManager?: { name?: string; version?: string } }
   publishConfig?: { tag?: string }
