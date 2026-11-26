@@ -197,10 +197,10 @@ Instead of publishing from your machine (which requires npm 2FA), you can let `@
    - **Confirm**: click `Set up connection`
 
 > [!NOTE]
-> It uses [npm's trusted publishing](https://docs.npmjs.com/trusted-publishers).
+> **The first version of a new package** must be published manually (`$ pnpm publish`): npm can't set up a trusted publisher for a package that isn't on npm yet.
 
 > [!NOTE]
-> The first version of a new package must be published manually (`$ pnpm publish`): npm can't set up a trusted publisher for a package that isn't on npm yet.
+> It uses [npm's trusted publishing](https://docs.npmjs.com/trusted-publishers).
 
 > [!NOTE]
 > Stable releases get npm [provenance](https://docs.npmjs.com/generating-provenance-statements), commit releases don't.
