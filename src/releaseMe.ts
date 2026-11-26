@@ -22,7 +22,12 @@ import * as fs from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
 import { runCommand, assertUsage, logDetail, logTitle, run, run__return } from './utils.ts'
-import { abortIfNotOnNpm, triggerCommitRelease, triggerStableRelease } from './ci/githubAction.ts'
+import {
+  abortIfNotOnNpm,
+  abortIfRepositoryMismatch,
+  triggerCommitRelease,
+  triggerStableRelease,
+} from './ci/githubAction.ts'
 import { publishesViaGitHubAction, releaseWorkflowFileName, releaseWorkflowFilePath } from './ci/releaseWorkflowFile.ts'
 import * as path from 'path'
 /*
@@ -83,7 +88,11 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   logAnalysis(monorepoInfo, monorepoRootDir, packageRootDir, viaGitHubAction)
 
-  if (viaGitHubAction) await abortIfNotOnNpm(packageName)
+  if (viaGitHubAction) {
+    // Before abortIfNotOnNpm(), so that the manual first publish it asks for has the right package.json#repository
+    await abortIfRepositoryMismatch(packageName, getPackageJson(packageRootDir).packageJson.repository)
+    await abortIfNotOnNpm(packageName)
+  }
 
   if (!isCommitRelease && !args.force) await abortIfNotLatestMainCommit()
 

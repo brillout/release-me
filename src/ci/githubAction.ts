@@ -1,6 +1,7 @@
 export { abortIfNotOnNpm }
+export { abortIfRepositoryMismatch }
 export { getGitHubRepo }
-export { parseGitHubRepo }
+export { getRepositoryMismatch }
 export { triggerCommitRelease }
 export { triggerStableRelease }
 
@@ -11,6 +12,7 @@ import execa from 'execa'
 import pc from '@brillout/picocolors'
 import { assertUsage, logDetail, logTitle, run } from '../utils.ts'
 import { releaseWorkflowFileName, releaseWorkflowFilePath } from './releaseWorkflowFile.ts'
+import type { PackageJson } from '../releaseMe.ts'
 
 /** @param packageSpec The released package, e.g. `vike@0.4.271` */
 async function triggerStableRelease(gitTag: string, packageSpec: string) {
@@ -88,6 +90,29 @@ async function abortIfNotOnNpm(packageName: string) {
       ),
     ),
   )
+}
+
+/** Otherwise the GitHub Action fails to publish, after the release is pushed */
+async function abortIfRepositoryMismatch(packageName: string, repository: PackageJson['repository']) {
+  const repositoryMismatch = getRepositoryMismatch(packageName, repository, await getGitHubRepo())
+  if (!repositoryMismatch) return
+  throw new Error(pc.red(pc.bold(`Release aborted, because ${repositoryMismatch}.`)))
+}
+
+/** @returns Why package.json#repository doesn't match the GitHub repository `repo` (`null` if it does, or if `repo` is unknown) */
+function getRepositoryMismatch(packageName: string, repository: PackageJson['repository'], repo: string | null) {
+  const url = typeof repository === 'string' ? repository : repository?.url
+  if (!repo || (url && parseRepositoryUrl(url)?.toLowerCase() === repo.toLowerCase())) return null
+  return `npm's trusted publishing requires ${pc.cyan(packageName)}'s ${pc.bold(
+    'package.json#repository',
+  )} to match ${pc.underline(`https://github.com/${repo}`)} (${url ? `it's ${pc.bold(url)}` : "it isn't set"})` as const
+}
+/** package.json#repository => `owner/repo` */
+function parseRepositoryUrl(url: string): string | null {
+  // Shorthand: `vikejs/vike` or `github:vikejs/vike`
+  const shorthand = /^(?:github:)?([\w.-]+\/[\w.-]+)$/.exec(url)
+  if (shorthand) return shorthand[1]!
+  return parseGitHubRepo(url)
 }
 
 /** E.g. `go to https://github.com/vikejs/vike/actions/workflows/release.yml, press Run workflow, and ${nextStep}` */

@@ -3,7 +3,7 @@ export { init }
 // `$ pnpm exec release-me init` creates (or updates) .github/workflows/release.yml
 
 import pc from '@brillout/picocolors'
-import { getGitHubRepo, parseGitHubRepo } from './githubAction.ts'
+import { getGitHubRepo, getRepositoryMismatch } from './githubAction.ts'
 import { releaseWorkflowFileName, releaseWorkflowFilePath, writeReleaseWorkflowFile } from './releaseWorkflowFile.ts'
 import {
   assertInstalledAtRoot,
@@ -11,7 +11,6 @@ import {
   getMonorepoRootDir,
   getPackageJson,
   getReleaseMePackages,
-  type PackageJson,
   type ReleaseMePackage,
 } from '../releaseMe.ts'
 import { assertUsage, logTitle, run } from '../utils.ts'
@@ -81,27 +80,11 @@ async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[]
   )
   console.log(`   ${pc.dim("(A new connection expires if it isn't used within 2 days.)")}`)
 
-  // npm's trusted publishing requires package.json#repository to match the GitHub repository
   for (const { packageName, packageRootDir } of packages) {
-    const repository = getRepository(getPackageJson(packageRootDir).packageJson.repository)
-    if (!repo || repository?.toLowerCase() === repo.toLowerCase()) continue
+    const { repository } = getPackageJson(packageRootDir).packageJson
+    const repositoryMismatch = getRepositoryMismatch(packageName, repository, repo)
+    if (!repositoryMismatch) continue
     console.log()
-    console.log(
-      pc.yellow(
-        `Warning: set ${pc.cyan(packageName)}'s ${pc.bold('package.json#repository')} to ${pc.underline(
-          `https://github.com/${repo}`,
-        )} — npm's trusted publishing requires it to match the GitHub repository.`,
-      ),
-    )
+    console.log(pc.yellow(`Warning: ${repositoryMismatch}.`))
   }
-}
-
-/** package.json#repository => `owner/repo` */
-function getRepository(repository: PackageJson['repository']): string | null {
-  const url = typeof repository === 'string' ? repository : repository?.url
-  if (!url) return null
-  // Shorthand: `vikejs/vike` or `github:vikejs/vike`
-  const shorthand = /^(?:github:)?([\w.-]+\/[\w.-]+)$/.exec(url)
-  if (shorthand) return shorthand[1]!
-  return parseGitHubRepo(url)
 }
