@@ -21,13 +21,9 @@ function gitLines(args: string[]): string[] {
   return git(args).split('\n').filter(Boolean)
 }
 
-// The files that changed between two commits, one path per line — used to scope a push to the packages
-// it touched (see getPushedFiles()). Deletions are excluded (`--diff-filter=d`): a push that removes a
-// package's CHANGELOG.md still lists it as changed, but that file is gone — syncing it would only fail
-// to read it.
+// The files that changed between two commits — used to scope a push to the packages it touched (see getPushedFiles())
 function getChangedFiles(beforeSha: string, headSha: string): string[] {
-  // The SHAs are passed as argv (git() uses no shell), so they can't cause injection.
-  return gitLines(['diff', '--name-only', '--diff-filter=d', beforeSha, headSha])
+  return gitLines(['diff', '--name-only', beforeSha, headSha])
 }
 
 // A release tag's fully-qualified ref. The `refs/tags/` prefix pins it to a tag, so git can't resolve
