@@ -79,10 +79,9 @@ Publish your npm packages.
     }
    ```
 
-4. Set up the GitHub Actions of `@brillout/release-me` (see [GitHub Actions](#github-actions)):
+4. Set up [`@brillout/release-me`'s  GitHub Actions](#github-actions):
 
    ```shell
-   # Run, then follow the steps it prints
    pnpm exec release-me init
    ```
 
