@@ -9,6 +9,7 @@ import { execFileSync } from 'node:child_process'
 
 // Any CHANGELOG.md (in a pathspec, `*` also matches `/`), not only the package's: a changelog entry may have been added
 // before its CHANGELOG.md was moved
+// TODO/after-merge: only search the package's CHANGELOG.md, following its renames (`$ git log --follow`): with several packages, another package's CHANGELOG.md may have added `[<version>](` first, and the missing tag would then be created at that package's release commit
 const CHANGELOG_PATHSPEC = '*CHANGELOG.md'
 
 function git(args: string[]): string {

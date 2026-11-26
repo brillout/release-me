@@ -467,6 +467,7 @@ function getGitTag(versionNew: string, gitTagPrefix: GitTagPrefix): GitTag {
 }
 async function gitPush() {
   logTitle('Git push')
+  // TODO/after-merge: push the release commit and its tag atomically, like triggerStableRelease() does: otherwise release-github.yml may check out the release commit before its tag is pushed, and then refuse to create the latest release
   await run('git push')
   await run('git push --tags')
 }
