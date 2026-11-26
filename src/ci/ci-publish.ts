@@ -1,3 +1,5 @@
+// TODO/after-merge: move to new dir src/ci/release-npm/cmd/ (like src/ci/release-github/)
+
 export { ciPublish }
 
 // `$ pnpm exec release-me ci-publish`, run by the GitHub Action (see ./releaseWorkflowFile.ts), builds the released packages and publishes them to npm.

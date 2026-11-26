@@ -1,3 +1,5 @@
+// TODO/after-merge: move to new dir src/ci/release-npm/ (like src/ci/release-github/)
+
 export { abortIfNotOnNpm }
 export { abortIfRepositoryMismatch }
 export { getGitHubRepo }
