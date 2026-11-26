@@ -46,7 +46,7 @@
   "files": [
     "dist/",
     ".github/workflows/release.yml",
-    ".github/workflows/sync-github-releases.yml"
+    ".github/workflows/release-github.yml"
   ],
   "packageManager": "pnpm@12.23.0",
   "type": "module",

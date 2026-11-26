@@ -1,6 +1,6 @@
 export { init }
 
-// `$ pnpm exec release-me init` creates (or updates) .github/workflows/release.yml and .github/workflows/sync-github-releases.yml
+// `$ pnpm exec release-me init` creates (or updates) .github/workflows/release.yml and .github/workflows/release-github.yml
 
 import pc from '@brillout/picocolors'
 import { getGitHubRepo, getRepositoryMismatch } from './githubAction.ts'

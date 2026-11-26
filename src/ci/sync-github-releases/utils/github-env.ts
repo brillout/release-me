@@ -28,7 +28,7 @@ async function createReleasesClientFromEnv(
   return { client, owner, repo }
 }
 
-// GitHub Actions: the token of the run (see sync-github-releases.yml). Locally: GITHUB_TOKEN, or else the token of the GitHub CLI.
+// GitHub Actions: the token of the run (see release-github.yml). Locally: GITHUB_TOKEN, or else the token of the GitHub CLI.
 async function getGitHubToken(): Promise<string> {
   const token = process.env.GITHUB_TOKEN
   if (token) return token

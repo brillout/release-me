@@ -3,7 +3,7 @@ export { syncGitHubReleases }
 // `$ pnpm exec release-me sync-github-releases` keeps GitHub Releases in sync with CHANGELOG.md, see https://github.com/brillout/release-me#github-releases
 // - It creates any missing release, rewrites any whose notes have drifted from the changelog, and deletes any whose version is no longer in the changelog.
 // - CHANGELOG.md is the source of truth: GitHub Releases are completely derived from it.
-// - Run by the GitHub Action .github/workflows/sync-github-releases.yml (see ../releaseWorkflowFile.ts), or locally (e.g. with --dry-run).
+// - Run by the GitHub Action .github/workflows/release-github.yml (see ../releaseWorkflowFile.ts), or locally (e.g. with --dry-run).
 
 import * as fs from 'node:fs'
 import * as path from 'node:path'

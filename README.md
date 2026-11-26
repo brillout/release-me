@@ -203,7 +203,7 @@ pnpm exec release-me init
 
 ### GitHub Releases
 
-`$ pnpm exec release-me init` also creates `.github/workflows/sync-github-releases.yml`, a GitHub Action that keeps the GitHub Releases in sync with `CHANGELOG.md`:
+`$ pnpm exec release-me init` also creates `.github/workflows/release-github.yml`, a GitHub Action that keeps the GitHub Releases in sync with `CHANGELOG.md`:
 - It creates the missing releases (older ones too), rewrites the ones whose notes differ from `CHANGELOG.md`, and deletes the ones whose version isn't in `CHANGELOG.md` anymore.
 - It runs upon each push to `main` that changes a `CHANGELOG.md` (e.g. a release commit), and upon pressing its **Run workflow** button (it then syncs all packages).
 

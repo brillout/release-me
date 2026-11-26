@@ -2,7 +2,7 @@
 # - By pushing a CHANGELOG.md change to main (e.g. a release commit), or
 # - by pressing the "Run workflow" button (it then syncs all packages).
 
-# DON'T MODIFY THIS FILE: it's a copy of https://github.com/brillout/release-me/blob/main/.github/workflows/sync-github-releases.yml created and updated by `$ pnpm exec release-me init`.
+# DON'T MODIFY THIS FILE: it's a copy of https://github.com/brillout/release-me/blob/main/.github/workflows/release-github.yml created and updated by `$ pnpm exec release-me init`.
 
 name: Sync GitHub Releases
 on:

@@ -12,7 +12,7 @@ export type { WorkflowFile }
 
 // The GitHub Actions of release-me, see https://github.com/brillout/release-me#github-action
 // - .github/workflows/release.yml publishes to npm.
-// - .github/workflows/sync-github-releases.yml keeps GitHub Releases in sync with CHANGELOG.md.
+// - .github/workflows/release-github.yml keeps GitHub Releases in sync with CHANGELOG.md.
 // They're copies of release-me's own workflow files (shipped in the npm package): `$ pnpm exec release-me init` creates and updates them.
 // Releases fail if they aren't copies of the installed release-me's (e.g. after upgrading release-me).
 
@@ -41,7 +41,7 @@ function getWorkflowFile(fileName: string, command: string): WorkflowFile {
   return { fileName, filePath, command, outdated }
 }
 const releaseWorkflowFile = getWorkflowFile('release.yml', 'pnpm exec release-me ci-publish')
-const syncWorkflowFile = getWorkflowFile('sync-github-releases.yml', 'pnpm exec release-me sync-github-releases')
+const syncWorkflowFile = getWorkflowFile('release-github.yml', 'pnpm exec release-me sync-github-releases')
 const workflowFiles = [releaseWorkflowFile, syncWorkflowFile]
 
 const releaseWorkflowFileName = releaseWorkflowFile.fileName
