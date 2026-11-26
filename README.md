@@ -243,16 +243,16 @@ pnpm exec release-me init --github
 Preview the changes without making them:
 
 ```shell
-pnpm exec release-me github-release-sync-all --dry-run
+pnpm exec release-me github-release-sync --dry-run
 ```
 
 Sync only some packages (by name or directory):
 
 ```shell
-pnpm exec release-me github-release-sync-all some-package packages/another-package
+pnpm exec release-me github-release-sync some-package packages/another-package
 ```
 
-Delete all GitHub Releases of the repository (`CHANGELOG.md` and Git tags are kept, so that `github-release-sync-all` can re-create them):
+Delete all GitHub Releases of the repository (`CHANGELOG.md` and Git tags are kept, so that `github-release-sync` can re-create them):
 
 ```shell
 pnpm exec release-me github-release-delete-all

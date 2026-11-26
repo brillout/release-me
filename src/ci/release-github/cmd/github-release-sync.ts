@@ -1,6 +1,6 @@
 export { syncGitHubReleases }
 
-// `$ pnpm exec release-me github-release-sync-all` keeps GitHub Releases in sync with CHANGELOG.md, see https://github.com/brillout/release-me#github-release
+// `$ pnpm exec release-me github-release-sync` keeps GitHub Releases in sync with CHANGELOG.md, see https://github.com/brillout/release-me#github-release
 // - It creates any missing release, rewrites any whose notes have drifted from the changelog, and deletes any whose version is no longer in the changelog.
 // - CHANGELOG.md is the source of truth: GitHub Releases are completely derived from it.
 // - Run by the GitHub Action .github/workflows/release-github.yml (see ../../releaseWorkflowFile.ts), or locally (e.g. with --dry-run).
