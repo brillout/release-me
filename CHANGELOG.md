@@ -1,3 +1,12 @@
+## [0.5.5](https://github.com/brillout/release-me/compare/v0.5.4...v0.5.5) (2026-11-26)
+
+
+### Bug Fixes
+
+* `github-release-sync` warns instead of failing when it only skipped releases ([#25](https://github.com/brillout/release-me/issues/25)) ([5278531](https://github.com/brillout/release-me/commit/52785316d25068d2327416f56d9444dc35196608))
+
+
+
 ## [0.5.4](https://github.com/brillout/release-me/compare/v0.5.3...v0.5.4) (2026-11-26)
 
 
