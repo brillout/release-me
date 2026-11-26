@@ -36,7 +36,7 @@ Used by:
 
 ## Get started
 
-1. Add `@brillout/release-me` to the `devDependencies` of your repository's root `package.json`, and add the following scripts (release-me runs the `build` script before releasing):
+1. Add `@brillout/release-me` to the `devDependencies` of your repository's root `package.json`, and add the following scripts (`@brillout/release-me` runs the `build` script before releasing):
 
    ```shell
    pnpm add -D @brillout/release-me
@@ -60,7 +60,7 @@ Used by:
     }
    ```
 
-2. Set up the GitHub Actions of release-me (see [GitHub Actions](#github-actions)):
+2. Set up the GitHub Actions of `@brillout/release-me` (see [GitHub Actions](#github-actions)):
 
    ```shell
    # Run, then follow the steps it prints
@@ -92,13 +92,13 @@ Options:
 > A commit release (`$ pnpm exec release-me commit`) doesn't change your repository (no release commit, no Git tag), and it has no npm dist-tag: installing it requires its exact version, e.g. `$ pnpm add my-package@0.1.2-commit-ff3d6cd`.
 
 > [!NOTE]
-> If your package has a `PROJECT_VERSION.ts` file, it must contain `const PROJECT_VERSION = '0.1.2'` (the current version): release-me updates it as well.
+> If your package has a `PROJECT_VERSION.ts` file, it must contain `const PROJECT_VERSION = '0.1.2'` (the current version): `@brillout/release-me` updates it as well.
 
 <br/>
 
 ## Conventional Commits
 
-release-me generates `CHANGELOG.md` from your commits: follow [Conventional Commits](https://www.conventionalcommits.org).
+For proper `CHANGELOG.md` generation, make sure to follow [Conventional Commits](https://www.conventionalcommits.org).
 
 - `fix:` => bug fix or some polishing (e.g. improved error message).
 - `feat:` => new feature, i.e. new functionality.
@@ -176,14 +176,14 @@ Each package has its own `CHANGELOG.md` (`packages/my-package/CHANGELOG.md`), wi
 
 ## GitHub Actions
 
-`$ pnpm exec release-me init` sets up both GitHub Actions of release-me:
+`$ pnpm exec release-me init` sets up both GitHub Actions of `@brillout/release-me`:
 - [Npm Release](#npm-release) (`.github/workflows/release-npm.yml`) publishes to npm.
 - [GitHub Release](#github-release) (`.github/workflows/release-github.yml`) keeps GitHub Releases in sync with `CHANGELOG.md`.
 
 To set up only one of them, use `--npm` or `--github`.
 
 > [!NOTE]
-> The workflow files are copies of release-me's own: don't modify them. After upgrading release-me, run `$ pnpm exec release-me init` again: releases abort while the workflow files don't match the installed release-me.
+> The workflow files are copies of the ones of `@brillout/release-me`: don't modify them. After upgrading `@brillout/release-me`, run `$ pnpm exec release-me init` again (releases abort while the workflow files are outdated).
 
 > [!NOTE]
 > The GitHub Actions install the pnpm version of the root `package.json#packageManager` (e.g. `"packageManager": "pnpm@10.0.0"`), which `$ pnpm exec release-me init` requires.
