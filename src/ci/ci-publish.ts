@@ -8,8 +8,7 @@ import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import { execFileSync } from 'node:child_process'
-import { logTitle, run } from '../utils.ts'
-import { fail } from './fail.ts'
+import { fail, logTitle, run } from '../utils.ts'
 import {
   isReleaseWorkflowFileUpToDate,
   releaseWorkflowFileName,

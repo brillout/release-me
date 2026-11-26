@@ -9,8 +9,8 @@ import { getPackages, getPackagesToSync } from '../sync-github-releases/packages
 import { syncPackage, type SyncContext } from '../sync-github-releases/sync-package.ts'
 import { createReleasesClientFromEnv, getDefaultBranch, getPushedFiles } from '../utils/github-env.ts'
 import { isWorkflowFileUpToDate, releaseGitHubWorkflowFile } from '../../releaseWorkflowFile.ts'
-import { fail } from '../../fail.ts'
 import { getMonorepoRootDir } from '../../../releaseMe.ts'
+import { fail } from '../../../utils.ts'
 
 async function githubReleaseSync({ packageArgs, dryRun }: { packageArgs: string[]; dryRun: boolean }): Promise<void> {
   // The directories passed as arguments are relative to where the command is run
