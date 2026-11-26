@@ -204,10 +204,8 @@ You can let `@brillout/release-me`'s GitHub Action synchronize your GitHub Relea
 pnpm exec release-me init --github
 ```
 
-It syncs upon each push of a `CHANGELOG.md` change to `main` (e.g. a release commit).
-
 > [!NOTE]
-> `CHANGELOG.md` is the source of truth: GitHub Releases are created, updated, and deleted to match it. Edit `CHANGELOG.md` instead of a GitHub Release (the next sync overwrites it).
+> `CHANGELOG.md` is the source of truth: upon each push of a `CHANGELOG.md` change to `main` (e.g. a release commit), GitHub Releases are created, updated, and deleted to match it. Edit `CHANGELOG.md` instead of a GitHub Release (the next sync overwrites it).
 
 > [!NOTE]
 > The first sync creates A LOT of GitHub Releases: one for every version in `CHANGELOG.md`.
