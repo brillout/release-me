@@ -22,7 +22,6 @@ Used by:
 ## Features
 
 - Monorepo support.
-- Only supports [`pnpm`](https://pnpm.io) with tight integration (it's a feature, not a limitation).
 - Can publish via a GitHub Action instead of your machine: no npm login/2FA/token needed. (See [GitHub Actions > Npm Release](#npm-release).)
 - Generates `CHANGELOG.md` from your commits. (See [Conventional Commits](#conventional-commits).)
   - Keeps GitHub Releases in sync with `CHANGELOG.md`. (See [GitHub Actions > GitHub Release](#github-release).)
@@ -30,6 +29,7 @@ Used by:
   - Shows a preview of the changes made to `package.json` and `CHANGELOG.md`, and asks for confirmation before releasing.
 - Commit releases: publish any commit as a pre-release, e.g. [`0.4.177-commit-ff3d6cd`](https://www.npmjs.com/package/vike/v/0.4.177-commit-ff3d6cd).
 - Updates the `const PROJECT_VERSION = '0.1.2'` of `PROJECT_VERSION.ts` files.
+- Only supports [`pnpm`](https://pnpm.io) with tight integration (it's a feature, not a limitation).
 
 <br/>
 
