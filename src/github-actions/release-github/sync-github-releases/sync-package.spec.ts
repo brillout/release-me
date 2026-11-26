@@ -10,7 +10,7 @@ vi.mock('node:fs/promises', () => ({
 describe('syncPackage()', () => {
   it('skips the package when its CHANGELOG.md parses to zero versions, touching nothing', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const release = { id: 1, tag_name: 'v1.0.0', body: 'Notes' }
+    const release = { id: 1, tag_name: 'v1.0.0', name: 'vike@1.0.0', body: 'Notes' }
     const client = { list: vi.fn(async () => [release]), create: vi.fn(), update: vi.fn(), delete: vi.fn() }
     const context: SyncContext = { client, repo: 'vikejs/vike', defaultBranch: 'main', hasMultiplePackages: false }
 

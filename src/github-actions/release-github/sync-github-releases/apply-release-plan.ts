@@ -48,7 +48,7 @@ function resolveTargetCommitish(release: ReleaseToCreate, changelogPath: string)
 function buildNewRelease(release: ReleaseToCreate, targetCommitish: string | undefined): NewRelease {
   return {
     tag_name: release.tag_name,
-    name: release.tag_name,
+    name: release.name,
     body: release.body,
     target_commitish: targetCommitish,
     // Only the newest version may be "Latest": make_latest defaults to true, so a backfilled older release would

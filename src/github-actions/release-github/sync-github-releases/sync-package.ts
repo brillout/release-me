@@ -38,7 +38,7 @@ async function syncPackage(pkg: SyncPackage, context: SyncContext): Promise<void
     changelogUrl,
   })
   const githubReleases = await context.client.list()
-  const plan = getReleasePlan({ githubReleases, releaseBodyByVersion, tagScheme })
+  const plan = getReleasePlan({ githubReleases, releaseBodyByVersion, tagScheme, packageName: pkg.packageName })
   await applyReleasePlan({ plan, client: context.client, changelogPath: pkg.changelogPath })
 }
 

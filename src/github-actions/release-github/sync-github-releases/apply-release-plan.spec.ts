@@ -17,7 +17,7 @@ describe('applyReleasePlan()', () => {
   // before the client is called, so even a dry run fails fast.
   describe('refuses to create a release whose git tag is missing', () => {
     const createPlan = (isLatest: boolean): ReleasePlan => ({
-      releasesToCreate: [{ tag_name: 'v1.0.0', body: 'Notes', version: '1.0.0', isLatest }],
+      releasesToCreate: [{ tag_name: 'v1.0.0', name: 'vike@1.0.0', body: 'Notes', version: '1.0.0', isLatest }],
       releasesToUpdate: [],
       releasesToDelete: [],
     })

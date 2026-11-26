@@ -193,6 +193,9 @@ pnpm exec release-me github-release-sync
 > The first sync creates A LOT of GitHub Releases: one for every version listed in `CHANGELOG.md`.
 
 > [!NOTE]
+> GitHub Releases are named `<package-name>@<version>` (e.g. `vike@0.4.259`): the subject of a release's notification email then tells the package, so that subscribers can filter these emails.
+
+> [!NOTE]
 > `CHANGELOG.md` is the source of truth: **upon each push of a `CHANGELOG.md` change to `main`, GitHub Releases are created, updated, and deleted to match exactly `CHANGELOG.md`**. Always edit `CHANGELOG.md` instead of a GitHub Release: the next sync overwrites any edit made to a GitHub Release.
 
 <br/>
