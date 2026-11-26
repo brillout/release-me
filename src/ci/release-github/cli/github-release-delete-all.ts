@@ -1,4 +1,4 @@
-export { deleteAllGitHubReleases }
+export { githubReleaseDeleteAll }
 
 // `$ pnpm exec release-me github-release-delete-all` deletes every GitHub Release of the repository — not only the ones
 // created by github-release-sync. CHANGELOG.md and the Git tags are left untouched, so `$ pnpm exec release-me github-release-sync`
@@ -8,7 +8,7 @@ import readline from 'node:readline'
 import pc from '@brillout/picocolors'
 import { createReleasesClientFromEnv } from '../utils/github-env.ts'
 
-async function deleteAllGitHubReleases({ dryRun, yes }: { dryRun: boolean; yes: boolean }): Promise<void> {
+async function githubReleaseDeleteAll({ dryRun, yes }: { dryRun: boolean; yes: boolean }): Promise<void> {
   const { client, owner, repo } = await createReleasesClientFromEnv(dryRun)
 
   console.log(`Fetching releases for ${owner}/${repo} …`)

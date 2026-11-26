@@ -5,8 +5,8 @@ import pc from '@brillout/picocolors'
 import { releaseMe, type ReleaseTarget, type ReleaseType, releaseTypes } from './releaseMe.ts'
 import { init } from './ci/init.ts'
 import { ciPublish } from './ci/ci-publish.ts'
-import { syncGitHubReleases } from './ci/release-github/cli/github-release-sync.ts'
-import { deleteAllGitHubReleases } from './ci/release-github/cli/github-release-delete-all.ts'
+import { githubReleaseSync } from './ci/release-github/cli/github-release-sync.ts'
+import { githubReleaseDeleteAll } from './ci/release-github/cli/github-release-delete-all.ts'
 
 program
   .name('release-me')
@@ -65,7 +65,7 @@ program
   .argument('[packages...]', 'the packages to sync, by name or directory (default: all packages)')
   .option('--dry-run', 'only log the changes, without making them')
   .action(async (packageArgs: string[], options: { dryRun?: true }) => {
-    await syncGitHubReleases({ packageArgs, dryRun: !!options.dryRun })
+    await githubReleaseSync({ packageArgs, dryRun: !!options.dryRun })
   })
 
 program
@@ -78,7 +78,7 @@ program
   .option('--dry-run', 'only log the deletions, without making them')
   .option('--yes', 'skip confirmation')
   .action(async (options: { dryRun?: true; yes?: true }) => {
-    await deleteAllGitHubReleases({ dryRun: !!options.dryRun, yes: !!options.yes })
+    await githubReleaseDeleteAll({ dryRun: !!options.dryRun, yes: !!options.yes })
   })
 
 await program.parseAsync()

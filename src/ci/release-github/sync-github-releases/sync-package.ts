@@ -27,7 +27,7 @@ type SyncPackage = {
   changelogPath: string
 }
 
-// The loop-invariant inputs of a sync run, built once in syncGitHubReleases() and shared across every package.
+// The loop-invariant inputs of a sync run, built once in githubReleaseSync() and shared across every package.
 // owner/repo ride along so each package's changelog URL can be built (see getChangelogUrl); the client
 // also binds them internally for its own API calls.
 type SyncContext = {

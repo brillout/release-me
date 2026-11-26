@@ -1,4 +1,4 @@
-export { syncGitHubReleases }
+export { githubReleaseSync }
 
 // `$ pnpm exec release-me github-release-sync` keeps GitHub Releases in sync with CHANGELOG.md, see https://github.com/brillout/release-me#github-release
 // - It creates any missing release, rewrites any whose notes have drifted from the changelog, and deletes any whose version is no longer in the changelog.
@@ -15,19 +15,19 @@ import {
   type SyncPackage,
 } from '../sync-github-releases/sync-package.ts'
 import { createReleasesClientFromEnv, getDefaultBranch, getPushedFiles } from '../utils/github-env.ts'
-import { isWorkflowFileUpToDate, syncWorkflowFile } from '../../releaseWorkflowFile.ts'
+import { isWorkflowFileUpToDate, releaseGitHubWorkflowFile } from '../../releaseWorkflowFile.ts'
 import { getChangelogPath, getFilesInsideDir, getMonorepoRootDir, getReleaseMePackages } from '../../../releaseMe.ts'
 
-async function syncGitHubReleases({ packageArgs, dryRun }: { packageArgs: string[]; dryRun: boolean }): Promise<void> {
+async function githubReleaseSync({ packageArgs, dryRun }: { packageArgs: string[]; dryRun: boolean }): Promise<void> {
   // The directories passed as arguments are relative to where the command is run
   const cwd = process.cwd()
   const monorepoRootDir = await getMonorepoRootDir()
   // The git commands below resolve their paths against the current working directory
   process.chdir(monorepoRootDir)
   // E.g. after upgrading release-me without re-running `$ pnpm exec release-me init`
-  if (process.env.GITHUB_ACTIONS && !isWorkflowFileUpToDate(monorepoRootDir, syncWorkflowFile)) {
+  if (process.env.GITHUB_ACTIONS && !isWorkflowFileUpToDate(monorepoRootDir, releaseGitHubWorkflowFile)) {
     // Annotations don't render colors (picocolors enables them in CI)
-    console.log(`::error::${pc.rm(syncWorkflowFile.outdated)}`)
+    console.log(`::error::${pc.rm(releaseGitHubWorkflowFile.outdated)}`)
     process.exit(1)
   }
 

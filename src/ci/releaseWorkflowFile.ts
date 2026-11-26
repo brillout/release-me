@@ -8,7 +8,7 @@ export { publishesViaGitHubAction }
 export { releaseWorkflowFileName }
 export { releaseWorkflowFileOutdated }
 export { releaseWorkflowFilePath }
-export { syncWorkflowFile }
+export { releaseGitHubWorkflowFile }
 export { workflowFiles }
 export { writeWorkflowFiles }
 export type { WorkflowFile }
@@ -49,8 +49,12 @@ function getWorkflowFile(fileName: string, option: WorkflowFile['option'], comma
 }
 // TODO/after-merge: rename release.yml to release-npm.yml (npm's trusted publisher of each package is bound to the workflow filename: it must then be updated on npmjs.com)
 const releaseWorkflowFile = getWorkflowFile('release.yml', 'npm', 'pnpm exec release-me ci-publish')
-const syncWorkflowFile = getWorkflowFile('release-github.yml', 'github', 'pnpm exec release-me github-release-sync')
-const workflowFiles = [releaseWorkflowFile, syncWorkflowFile]
+const releaseGitHubWorkflowFile = getWorkflowFile(
+  'release-github.yml',
+  'github',
+  'pnpm exec release-me github-release-sync',
+)
+const workflowFiles = [releaseWorkflowFile, releaseGitHubWorkflowFile]
 
 const releaseWorkflowFileName = releaseWorkflowFile.fileName
 const releaseWorkflowFilePath = releaseWorkflowFile.filePath

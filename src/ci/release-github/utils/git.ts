@@ -1,6 +1,6 @@
 // Local git plumbing — runs the `git` CLI and shapes its output. Knows nothing of the GitHub Actions
 // environment (github-env.ts) nor the GitHub API (github.ts). Paths are relative to the repository root
-// (the current working directory, see syncGitHubReleases()).
+// (the current working directory, see githubReleaseSync()).
 
 export { gitTagExists }
 export { findReleaseCommit }
