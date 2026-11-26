@@ -91,7 +91,7 @@ Used by:
    ```
 
 > [!NOTE]
-> Make sure to follow [Conventional Commits](#conventional-commits): `@brillout/release-me` generates `CHANGELOG.md` from your commits.
+> Make sure to follow [Conventional Commits](#conventional-commits), so that `@brillout/release-me` can generate `CHANGELOG.md` from your commits.
 
 <br/>
 
