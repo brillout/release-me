@@ -218,5 +218,17 @@ Preview the changes without making them:
 pnpm exec release-me sync-github-releases --dry-run
 ```
 
+Sync only some packages (by name or directory):
+
+```shell
+pnpm exec release-me sync-github-releases some-package packages/another-package
+```
+
+Delete all GitHub Releases of the repository (`CHANGELOG.md` and Git tags are kept, so that `sync-github-releases` can re-create them):
+
+```shell
+pnpm exec release-me delete-all-github-releases
+```
+
 > [!NOTE]
-> Run locally, it uses the environment variable `GITHUB_TOKEN`, or else the token of the GitHub CLI `gh` (`$ gh auth login`). Without `--dry-run`, the token needs write access to the repository's contents.
+> Run locally, these commands use the environment variable `GITHUB_TOKEN`, or else the token of the GitHub CLI `gh` (`$ gh auth login`). Without `--dry-run`, the token needs write access to the repository's contents.

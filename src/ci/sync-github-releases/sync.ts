@@ -12,7 +12,9 @@ import { createReleasesClientFromEnv, getDefaultBranch, getPushedFiles } from '.
 import { isWorkflowFileUpToDate, syncWorkflowFile } from '../releaseWorkflowFile.ts'
 import { getChangelogPath, getFilesInsideDir, getMonorepoRootDir, getReleaseMePackages } from '../../releaseMe.ts'
 
-async function syncGitHubReleases({ dryRun }: { dryRun: boolean }): Promise<void> {
+async function syncGitHubReleases({ packageArgs, dryRun }: { packageArgs: string[]; dryRun: boolean }): Promise<void> {
+  // The directories passed as arguments are relative to where the command is run
+  const cwd = process.cwd()
   const monorepoRootDir = await getMonorepoRootDir()
   // The git commands below resolve their paths against the current working directory
   process.chdir(monorepoRootDir)
@@ -32,10 +34,10 @@ async function syncGitHubReleases({ dryRun }: { dryRun: boolean }): Promise<void
     if (!fs.existsSync(changeLogFilePath)) return []
     // git reports forward-slash paths on every OS
     const changelogPath = path.relative(monorepoRootDir, changeLogFilePath).split(path.sep).join('/')
-    return [{ packageName, changelogPath }]
+    return [{ packageName, packageRootDir: path.resolve(packageRootDir), changelogPath }]
   })
 
-  const packagesToSync = getPackagesToSync(allPackages, getPushedFiles())
+  const packagesToSync = getPackagesToSync(allPackages, { packageArgs, cwd, pushedFiles: getPushedFiles() })
   if (packagesToSync.length === 0) {
     console.log('No CHANGELOG.md changes detected — nothing to sync.')
     return

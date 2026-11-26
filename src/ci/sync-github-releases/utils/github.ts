@@ -26,8 +26,8 @@ type ReleaseRef = { release_id: number; tag_name: string }
 
 // A client for one repository's GitHub Releases. It binds the owner/repo/token and API base URL once,
 // so callers just say what to do — not where, nor as whom. The write methods gate on --dry-run (logging
-// what they would do instead of doing it) and otherwise log what they did, so every write is narrated
-// the same way.
+// what they would do instead of doing it) and otherwise log what they did, so every caller — the sync
+// step and delete-all alike — narrates releases the same way.
 type ReleasesClient = {
   list(): Promise<Release[]>
   create(release: NewRelease): Promise<void>

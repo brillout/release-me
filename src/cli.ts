@@ -6,6 +6,7 @@ import { releaseMe, type ReleaseTarget, type ReleaseType, releaseTypes } from '.
 import { init } from './ci/init.ts'
 import { ciPublish } from './ci/ci-publish.ts'
 import { syncGitHubReleases } from './ci/sync-github-releases/sync.ts'
+import { deleteAllGitHubReleases } from './ci/sync-github-releases/delete-all.ts'
 
 program
   .name('release-me')
@@ -54,9 +55,23 @@ program
       'https://github.com/brillout/release-me#github-releases',
     )}).`,
   )
+  .argument('[packages...]', 'the packages to sync, by name or directory (default: all packages)')
   .option('--dry-run', 'only log the changes, without making them')
-  .action(async (options: { dryRun?: true }) => {
-    await syncGitHubReleases({ dryRun: !!options.dryRun })
+  .action(async (packageArgs: string[], options: { dryRun?: true }) => {
+    await syncGitHubReleases({ packageArgs, dryRun: !!options.dryRun })
+  })
+
+program
+  .command('delete-all-github-releases')
+  .description(
+    `⚠️  Delete all GitHub Releases of the repository (CHANGELOG.md and Git tags are kept: ${pc.bold(
+      '$ pnpm exec release-me sync-github-releases',
+    )} re-creates them).`,
+  )
+  .option('--dry-run', 'only log the deletions, without making them')
+  .option('--yes', 'skip confirmation')
+  .action(async (options: { dryRun?: true; yes?: true }) => {
+    await deleteAllGitHubReleases({ dryRun: !!options.dryRun, yes: !!options.yes })
   })
 
 await program.parseAsync()

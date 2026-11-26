@@ -4,6 +4,8 @@ export type { SyncContext }
 export type { SyncPackage }
 
 import { readFile } from 'node:fs/promises'
+import * as path from 'node:path'
+import pc from '@brillout/picocolors'
 import { applyReleasePlan } from './apply-release-plan.ts'
 import { getReleasePlan } from './release-plan.ts'
 import { getTagScheme, type TagScheme } from './tag-scheme.ts'
@@ -15,10 +17,13 @@ import {
 } from '../utils/changelog.ts'
 import { getReleaseDate } from '../utils/git.ts'
 import type { ReleasesClient } from '../utils/github.ts'
+import { assertUsage } from '../../../utils.ts'
 
-// A package released by release-me. changelogPath is relative to the repository root (e.g. `packages/vike/CHANGELOG.md`).
+// A package released by release-me. packageRootDir is absolute; changelogPath is relative to the repository root
+// (e.g. `packages/vike/CHANGELOG.md`).
 type SyncPackage = {
   packageName: string
+  packageRootDir: string
   changelogPath: string
 }
 
@@ -72,10 +77,31 @@ function getChangelogUrl(pkg: SyncPackage, { owner, repo, defaultBranch }: SyncC
   return `https://github.com/${owner}/${repo}/blob/${defaultBranch}/${pkg.changelogPath}`
 }
 
-// Which packages to sync:
+// Which packages to sync, in priority order:
+//  - the packages passed as arguments, if any — each a package name or directory (relative to cwd), or
 //  - on push (CI): the packages whose CHANGELOG.md changed, or
-//  - otherwise (manual workflow_dispatch, or a local run): every package.
-function getPackagesToSync(allPackages: SyncPackage[], pushedFiles: string[] | null): SyncPackage[] {
-  if (!pushedFiles) return allPackages
-  return allPackages.filter((pkg) => pushedFiles.includes(pkg.changelogPath))
+//  - otherwise (manual workflow_dispatch, or a local run without arguments): every package.
+function getPackagesToSync(
+  allPackages: SyncPackage[],
+  { packageArgs, cwd, pushedFiles }: { packageArgs: string[]; cwd: string; pushedFiles: string[] | null },
+): SyncPackage[] {
+  if (packageArgs.length > 0) {
+    const selected = packageArgs.map((packageArg) => {
+      const pkg = allPackages.find(
+        (pkg) => pkg.packageName === packageArg || pkg.packageRootDir === path.resolve(cwd, packageArg),
+      )
+      assertUsage(
+        pkg,
+        `${pc.cyan(
+          packageArg,
+        )} isn't the name or directory of a package to sync (the packages released by release-me that have a CHANGELOG.md: ${allPackages
+          .map((pkg) => pkg.packageName)
+          .join(', ')})`,
+      )
+      return pkg
+    })
+    return [...new Set(selected)]
+  }
+  if (pushedFiles) return allPackages.filter((pkg) => pushedFiles.includes(pkg.changelogPath))
+  return allPackages
 }
