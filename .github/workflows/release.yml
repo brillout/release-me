@@ -1,10 +1,12 @@
 # Publishes to npm, see https://github.com/brillout/release-me#github-action
+# - By pushing a release tag, or
+# - by pressing the "Run workflow" button.
+
+# Security notes (ALWAYS READ THIS):
+# - ONLY RELEASE COMMITS YOU TRUST: review a pull request before commit-releasing it — it runs with *full* npm publish rights.
+# - USERS WITH WRITE ACCESS CAN PUBLISH: only add repository write access to people you trust.
 
 # DON'T MODIFY THIS FILE: it's a copy of https://github.com/brillout/release-me/blob/main/.github/workflows/release.yml created and updated by `$ pnpm exec release-me init`.
-
-# SECURITY:
-# - Only users with write access can trigger this workflow: by pushing a release tag, or by pressing the "Run workflow" button.
-# - It runs the released commit's code with npm publish rights: only release commits you trust (review a pull request from a fork before commit-releasing it).
 
 name: Release
 on:
@@ -34,7 +36,6 @@ jobs:
       - uses: pnpm/action-setup@v6
       - run: pnpm install
       - run: pnpm exec release-me ci-publish
-        # SECURITY: the values are passed as env variables, instead of being inserted into `run:` (shell injection)
         env:
           # - Stable release: the release tag (pushed, or selected in "Use workflow from" with an empty input `ref`)
           # - Commit release: empty
