@@ -114,9 +114,6 @@ BREAKING CHANGE: Replace `someFunction(someArg)` with `someFunction({ someArg })
 > [!NOTE]
 > When introducing a breaking change, in order to respect the [semver](https://semver.org/) convention, don't `$ pnpm exec release-me patch` but `$ pnpm exec release-me major` instead (or `$ pnpm exec release-me minor` if your package's version is `0.y.z`).
 
-> [!NOTE]
-> If the release has no `CHANGELOG.md` entry (e.g. no `fix:` nor `feat:` commit since the last release), it aborts (use `--force` to release nevertheless).
-
 <br/>
 
 ## Monorepo
