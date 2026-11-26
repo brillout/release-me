@@ -230,7 +230,7 @@ Run locally, these commands use the environment variable `GITHUB_TOKEN`, or else
 </details>
 
 > [!NOTE]
-> `CHANGELOG.md` is the source of truth: upon each push of a `CHANGELOG.md` change to `main` (e.g. a release commit), GitHub Releases are created, updated, and deleted to match `CHANGELOG.md`. Edit `CHANGELOG.md` instead of a GitHub Release: the next sync overwrites any edit made to a GitHub Release.
+> `CHANGELOG.md` is the source of truth: upon each push of a `CHANGELOG.md` change to `main`, GitHub Releases are created, updated, and deleted to match `CHANGELOG.md`. Edit `CHANGELOG.md` instead of a GitHub Release: the next sync overwrites any edit made to a GitHub Release.
 
 > [!NOTE]
 > The first sync creates A LOT of GitHub Releases: one for every version listed in `CHANGELOG.md`.
