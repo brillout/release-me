@@ -13,13 +13,14 @@ import pc from '@brillout/picocolors'
 import { assertUsage, logDetail, logTitle, run } from '../../utils.ts'
 import { releaseNpmWorkflowFile } from '../workflowFiles.ts'
 import { getGitHubRepo, parseGitHubRepo } from '../utils/githubRepo.ts'
+import { getRunWorkflowCta, getWorkflowLink } from '../utils/workflowLink.ts'
 import type { PackageJson } from '../../releaseMe.ts'
 
 // After gitPush() pushed the release tag, which triggers the GitHub Action that publishes to npm
 /** @param packageSpec The released package, e.g. `vike@0.4.271` */
 async function logStableRelease(gitTag: string, packageSpec: string) {
   logTitle('npm publish')
-  const workflowLink = getWorkflowLink(await getGitHubRepo())
+  const workflowLink = getWorkflowLink(releaseNpmWorkflowFile, await getGitHubRepo())
   logWillPublish(
     packageSpec,
     workflowLink,
@@ -37,7 +38,7 @@ async function triggerCommitRelease(packageName: string, versionNew: string, com
     repo,
     `Couldn't determine the GitHub repository of ${pc.cyan('origin')} ${logDetail('$ git remote get-url origin')}.`,
   )
-  const workflowLink = getWorkflowLink(repo)
+  const workflowLink = getWorkflowLink(releaseNpmWorkflowFile, repo)
   const packageSpec = `${packageName}@${versionNew}` as const
   const runWorkflow = getRunWorkflowCta(
     workflowLink,
@@ -115,14 +116,6 @@ function parseRepositoryUrl(url: string): string | null {
   return parseGitHubRepo(url)
 }
 
-/** E.g. `go to https://github.com/vikejs/vike/actions/workflows/release-npm.yml, press Run workflow, and ${nextStep}` */
-function getRunWorkflowCta(workflowLink: string, nextStep?: string) {
-  const press = `press ${pc.bold(pc.cyan('Run workflow'))}` as const
-  return nextStep
-    ? (`go to ${workflowLink}, ${press}, and ${nextStep}` as const)
-    : (`go to ${workflowLink} and ${press}` as const)
-}
-
 /**
  * Aborts if GitHub doesn't have the commit: the GitHub Action can only release commits that exist on GitHub (any branch, including pull requests from forks).
  * @returns Why `$ gh` can't be used (it isn't installed, or isn't logged in), otherwise `null`
@@ -162,9 +155,4 @@ function logWillPublish(packageSpec: string, workflowLink: string, hint: string)
   const workflow = pc.bold(releaseNpmWorkflowFile.fileName)
   console.log(`GitHub Action ${workflow} will publish ${pc.cyan(packageSpec)} to npm: ${workflowLink}`)
   console.log(pc.dim(`(${hint})`))
-}
-
-function getWorkflowLink(repo: string | null) {
-  if (!repo) return pc.bold(releaseNpmWorkflowFile.filePath)
-  return pc.underline(`https://github.com/${repo}/actions/workflows/${releaseNpmWorkflowFile.fileName}`)
 }
