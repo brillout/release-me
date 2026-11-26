@@ -492,23 +492,19 @@ function getFilesMonorepoPackageJson(filesMonorepo: Files): Files {
 
 async function bumpPnpmLockFile(monorepoRootDir: string) {
   logTitle('Bump pnpm-lock.yaml')
-  try {
-    await run(
-      [
-        'pnpm install',
-        // Only update pnpm-lock.yaml (which is what we commit) and leave node_modules untouched:
-        // - A full `$ pnpm install` may show an interactive prompt (e.g. `The modules directory at "..." will be removed and reinstalled from scratch. Proceed?`) which stalls the release right after the npm package was published.
-        // - There is no pnpm setting to skip that prompt (`--force` skips it but it also forces a full reinstall).
-        // - `--lockfile-only` skips the node_modules validation altogether, and it's also faster (nothing is downloaded, no lifecycle script is run).
-        '--lockfile-only',
-      ].join(' '),
-      { cwd: monorepoRootDir, timeout: 10 * 60 * 1000 },
-    )
-  } catch (err) {
-    if (!(err as Error).message.includes('ERR_PNPM_PEER_DEP_ISSUES')) {
-      throw err
-    }
-  }
+  await run(
+    [
+      'pnpm install',
+      // Only update pnpm-lock.yaml (which is what we commit) and leave node_modules untouched:
+      // - A full `$ pnpm install` may show an interactive prompt (e.g. `The modules directory at "..." will be removed and reinstalled from scratch. Proceed?`) which stalls the release right after the npm package was published.
+      // - There is no pnpm setting to skip that prompt (`--force` skips it but it also forces a full reinstall).
+      // - `--lockfile-only` skips the node_modules validation altogether, and it's also faster (nothing is downloaded, no lifecycle script is run).
+      '--lockfile-only',
+      // Peer dependency issues don't abort the release, even if the repository sets strict-peer-dependencies: pnpm then only warns about them (it writes pnpm-lock.yaml either way)
+      '--config.strict-peer-dependencies=false',
+    ].join(' '),
+    { cwd: monorepoRootDir, timeout: 10 * 60 * 1000 },
+  )
 }
 
 type Files = {
