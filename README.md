@@ -32,7 +32,11 @@ Used by:
 
 <br/>
 
-<!-- TODO/after-merge: update section -->
+<!--
+TODO/after-merge: update section:
+- `"@brillout/release-me": "^0.4.0"` => the version released with `$ pnpm exec release-me init --npm` and `--github`
+- It describes publishing from your machine (`$ pnpm exec release-me patch`) and then the GitHub Actions (`$ pnpm exec release-me init`): make it one setup path
+-->
 
 ## Get started
 
