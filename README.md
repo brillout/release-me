@@ -236,4 +236,4 @@ Run locally, these commands use the environment variable `GITHUB_TOKEN`, or else
 > The first sync creates A LOT of GitHub Releases: one for every version in `CHANGELOG.md`.
 
 > [!NOTE]
-> To sync manually (all packages), press the **Run workflow** button of the GitHub Action `release-github.yml`.
+> To sync manually, press the **Run workflow** button of the GitHub Action `release-github.yml`.
