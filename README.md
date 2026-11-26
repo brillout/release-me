@@ -141,7 +141,6 @@ Each package has its own `CHANGELOG.md` (`packages/my-package/CHANGELOG.md`), wi
 Instead of publishing from your machine (which requires npm 2FA), you can let `@brillout/release-me`'s GitHub Action publish to npm (without 2FA and without an npm secret token):
 
 ```shell
-# Creates .github/workflows/release-npm.yml (run, then follow the steps it prints)
 pnpm exec release-me init --npm
 ```
 
@@ -163,7 +162,6 @@ pnpm exec release-me init --npm
 You can let `@brillout/release-me`'s GitHub Action synchronize your GitHub Releases with `CHANGELOG.md`:
 
 ```shell
-# Creates .github/workflows/release-github.yml
 pnpm exec release-me init --github
 ```
 
