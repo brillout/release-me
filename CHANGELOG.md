@@ -1,3 +1,12 @@
+## [0.5.6](https://github.com/brillout/release-me/compare/v0.5.5...v0.5.6) (2026-11-26)
+
+
+### Bug Fixes
+
+* the GitHub Action builds a package after the workspace packages it depends on ([#26](https://github.com/brillout/release-me/issues/26)) ([db15c07](https://github.com/brillout/release-me/commit/db15c07739d966327556ccf1e889305ddb721998))
+
+
+
 ## [0.5.5](https://github.com/brillout/release-me/compare/v0.5.4...v0.5.5) (2026-11-26)
 
 
