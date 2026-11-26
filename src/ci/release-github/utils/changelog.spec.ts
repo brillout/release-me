@@ -28,6 +28,12 @@ describe('parseChangelog()', () => {
     })
   })
 
+  it('gives no notes to a heading on the last line without a line end', () => {
+    expect(parseChangelog('## [0.1.0](https://github.com/owner/repo/releases/tag/v0.1.0) (2026-01-01)')).toEqual({
+      '0.1.0': '',
+    })
+  })
+
   it('parses oldest Vike entries (single # headings, pre-release versions)', () => {
     const changelogNotes = parseChangelog(readFixture('changelog-vike.md'))
     expect(Object.keys(changelogNotes)).toEqual([

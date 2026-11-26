@@ -14,7 +14,9 @@ function parseChangelog(changelog: string): ReleaseNotesByVersion {
     matches.map((match, index) => {
       const [, version] = match
       // A version's notes run from the end of its heading line to the start of the next heading.
-      const notesStart = changelog.indexOf('\n', match.index)
+      const headingLineEnd = changelog.indexOf('\n', match.index)
+      // No line end: the heading is the last line
+      const notesStart = headingLineEnd === -1 ? changelog.length : headingLineEnd
       const notesEnd = matches[index + 1]?.index ?? changelog.length
       const notes = changelog.slice(notesStart, notesEnd).trim()
       return [version, notes]
