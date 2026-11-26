@@ -158,7 +158,7 @@ To release all packages at once, add `release` scripts to the monorepo root's `p
 +     "release": "pnpm --recursive --sequential run release --yes",
 +     "release:minor": "pnpm --recursive --sequential run release:minor --yes",
 +     "release:major": "pnpm --recursive --sequential run release:major --yes",
-+     "release:commit": "pnpm --recursive --sequential run release:commit --yes"
++     "release:commit": "pnpm --recursive --sequential run release:commit --yes",
     }
   }
 ```
