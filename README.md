@@ -57,6 +57,8 @@ Used by:
    ```diff
     // package.json
     {
+      "name": "my-package",
+      "version": "0.0.0",
       "scripts": {
         "build": "echo 'Build step before releasing'",
    +    "release": "release-me patch",
