@@ -7,7 +7,7 @@ import execa from 'execa'
 import pc from '@brillout/picocolors'
 import { getChangedFiles } from './git.ts'
 import { createReleasesClient, type ReleasesClient } from './github.ts'
-import { getGitHubRepo } from '../../githubAction.ts'
+import { getGitHubRepo } from '../../utils/githubRepo.ts'
 import { assertUsage, logDetail } from '../../../utils.ts'
 
 // The inputs of a run (the repository, the token, the default branch, the pushed files), read from the GitHub Actions

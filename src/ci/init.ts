@@ -3,7 +3,8 @@ export { init }
 // `$ pnpm exec release-me init [--npm] [--github]` creates (or updates) .github/workflows/release.yml and/or .github/workflows/release-github.yml (see getWorkflowFilesToInit())
 
 import pc from '@brillout/picocolors'
-import { getGitHubRepo, getRepositoryMismatch } from './githubAction.ts'
+import { getRepositoryMismatch } from './githubAction.ts'
+import { getGitHubRepo } from './utils/githubRepo.ts'
 import {
   getWorkflowFilesToInit,
   releaseWorkflowFileName,
