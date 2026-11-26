@@ -3,10 +3,10 @@
 import { Argument, InvalidArgumentError, program } from 'commander'
 import pc from '@brillout/picocolors'
 import { releaseMe, type ReleaseTarget, type ReleaseType, releaseTypes } from './releaseMe.ts'
-import { init } from './ci/init.ts'
-import { ciPublish } from './ci/ci-publish.ts'
-import { githubReleaseSync } from './ci/release-github/cli/github-release-sync.ts'
-import { githubReleaseDeleteAll } from './ci/release-github/cli/github-release-delete-all.ts'
+import { init } from './github-actions/init.ts'
+import { ciPublish } from './github-actions/release-npm/cli/ci-publish.ts'
+import { githubReleaseSync } from './github-actions/release-github/cli/github-release-sync.ts'
+import { githubReleaseDeleteAll } from './github-actions/release-github/cli/github-release-delete-all.ts'
 
 program
   .name('release-me')
@@ -51,10 +51,10 @@ program
   )
   .action(init)
 
-// Run by the GitHub Action (see ./ci/releaseWorkflowFile.ts)
+// Run by the GitHub Action (see ./github-actions/workflowFiles.ts)
 program.command('ci-publish', { hidden: true }).action(ciPublish)
 
-// Run by the GitHub Action (see ./ci/releaseWorkflowFile.ts), and locally to preview or backfill
+// Run by the GitHub Action (see ./github-actions/workflowFiles.ts), and locally to preview or backfill
 program
   .command('github-release-sync')
   .description(
