@@ -12,7 +12,7 @@ Used by:
 [Get started](#get-started)  
 [Usage](#usage)  
 [Monorepo](#monorepo)  
-[GitHub Action](#github-action)  
+[Npm Release](#npm-release)  
 [GitHub Release](#github-release)  
 
 > [!WARNING]
@@ -26,17 +26,11 @@ Used by:
 - Monorepo support.
 - Generates Git release tags.
 - Pre-release support. (For example [`0.4.177-commit-ff3d6cd`](https://www.npmjs.com/package/vike/v/0.4.177-commit-ff3d6cd).)
-- Can publish via a GitHub Action instead of your machine: no npm login/2FA/token needed. (See [GitHub Action](#github-action).)
+- Can publish via a GitHub Action instead of your machine: no npm login/2FA/token needed. (See [Npm Release](#npm-release).)
 - Keeps GitHub Releases in sync with `CHANGELOG.md`. (See [GitHub Release](#github-release).)
 - Asks for confirmation before publishing, and shows a preview of the changes made to `package.json` and `CHANGELOG.md`, enabling you to double check before publishing.
 
 <br/>
-
-<!--
-TODO/after-merge: update section:
-- `"@brillout/release-me": "^0.4.0"` => the version released with `$ pnpm exec release-me init --npm` and `--github`
-- It describes publishing from your machine (`$ pnpm exec release-me patch`) and then the GitHub Actions (`$ pnpm exec release-me init`): make it one setup path
--->
 
 ## Get started
 
@@ -53,12 +47,12 @@ Run `$ pnpm add -D @brillout/release-me` and make sure you have the following:
     "build": "echo 'Some build step (release-me runs the build script before releasing)'"
   },
   "devDependencies": {
-    "@brillout/release-me": "^0.4.0"
+    "@brillout/release-me": "^0.6.0"
   }
 }
 ```
 
-Then set up the GitHub Actions of release-me (see [GitHub Action](#github-action) and [GitHub Release](#github-release)):
+Then set up the GitHub Actions of release-me (see [Npm Release](#npm-release) and [GitHub Release](#github-release)):
 
 ```shell
 # Run then follow the steps it prints
@@ -82,7 +76,7 @@ We recommend adding the following scripts:
 +    "release:commit": "release-me commit"
    },
    "devDependencies": {
-     "@brillout/release-me": "^0.4.0"
+     "@brillout/release-me": "^0.6.0"
    }
  }
 ```
@@ -202,14 +196,12 @@ Consider adding `release` scripts to the monorepo root's `package.json`:
 
 <br/>
 
-<!-- TODO/after-merge: rename section to "Npm Release" (and update the links to #github-action) -->
-
-## GitHub Action
+## Npm Release
 
 Instead of publishing from your machine (which requires npm 2FA), you can let `@brillout/release-me`'s GitHub Action publish releases to npm (without 2FA and without an npm secret token):
 
 ```shell
-# Run then follow the steps it prints
+# Creates .github/workflows/release-npm.yml (run then follow the steps it prints)
 pnpm exec release-me init --npm
 ```
 

@@ -1,4 +1,4 @@
-# Publishes to npm, see https://github.com/brillout/release-me#github-action
+# Publishes to npm, see https://github.com/brillout/release-me#npm-release
 # - By pushing a release tag, or
 # - by pressing the "Run workflow" button.
 
@@ -6,7 +6,7 @@
 # - ONLY RELEASE COMMITS YOU TRUST: review a pull request before commit-releasing it — it runs with npm publish rights for all of this repository's packages.
 # - USERS WITH WRITE ACCESS CAN PUBLISH: only add repository write access to people you trust.
 
-# DON'T MODIFY THIS FILE: it's a copy of https://github.com/brillout/release-me/blob/main/.github/workflows/release.yml created and updated by `$ pnpm exec release-me init`.
+# DON'T MODIFY THIS FILE: it's a copy of https://github.com/brillout/release-me/blob/main/.github/workflows/release-npm.yml created and updated by `$ pnpm exec release-me init`.
 
 name: Release
 on:

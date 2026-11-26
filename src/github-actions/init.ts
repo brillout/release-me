@@ -1,6 +1,6 @@
 export { init }
 
-// `$ pnpm exec release-me init [--npm] [--github]` creates (or updates) .github/workflows/release.yml and/or .github/workflows/release-github.yml (see getWorkflowFilesToInit())
+// `$ pnpm exec release-me init [--npm] [--github]` creates (or updates) .github/workflows/release-npm.yml and/or .github/workflows/release-github.yml (see getWorkflowFilesToInit())
 
 import pc from '@brillout/picocolors'
 import { getRepositoryMismatch } from './release-npm/githubAction.ts'
@@ -10,6 +10,7 @@ import {
   releaseNpmWorkflowFile,
   writeWorkflowFiles,
   type WorkflowFileOptions,
+  type WriteResult,
 } from './workflowFiles.ts'
 import {
   assertInstalledAtRoot,
@@ -28,24 +29,21 @@ async function init(options: WorkflowFileOptions) {
   const packages = getReleaseMePackages(await getFilesInsideDir(monorepoRootDir))
 
   const results = writeWorkflowFiles(monorepoRootDir, getWorkflowFilesToInit(monorepoRootDir, options))
-  const releaseNpmWorkflowStatus = results.find(({ workflowFile }) => workflowFile === releaseNpmWorkflowFile)?.status
+  const releaseNpmResult = results.find(({ workflowFile }) => workflowFile === releaseNpmWorkflowFile)
 
   // CLI output is read bottom to top: the workflow files last
-  if (releaseNpmWorkflowStatus) {
+  if (releaseNpmResult) {
     logTitle('npm trusted publisher', true)
-    await logNpmSetup(
-      monorepoRootDir,
-      packages,
-      releaseNpmWorkflowStatus === 'created' ? 'Set up' : "If you didn't already, set up",
-    )
+    await logNpmSetup(monorepoRootDir, packages, releaseNpmResult)
   }
 
   // The first title has no margin
-  logTitle('GitHub Action', releaseNpmWorkflowStatus ? undefined : true)
-  for (const { workflowFile, status } of results) {
-    const filePath = pc.bold(workflowFile.filePath)
-    if (status === 'up-to-date') console.log(`${filePath} is up-to-date`)
-    else console.log(`${status === 'created' ? 'Created' : 'Updated'} ${filePath}`)
+  logTitle('GitHub Action', releaseNpmResult ? undefined : true)
+  for (const result of results) {
+    const filePath = pc.bold(result.workflowFile.filePath)
+    if (result.status === 'up-to-date') console.log(`${filePath} is up-to-date`)
+    else if (result.status === 'renamed') console.log(`Renamed ${pc.bold(result.old.filePath)} to ${filePath}`)
+    else console.log(`${result.status === 'created' ? 'Created' : 'Updated'} ${filePath}`)
   }
   const changes = results.filter(({ status }) => status !== 'up-to-date')
   if (changes.length === 0) return
@@ -66,8 +64,11 @@ function assertPackageManager(monorepoRootDir: string) {
   )
 }
 
-async function commitWorkflowFiles(monorepoRootDir: string, changes: ReturnType<typeof writeWorkflowFiles>) {
-  const filePaths = changes.map(({ workflowFile }) => workflowFile.filePath)
+async function commitWorkflowFiles(monorepoRootDir: string, changes: WriteResult[]) {
+  // A renamed workflow file: also its removed old file
+  const filePaths = changes.flatMap((change) =>
+    change.status === 'renamed' ? [change.old.filePath, change.workflowFile.filePath] : [change.workflowFile.filePath],
+  )
   const isSetup = changes.some(({ status }) => status === 'created')
   const commitMessage = isSetup ? 'ci: set up release-me GitHub Action' : 'ci: update release-me GitHub Action'
   await run(['git', 'add', '--', ...filePaths], { cwd: monorepoRootDir })
@@ -76,11 +77,22 @@ async function commitWorkflowFiles(monorepoRootDir: string, changes: ReturnType<
   console.log(`Committed ${pc.dim(`(${commitMessage})`)}`)
 }
 
-/** The steps to set up npm's trusted publishing, e.g. `intro` = `Set up` */
-async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[], intro: string) {
+/** The steps to set up npm's trusted publishing */
+async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[], releaseNpmResult: WriteResult) {
   const repo = await getGitHubRepo(monorepoRootDir)
   const [owner, repoName] = repo ? repo.split('/') : []
-  console.log(`${intro} ${packages.length === 1 ? "the package's" : "each package's"} trusted publisher:`)
+  const trustedPublisher = `${packages.length === 1 ? "the package's" : "each package's"} trusted publisher`
+  if (releaseNpmResult.status === 'created') {
+    console.log(`Set up ${trustedPublisher}:`)
+  } else if (releaseNpmResult.status === 'renamed') {
+    // A trusted publisher is bound to the workflow filename, which npm can't change
+    const { fileName } = releaseNpmWorkflowFile
+    console.log(
+      `${pc.bold(releaseNpmResult.old.fileName)} was renamed ${pc.bold(fileName)}: set up ${trustedPublisher} anew:`,
+    )
+  } else {
+    console.log(`If you didn't already, set up ${trustedPublisher}:`)
+  }
   const links = packages.map(({ packageName }) => pc.underline(`https://www.npmjs.com/package/${packageName}/access`))
   if (links.length === 1) {
     console.log(`   1. Go to ${links[0]}`)
@@ -102,6 +114,9 @@ async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[]
     console.log(`        ${label.padEnd(22)}${pc.bold(value)}`)
   }
   console.log(`   3. Click ${pc.bold('Set up connection')}`)
+  if (releaseNpmResult.status === 'renamed') {
+    console.log(`   4. Delete the trusted publisher of ${pc.bold(releaseNpmResult.old.fileName)}`)
+  }
   console.log(
     `   ${pc.bold(
       '⚠️  Use it within 2 days',

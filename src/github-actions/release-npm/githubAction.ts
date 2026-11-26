@@ -85,7 +85,7 @@ async function abortIfNotOnNpm(packageName: string) {
     pc.red(
       pc.bold(
         `Release aborted, because ${packageName} isn't on npm yet, and npm can't set up a trusted publisher for it until it is: publish its first version manually ($ pnpm publish), then set up its trusted publisher (see ${pc.underline(
-          'https://github.com/brillout/release-me#github-action',
+          'https://github.com/brillout/release-me#npm-release',
         )}).`,
       ),
     ),
@@ -115,7 +115,7 @@ function parseRepositoryUrl(url: string): string | null {
   return parseGitHubRepo(url)
 }
 
-/** E.g. `go to https://github.com/vikejs/vike/actions/workflows/release.yml, press Run workflow, and ${nextStep}` */
+/** E.g. `go to https://github.com/vikejs/vike/actions/workflows/release-npm.yml, press Run workflow, and ${nextStep}` */
 function getRunWorkflowCta(workflowLink: string, nextStep?: string) {
   const press = `press ${pc.bold(pc.cyan('Run workflow'))}` as const
   return nextStep
