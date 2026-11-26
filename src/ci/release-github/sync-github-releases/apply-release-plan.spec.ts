@@ -40,7 +40,6 @@ describe('applyReleasePlan()', () => {
         releasesToDelete: [{ release_id: 2, tag_name: 'v0.9.0' }],
       },
       client,
-      defaultBranch: 'main',
     })
 
     expect(calls).toEqual(['update:1', 'delete:2'])
@@ -60,7 +59,7 @@ describe('applyReleasePlan()', () => {
       vi.mocked(gitTagExists).mockReturnValue(false)
       const { client } = createFakeClient()
 
-      await expect(applyReleasePlan({ plan: createPlan(true), client, defaultBranch: 'main' })).rejects.toThrow(
+      await expect(applyReleasePlan({ plan: createPlan(true), client })).rejects.toThrow(
         /latest release must already be tagged/,
       )
     })
@@ -70,9 +69,7 @@ describe('applyReleasePlan()', () => {
       vi.mocked(findReleaseCommit).mockReturnValue(null)
       const { client } = createFakeClient()
 
-      await expect(applyReleasePlan({ plan: createPlan(false), client, defaultBranch: 'main' })).rejects.toThrow(
-        /couldn't be deduced/,
-      )
+      await expect(applyReleasePlan({ plan: createPlan(false), client })).rejects.toThrow(/couldn't be deduced/)
     })
   })
 })

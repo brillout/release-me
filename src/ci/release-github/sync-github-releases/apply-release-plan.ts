@@ -8,17 +8,9 @@ import type { NewRelease, ReleasesClient } from '../utils/github.ts'
 // gates each write on --dry-run and logs it (see createReleasesClient()); the one thing that must happen
 // here, before the client is even called, is resolving each create's target commit — so a dry run still
 // surfaces a missing-tag failure or a deduced-commit warning.
-async function applyReleasePlan({
-  plan,
-  client,
-  defaultBranch,
-}: {
-  plan: ReleasePlan
-  client: ReleasesClient
-  defaultBranch: string
-}): Promise<void> {
+async function applyReleasePlan({ plan, client }: { plan: ReleasePlan; client: ReleasesClient }): Promise<void> {
   for (const release of plan.releasesToCreate) {
-    const targetCommitish = resolveTargetCommitish(release, defaultBranch)
+    const targetCommitish = resolveTargetCommitish(release)
     await client.create(buildNewRelease(release, targetCommitish))
   }
 
@@ -28,14 +20,14 @@ async function applyReleasePlan({
 }
 
 // The commit a to-be-created release is tagged at (its GitHub `target_commitish`):
-//  - Tag already exists: GitHub uses it and ignores target_commitish — pass the branch as a no-op.
+//  - Tag already exists: none — GitHub uses the tag (and ignores target_commitish).
 //  - Tag missing on the latest release: hard fail. The just-released version must already be tagged;
 //    tagging it now would point at the default branch's HEAD (the wrong commit).
 //  - Tag missing on an older (backfilled) release: tag the commit deduced from the changelog history,
 //    or hard fail if it couldn't be deduced — never silently tag the wrong commit.
-function resolveTargetCommitish(release: ReleaseToCreate, defaultBranch: string): string {
+function resolveTargetCommitish(release: ReleaseToCreate): string | undefined {
   const { tag_name: releaseTag, version, isLatest } = release
-  if (gitTagExists(releaseTag)) return defaultBranch
+  if (gitTagExists(releaseTag)) return undefined
   const refusal = `Refusing to create release ${releaseTag}: its git tag is missing`
   if (isLatest) {
     throw new Error(
@@ -51,7 +43,7 @@ function resolveTargetCommitish(release: ReleaseToCreate, defaultBranch: string)
 }
 
 // The GitHub create-release payload for one planned release, tagged at the already-resolved commit.
-function buildNewRelease(release: ReleaseToCreate, targetCommitish: string): NewRelease {
+function buildNewRelease(release: ReleaseToCreate, targetCommitish: string | undefined): NewRelease {
   return {
     tag_name: release.tag_name,
     name: release.tag_name,

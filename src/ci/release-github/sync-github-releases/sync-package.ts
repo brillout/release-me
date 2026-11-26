@@ -40,7 +40,7 @@ async function syncPackage(pkg: SyncPackage, context: SyncContext): Promise<void
   const releaseBodyByVersion = buildReleaseBodies(changelogNotes, { tagScheme, changelogUrl })
   const githubReleases = await context.client.list()
   const plan = getReleasePlan({ githubReleases, releaseBodyByVersion, tagScheme })
-  await applyReleasePlan({ plan, client: context.client, defaultBranch: context.defaultBranch })
+  await applyReleasePlan({ plan, client: context.client })
 }
 
 // Turn each version's parsed changelog notes into the release body we publish (buildReleaseBody()). Separate

@@ -14,7 +14,7 @@ type Release = {
 
 type NewRelease = {
   tag_name: string
-  target_commitish: string
+  target_commitish?: string
   name: string
   body: string
   make_latest: 'true' | 'false'
