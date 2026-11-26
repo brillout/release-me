@@ -42,6 +42,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - run: pnpm install
       - run: pnpm exec release-me ci-publish
+        # SECURITY: the values are passed as env variables, instead of being inserted into `run:` (shell injection)
         env:
           # - Stable release: the release tag (pushed, or selected in "Use workflow from" with an empty input `ref`)
           # - Commit release: empty
