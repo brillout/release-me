@@ -167,7 +167,7 @@ You can let `@brillout/release-me`'s GitHub Action synchronize your GitHub Relea
 pnpm exec release-me init --github
 ```
 
-For the first sync, manually run it by pressing the **Run workflow** button of the GitHub Action `release-github.yml`.
+For the first sync, run `$ pnpm exec release-me github-release-sync`.
 
 > [!NOTE]
 > The first sync creates A LOT of GitHub Releases: one for every version listed in `CHANGELOG.md`.
