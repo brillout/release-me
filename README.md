@@ -2,12 +2,6 @@
 
 Publish your npm packages.
 
-Used by:
-- Vike
-- Telefunc
-- Packages made by [`brillout`](https://github.com/brillout)
-- Packages made by [`magne4000`](https://github.com/magne4000)
-
 [Features](#features)  
 [Get started](#get-started)  
 [Conventional Commits](#conventional-commits)  
