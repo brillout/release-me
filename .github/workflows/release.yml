@@ -43,5 +43,5 @@ jobs:
         env:
           # - Stable release: the release tag (pushed, or selected in "Use workflow from" with an empty input `ref`)
           # - Commit release: empty
-          TAG: ${{ github.ref_type == 'tag' && !inputs.ref && github.ref_name || '' }}
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && !inputs.ref && github.ref_name || '' }}
           PACKAGE: ${{ inputs.package }}

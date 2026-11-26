@@ -26,7 +26,7 @@ async function ciPublish() {
   // E.g. after upgrading release-me without re-running `$ pnpm exec release-me init`
   if (!isReleaseWorkflowUpToDate(monorepoRootDir)) fail(releaseWorkflowOutdated)
   // Stable release: its Git tag (`v1.2.3` or `some-package@1.2.3`). Commit release: empty.
-  const tag = getEnv('TAG')
+  const tag = getEnv('RELEASE_TAG')
   const isCommitRelease = !tag
   const packages = getReleaseMePackages(await getFilesInsideDir(monorepoRootDir))
 
