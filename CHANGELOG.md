@@ -1,3 +1,12 @@
+## [0.5.8](https://github.com/brillout/release-me/compare/v0.5.7...v0.5.8) (2026-11-26)
+
+
+### Bug Fixes
+
+* log info instead of warning when the npm dist-tag commit can't be removed ([#28](https://github.com/brillout/release-me/issues/28)) ([6e83089](https://github.com/brillout/release-me/commit/6e8308995704df183b4d46bc42853a4da355ce51))
+
+
+
 ## [0.5.7](https://github.com/brillout/release-me/compare/v0.5.6...v0.5.7) (2026-11-26)
 
 
