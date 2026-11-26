@@ -6,9 +6,13 @@ import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import { execFileSync } from 'node:child_process'
+import execa from 'execa'
+import pc from '@brillout/picocolors'
 import { logTitle, run } from '../../../utils.ts'
 import { fail } from '../../utils/fail.ts'
 import { isWorkflowFileUpToDate, releaseNpmWorkflowFile } from '../../workflowFiles.ts'
+import { getNotOnNpmReason, isMissingOnNpm } from '../githubAction.ts'
+import { getTrustedPublisherSteps } from '../trustedPublisher.ts'
 import {
   build,
   getCommitHash,
@@ -115,12 +119,12 @@ async function publish({ packageName, packageRootDir }: ReleaseMePackage, isComm
   if (!isCommitRelease) {
     // - npm requires an explicit tag for pre-release versions and for versions lower than the highest published version: use `latest`, as `$ pnpm publish` does (unless package.json#publishConfig.tag is set).
     // - Provenance (npm's default with trusted publishing): the workflow runs on the tag's commit (the pushed tag, or the tag selected in "Use workflow from").
-    npm(['publish', tarball, ...(packageJson.publishConfig?.tag ? [] : ['--tag', 'latest'])])
+    await npmPublish(packageName, spec, [tarball, ...(packageJson.publishConfig?.tag ? [] : ['--tag', 'latest'])])
   } else {
     // - `$ npm publish` always sets a dist-tag: use the dist-tag `commit` and remove it afterwards.
     // - No provenance: it would point to the commit the workflow run belongs to (the tip of the branch selected in "Use workflow from"), which isn't necessarily the released commit.
     //   (A CLI flag, because package.json#publishConfig.provenance overrides env variables, but not CLI flags.)
-    npm(['publish', tarball, '--tag', 'commit', '--provenance=false'])
+    await npmPublish(packageName, spec, [tarball, '--tag', 'commit', '--provenance=false'])
     try {
       npm(['dist-tag', 'rm', packageName, 'commit'])
     } catch {
@@ -168,6 +172,36 @@ function isPublished(packageName: string, version: string): boolean {
 function npm(args: string[]) {
   console.log(`$ npm ${args.join(' ')}`)
   execFileSync('npm', args, { stdio: 'inherit' })
+}
+
+/** `$ npm publish ${args}`, which fails with a helpful message if npm couldn't authenticate the GitHub Action */
+async function npmPublish(packageName: string, spec: string, args: string[]) {
+  args = ['publish', ...args]
+  console.log(`$ npm ${args.join(' ')}`)
+  // Shows npm's stderr, and keeps it to read npm's error code
+  const subprocess = execa('npm', args, { stdin: 'inherit', stdout: 'inherit', stderr: 'pipe', reject: false })
+  subprocess.stderr!.pipe(process.stderr)
+  const { failed, stderr } = await subprocess
+  if (!failed) return
+  // npm has no credentials: its trusted publishing failed (the workflow has the permission `id-token: write`, and no npm token)
+  if (/^npm error code ENEEDAUTH$/m.test(stderr)) fail(await getNeedAuthMessage(packageName, spec))
+  throw new Error(`Command failed: npm ${args.join(' ')}`)
+}
+
+/** Why npm couldn't authenticate the GitHub Action to publish `spec`, and how to fix it */
+async function getNeedAuthMessage(packageName: string, spec: string): Promise<string> {
+  if (await isMissingOnNpm(packageName)) return `npm can't publish ${spec}, because ${getNotOnNpmReason(packageName)}.`
+  const { GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_RUN_ID } = process.env
+  // The page of this run, which has the button Re-run jobs
+  const runLink =
+    GITHUB_SERVER_URL && GITHUB_REPOSITORY && GITHUB_RUN_ID
+      ? pc.underline(`${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`)
+      : null
+  return [
+    `npm couldn't authenticate the GitHub Action ${releaseNpmWorkflowFile.fileName} to publish ${spec} (npm error code ENEEDAUTH): ${packageName} needs a trusted publisher for it. Set it up (or, if ${packageName} already has one, check that it matches):`,
+    ...getTrustedPublisherSteps([packageName], GITHUB_REPOSITORY || null),
+    `Then ${runLink ? `go to ${runLink} and press` : 'press'} ${pc.bold('Re-run jobs')}.`,
+  ].join('\n')
 }
 
 function list(packages: ReleaseMePackage[]): string {

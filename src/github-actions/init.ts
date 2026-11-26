@@ -4,6 +4,7 @@ export { init }
 
 import pc from '@brillout/picocolors'
 import { getRepositoryMismatch } from './release-npm/githubAction.ts'
+import { getTrustedPublisherSteps } from './release-npm/trustedPublisher.ts'
 import { getGitHubRepo } from './utils/githubRepo.ts'
 import {
   getWorkflowFilesToInit,
@@ -80,7 +81,6 @@ async function commitWorkflowFiles(monorepoRootDir: string, changes: WriteResult
 /** The steps to set up npm's trusted publishing */
 async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[], releaseNpmResult: WriteResult) {
   const repo = await getGitHubRepo(monorepoRootDir)
-  const [owner, repoName] = repo ? repo.split('/') : []
   const trustedPublisher = `${packages.length === 1 ? "the package's" : "each package's"} trusted publisher`
   if (releaseNpmResult.status === 'created') {
     console.log(`Set up ${trustedPublisher}:`)
@@ -93,27 +93,12 @@ async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[]
   } else {
     console.log(`If you didn't already, set up ${trustedPublisher}:`)
   }
-  const links = packages.map(({ packageName }) => pc.underline(`https://www.npmjs.com/package/${packageName}/access`))
-  if (links.length === 1) {
-    console.log(`   1. Go to ${links[0]}`)
-  } else {
-    console.log('   1. Go to:')
-    for (const link of links) console.log(`        ${link}`)
+  for (const step of getTrustedPublisherSteps(
+    packages.map(({ packageName }) => packageName),
+    repo,
+  )) {
+    console.log(step)
   }
-  console.log(`   2. Under ${pc.bold('Trusted Publisher')}, click ${pc.bold('GitHub Actions')} and fill in:`)
-  // The fields of npm's form
-  const fields = [
-    ['Organization or user', owner ?? '<owner>'],
-    ['Repository', repoName ?? '<repo>'],
-    ['Workflow filename', releaseNpmWorkflowFile.fileName],
-    ['Allow npm publish', '✅'],
-    // `$ npm dist-tag rm` removes the dist-tag that `$ npm publish` requires for commit releases (see ./release-npm/cli/ci-publish.ts)
-    ['Allow npm dist-tag', '✅'],
-  ] as const
-  for (const [label, value] of fields) {
-    console.log(`        ${label.padEnd(22)}${pc.bold(value)}`)
-  }
-  console.log(`   3. Click ${pc.bold('Set up connection')}`)
   if (releaseNpmResult.status === 'renamed') {
     console.log(`   4. Delete the trusted publisher of ${pc.bold(releaseNpmResult.old.fileName)}`)
   }
