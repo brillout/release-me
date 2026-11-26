@@ -59,7 +59,7 @@ program
   .command('sync-github-releases')
   .description(
     `Create, update, and delete GitHub Releases so that they match CHANGELOG.md (see ${pc.underline(
-      'https://github.com/brillout/release-me#github-releases',
+      'https://github.com/brillout/release-me#github-release',
     )}).`,
   )
   .argument('[packages...]', 'the packages to sync, by name or directory (default: all packages)')

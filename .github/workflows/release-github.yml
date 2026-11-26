@@ -1,4 +1,4 @@
-# Keeps GitHub Releases in sync with CHANGELOG.md, see https://github.com/brillout/release-me#github-releases
+# Keeps GitHub Releases in sync with CHANGELOG.md, see https://github.com/brillout/release-me#github-release
 # - By pushing a CHANGELOG.md change to main (e.g. a release commit), or
 # - by pressing the "Run workflow" button (it then syncs all packages).
 
