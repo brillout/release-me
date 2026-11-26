@@ -30,7 +30,7 @@ import {
   triggerCommitRelease,
   triggerStableRelease,
 } from './ci/githubAction.ts'
-import { publishesViaGitHubAction, releaseWorkflowFileName, releaseWorkflowFilePath } from './ci/workflowFiles.ts'
+import { publishesViaGitHubAction, releaseWorkflowFileName, releaseWorkflowFilePath } from './ci/releaseWorkflowFile.ts'
 import * as path from 'path'
 /*
 //  "js-yaml": "4.1.0",

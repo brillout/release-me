@@ -3,13 +3,13 @@ export { syncGitHubReleases }
 // `$ pnpm exec release-me sync-github-releases` keeps GitHub Releases in sync with CHANGELOG.md, see https://github.com/brillout/release-me#github-releases
 // - It creates any missing release, rewrites any whose notes have drifted from the changelog, and deletes any whose version is no longer in the changelog.
 // - CHANGELOG.md is the source of truth: GitHub Releases are completely derived from it.
-// - Run by the GitHub Action .github/workflows/sync-github-releases.yml (see ../workflowFiles.ts), or locally (e.g. with --dry-run).
+// - Run by the GitHub Action .github/workflows/sync-github-releases.yml (see ../releaseWorkflowFile.ts), or locally (e.g. with --dry-run).
 
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { getPackagesToSync, syncPackage, type SyncContext, type SyncPackage } from './sync/sync-package.ts'
 import { createReleasesClientFromEnv, getDefaultBranch, getPushedFiles } from './utils/github-env.ts'
-import { isWorkflowFileUpToDate, syncWorkflowFile } from '../workflowFiles.ts'
+import { isWorkflowFileUpToDate, syncWorkflowFile } from '../releaseWorkflowFile.ts'
 import { getChangelogPath, getFilesInsideDir, getMonorepoRootDir, getReleaseMePackages } from '../../releaseMe.ts'
 
 async function syncGitHubReleases({ dryRun }: { dryRun: boolean }): Promise<void> {
