@@ -26,7 +26,7 @@ switch (process.argv[2]) {
     await ciPublish()
     break
   default:
-    await cli()
+    await cliReleaseMe()
 }
 
 async function cliInit() {
@@ -39,7 +39,7 @@ async function cliInit() {
   await init()
 }
 
-async function cli() {
+async function cliReleaseMe() {
   const packageRootDir = process.cwd()
   const args = parseArgs()
   await releaseMe(args, packageRootDir)
