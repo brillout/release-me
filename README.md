@@ -10,10 +10,9 @@ Used by:
 
 [Features](#features)  
 [Get started](#get-started)  
-&nbsp;&nbsp;&nbsp;&nbsp;[Monorepo](#monorepo)  
 [CLI](#cli)  
 [Conventional Commits](#conventional-commits)  
-&nbsp;&nbsp;&nbsp;&nbsp;[Monorepo](#monorepo-1)  
+&nbsp;&nbsp;&nbsp;&nbsp;[Monorepo](#monorepo)  
 [GitHub Actions](#github-actions)  
 &nbsp;&nbsp;&nbsp;&nbsp;[Npm Release](#npm-release)  
 &nbsp;&nbsp;&nbsp;&nbsp;[GitHub Release](#github-release)  
@@ -30,7 +29,7 @@ Used by:
 - Updates the `const PROJECT_VERSION = '0.1.2'` of `PROJECT_VERSION.ts` files.
 - Shows a preview of the changes made to `package.json` and `CHANGELOG.md`, and asks for confirmation before releasing.
 - Commit releases: publish any commit as a pre-release, e.g. [`0.4.177-commit-ff3d6cd`](https://www.npmjs.com/package/vike/v/0.4.177-commit-ff3d6cd).
-- Monorepo support. (See [Monorepo](#monorepo).)
+- Monorepo support.
 - Can publish via a GitHub Action instead of your machine: no npm login/2FA/token needed. (See [Npm Release](#npm-release).)
 - Keeps GitHub Releases in sync with `CHANGELOG.md`. (See [GitHub Release](#github-release).)
 
@@ -70,6 +69,20 @@ Used by:
     }
    ```
 
+   In a monorepo, add them to each package you want to release (a package is released by `@brillout/release-me` if and only if it defines a script that runs `release-me`). To release all packages at once, add `release` scripts to the monorepo root's `package.json`:
+
+   ```diff
+    // package.json
+    {
+      "scripts": {
+   +    "release": "pnpm --recursive --sequential run release --yes",
+   +    "release:minor": "pnpm --recursive --sequential run release:minor --yes",
+   +    "release:major": "pnpm --recursive --sequential run release:major --yes",
+   +    "release:commit": "pnpm --recursive --sequential run release:commit --yes",
+      }
+    }
+   ```
+
 4. Set up the GitHub Actions of `@brillout/release-me` (see [GitHub Actions](#github-actions)):
 
    ```shell
@@ -78,41 +91,6 @@ Used by:
    ```
 
 5. Make sure to follow [Conventional Commits](#conventional-commits) (`@brillout/release-me` generates `CHANGELOG.md` from your commits).
-
-### Monorepo
-
-Add the `release` scripts to each package you want to release:
-
-```diff
- // packages/my-package/package.json
- {
-   "name": "my-package",
-   "version": "0.1.2",
-   "scripts": {
-+    "release": "release-me patch",
-+    "release:minor": "release-me minor",
-+    "release:major": "release-me major",
-+    "release:commit": "release-me commit"
-   }
- }
-```
-
-> [!NOTE]
-> A package is released by `@brillout/release-me` if and only if it defines a script that runs `release-me`.
-
-To release all packages at once, add `release` scripts to the monorepo root's `package.json`:
-
-```diff
-  // package.json
-  {
-    "scripts": {
-+     "release": "pnpm --recursive --sequential run release --yes",
-+     "release:minor": "pnpm --recursive --sequential run release:minor --yes",
-+     "release:major": "pnpm --recursive --sequential run release:major --yes",
-+     "release:commit": "pnpm --recursive --sequential run release:commit --yes",
-    }
-  }
-```
 
 <br/>
 
