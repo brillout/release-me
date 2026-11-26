@@ -811,7 +811,8 @@ function analyzeMonorepo(filesMonorepo: Files, packageRootDir: string, packageNa
   const currentPackages = monorepoPackages.filter((pkg) => pkg.isCurrentPackage)
   assertUsage(
     currentPackages.length === 1,
-    `${pc.cyan(packageName)} isn't released by release-me: add a script that runs release-me to ${path.join(
+    // TODO/ai add link to readme
+    `${pc.cyan(packageName)} isn't enabled for @brillout/release-me — add a script that runs release-me to ${path.join(
       packageRootDir,
       'package.json',
     )} (e.g. ${pc.bold('"release": "release-me patch"')}).`,
