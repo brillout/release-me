@@ -38,31 +38,39 @@ Used by:
 
 ## Get started
 
-1. Add `@brillout/release-me` to the `devDependencies` of your repository's root `package.json`, and add the following scripts (`@brillout/release-me` runs the `build` script before releasing):
+1. Add `@brillout/release-me` to the `devDependencies` of your repository's root `package.json`:
 
    ```shell
    pnpm add -D @brillout/release-me
    ```
 
+2. Make sure your `package.json` defines a `build` script (`@brillout/release-me` runs it before releasing):
+
    ```diff
     // package.json
     {
-      "name": "my-package",
-      "version": "0.1.2",
       "scripts": {
-   +    "build": "echo 'Build step before releasing'",
-   +    "release": "release-me patch",
-   +    "release:minor": "release-me minor",
-   +    "release:major": "release-me major",
-   +    "release:commit": "release-me commit"
-      },
-      "devDependencies": {
-        "@brillout/release-me": "^0.6.0"
+   +    "build": "echo 'Build step before releasing'"
       }
     }
    ```
 
-2. Set up the GitHub Actions of `@brillout/release-me` (see [GitHub Actions](#github-actions)):
+3. Add the `release` scripts:
+
+   ```diff
+    // package.json
+    {
+      "scripts": {
+        "build": "echo 'Build step before releasing'",
+   +    "release": "release-me patch",
+   +    "release:minor": "release-me minor",
+   +    "release:major": "release-me major",
+   +    "release:commit": "release-me commit"
+      }
+    }
+   ```
+
+4. Set up the GitHub Actions of `@brillout/release-me` (see [GitHub Actions](#github-actions)):
 
    ```shell
    # Run, then follow the steps it prints
