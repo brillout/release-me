@@ -1,4 +1,4 @@
-# The CI of release-me itself (unlike release.yml and release-github.yml, it isn't shipped to users)
+# The CI of release-me itself (unlike release-npm.yml and release-github.yml, it isn't shipped to users)
 
 name: CI
 on:

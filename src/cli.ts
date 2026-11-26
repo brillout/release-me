@@ -41,10 +41,10 @@ program
   .command('init')
   .description(
     `Create or update the GitHub Actions of release-me (default: the ones already set up, or else both), see ${pc.underline(
-      'https://github.com/brillout/release-me#github-action',
+      'https://github.com/brillout/release-me#get-started',
     )}.`,
   )
-  .option('--npm', 'the GitHub Action .github/workflows/release.yml that publishes to npm')
+  .option('--npm', 'the GitHub Action .github/workflows/release-npm.yml that publishes to npm')
   .option(
     '--github',
     'the GitHub Action .github/workflows/release-github.yml that syncs GitHub Releases with CHANGELOG.md',

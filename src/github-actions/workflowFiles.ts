@@ -6,9 +6,11 @@ export { releaseNpmWorkflowFile }
 export { writeWorkflowFiles }
 export type { WorkflowFile }
 export type { WorkflowFileOptions }
+export type { WriteResult }
 
-// The GitHub Actions of release-me, see https://github.com/brillout/release-me#github-action
-// - .github/workflows/release.yml publishes to npm.
+// The GitHub Actions of release-me, see https://github.com/brillout/release-me#npm-release and https://github.com/brillout/release-me#github-release
+// - .github/workflows/release-npm.yml publishes to npm.
+//   (release-me 0.5.0 named it release.yml: `$ pnpm exec release-me init` renames it.)
 // - .github/workflows/release-github.yml keeps GitHub Releases in sync with CHANGELOG.md.
 // They're copies of release-me's own workflow files (shipped in the npm package): `$ pnpm exec release-me init` creates and updates them.
 // A repository sets up both or only one of them (`$ pnpm exec release-me init --npm` or `--github`).
@@ -31,17 +33,33 @@ type WorkflowFile = {
   command: string
   /** Why the workflow file is outdated, and how to fix it */
   outdated: string
+  /** The workflow file under its name of an older release-me (`$ pnpm exec release-me init` renames it) */
+  old: WorkflowFileOld | null
 }
-function getWorkflowFile(fileName: string, option: WorkflowFile['option'], command: string): WorkflowFile {
-  const filePath = `.github/workflows/${fileName}`
+type WorkflowFileOld = { fileName: string; filePath: string }
+function getWorkflowFile(
+  fileName: string,
+  option: WorkflowFile['option'],
+  command: string,
+  fileNameOld?: string,
+): WorkflowFile {
+  const filePath = getWorkflowFilePath(fileName)
   // `$ pnpm install` first: if node_modules/ has an older release-me than the lockfile (e.g. after `$ git pull`), `$ pnpm exec release-me init` would downgrade the workflow file
   const outdated = `${filePath} doesn't match the installed release-me's (e.g. after upgrading release-me, or if it was modified): run ${pc.bold(
     '$ pnpm install',
   )} and ${initCommand}, then push the commit it makes (if any).`
-  return { fileName, filePath, option, command, outdated }
+  const old = fileNameOld ? { fileName: fileNameOld, filePath: getWorkflowFilePath(fileNameOld) } : null
+  return { fileName, filePath, option, command, outdated, old }
 }
-// TODO/after-merge: rename release.yml to release-npm.yml (npm's trusted publisher of each package is bound to the workflow filename: it must then be updated on npmjs.com)
-const releaseNpmWorkflowFile = getWorkflowFile('release.yml', 'npm', 'pnpm exec release-me ci-publish')
+function getWorkflowFilePath(fileName: string) {
+  return `.github/workflows/${fileName}`
+}
+const releaseNpmWorkflowFile = getWorkflowFile(
+  'release-npm.yml',
+  'npm',
+  'pnpm exec release-me ci-publish',
+  'release.yml',
+)
 const releaseGitHubWorkflowFile = getWorkflowFile(
   'release-github.yml',
   'github',
@@ -62,10 +80,12 @@ function publishesViaGitHubAction(monorepoRootDir: string): boolean {
   return workflowFilesSetUp.includes(releaseNpmWorkflowFile)
 }
 
-/** The workflow files of release-me that the repository has */
+/** The workflow files of release-me that the repository has (also under their old name) */
 function getWorkflowFilesSetUp(monorepoRootDir: string): WorkflowFile[] {
-  return workflowFiles.filter((workflowFile) =>
-    isReleaseMeWorkflowFile(readWorkflowFile(monorepoRootDir, workflowFile), workflowFile),
+  return workflowFiles.filter(
+    (workflowFile) =>
+      isReleaseMeWorkflowFile(readWorkflowFile(monorepoRootDir, workflowFile), workflowFile) ||
+      getWorkflowFileOld(monorepoRootDir, workflowFile),
   )
 }
 
@@ -85,11 +105,26 @@ function getWorkflowFilesToInit(monorepoRootDir: string, options: WorkflowFileOp
 }
 
 function isWorkflowFileUpToDate(monorepoRootDir: string, workflowFile: WorkflowFile): boolean {
-  return readWorkflowFile(monorepoRootDir, workflowFile) === getWorkflowFileExpected(workflowFile)
+  return (
+    readWorkflowFile(monorepoRootDir, workflowFile) === getWorkflowFileExpected(workflowFile) &&
+    // Still under its old name (as well): both workflows would run
+    !getWorkflowFileOld(monorepoRootDir, workflowFile)
+  )
 }
 
-/** Create or update the workflow files `workflowFilesToWrite` */
-function writeWorkflowFiles(monorepoRootDir: string, workflowFilesToWrite: WorkflowFile[]) {
+/** The workflow file under its old name, if the repository has it */
+function getWorkflowFileOld(monorepoRootDir: string, workflowFile: WorkflowFile): WorkflowFileOld | null {
+  const { old } = workflowFile
+  if (!old || !isReleaseMeWorkflowFile(readFile(path.join(monorepoRootDir, old.filePath)), workflowFile)) return null
+  return old
+}
+
+type WriteResult = { workflowFile: WorkflowFile } & (
+  | { status: 'created' | 'updated' | 'up-to-date' }
+  | { status: 'renamed'; old: WorkflowFileOld }
+)
+/** Create, update, or rename the workflow files `workflowFilesToWrite` */
+function writeWorkflowFiles(monorepoRootDir: string, workflowFilesToWrite: WorkflowFile[]): WriteResult[] {
   // Check all files before writing any
   const writes = workflowFilesToWrite.map((workflowFile) => {
     const content = readWorkflowFile(monorepoRootDir, workflowFile)
@@ -108,12 +143,16 @@ function writeWorkflowFiles(monorepoRootDir: string, workflowFilesToWrite: Workf
   })
   return writes.map(({ workflowFile, filePath, content }) => {
     const contentExpected = getWorkflowFileExpected(workflowFile)
-    const status: 'created' | 'updated' | 'up-to-date' =
-      content === contentExpected ? 'up-to-date' : content === null ? 'created' : 'updated'
-    if (status !== 'up-to-date') {
+    const old = getWorkflowFileOld(monorepoRootDir, workflowFile)
+    if (content !== contentExpected) {
       fs.mkdirSync(path.dirname(filePath), { recursive: true })
       fs.writeFileSync(filePath, contentExpected)
     }
+    if (old) {
+      fs.rmSync(path.join(monorepoRootDir, old.filePath))
+      return { workflowFile, status: 'renamed', old }
+    }
+    const status = content === contentExpected ? 'up-to-date' : content === null ? 'created' : 'updated'
     return { workflowFile, status }
   })
 }

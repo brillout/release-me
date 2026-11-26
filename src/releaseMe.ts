@@ -465,7 +465,7 @@ function getGitTag(versionNew: string, gitTagPrefix: GitTagPrefix): GitTag {
 async function gitPush(gitTag: GitTag) {
   logTitle('Git push')
   // - Push the release commit and its tag atomically: with the GitHub Actions, the tag triggers the publish to npm
-  //   (release.yml), and the release commit triggers the sync of the GitHub Releases (release-github.yml), which refuses
+  //   (release-npm.yml), and the release commit triggers the sync of the GitHub Releases (release-github.yml), which refuses
   //   to create the latest release if its tag isn't pushed yet.
   // - Only push this one tag: GitHub doesn't trigger any workflow when more than three tags are pushed at once.
   await run(['git', 'push', '--atomic', 'origin', 'HEAD', `refs/tags/${gitTag}`])
