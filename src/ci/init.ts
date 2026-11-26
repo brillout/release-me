@@ -23,12 +23,11 @@ async function init() {
 
   const status = writeReleaseWorkflowFile(monorepoRootDir)
   logTitle('GitHub Action', true)
-  // The npm steps also when release.yml already exists: each package requires a trusted publisher on npm (e.g. also a package added since the previous init)
   if (status === 'up-to-date') {
     await logNpmSetup(monorepoRootDir, packages, "If you didn't already, go to")
     // Last: CLI output is read bottom to top
     console.log()
-    console.log(`${pc.bold(releaseWorkflowFilePath)} is already up-to-date`)
+    console.log(`${pc.bold(releaseWorkflowFilePath)} is up-to-date`)
     return
   }
   console.log(`${status === 'created' ? 'Created' : 'Updated'} ${pc.bold(releaseWorkflowFilePath)}`)
