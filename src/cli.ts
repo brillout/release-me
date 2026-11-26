@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Argument, InvalidArgumentError, program } from 'commander'
+import pc from '@brillout/picocolors'
 import { releaseMe, type ReleaseTarget, type ReleaseType, releaseTypes } from './releaseMe.ts'
 import { init } from './ci/init.ts'
 import { ciPublish } from './ci/ci-publish.ts'
@@ -35,7 +36,9 @@ program
 program
   .command('init')
   .description(
-    'Create or update .github/workflows/release.yml, the GitHub Action that publishes to npm (see https://github.com/brillout/release-me#github-action).',
+    `Create or update .github/workflows/release.yml, the GitHub Action that publishes to npm (see ${pc.underline(
+      'https://github.com/brillout/release-me#github-action',
+    )}).`,
   )
   .action(init)
 

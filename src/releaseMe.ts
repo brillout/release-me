@@ -815,7 +815,7 @@ function analyzeMonorepo(filesMonorepo: Files, packageRootDir: string, packageNa
     `${pc.cyan(packageName)} isn't enabled for @brillout/release-me — add a script that runs release-me to ${path.join(
       packageRootDir,
       'package.json',
-    )} (e.g. ${pc.bold('"release": "release-me patch"')}), see ${readmeMonorepo}`,
+    )} (e.g. ${pc.bold('"release": "release-me patch"')}), see ${pc.underline(readmeMonorepo)}`,
   )
   assert(currentPackages[0]!.packageName === packageName)
   return {
@@ -866,7 +866,7 @@ function getReleaseMePackages(filesMonorepo: Files) {
     packages.length > 0,
     `No package to release: add a script that runs release-me to the package.json of each package to release (e.g. ${pc.bold(
       '"release": "release-me patch"',
-    )}), see ${readmeMonorepo}`,
+    )}), see ${pc.underline(readmeMonorepo)}`,
   )
   return packages
 }

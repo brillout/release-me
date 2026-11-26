@@ -88,7 +88,7 @@ async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[]
     console.log()
     console.log(
       pc.yellow(
-        `Warning: set ${pc.cyan(packageName)}'s ${pc.bold('package.json#repository')} to ${pc.bold(
+        `Warning: set ${pc.cyan(packageName)}'s ${pc.bold('package.json#repository')} to ${pc.underline(
           `https://github.com/${repo}`,
         )} — npm's trusted publishing requires it to match the GitHub repository.`,
       ),

@@ -82,7 +82,9 @@ async function abortIfNotOnNpm(packageName: string) {
   throw new Error(
     pc.red(
       pc.bold(
-        `Release aborted, because ${packageName} isn't on npm yet, and npm can't set up a trusted publisher for it until it is: publish its first version manually ($ pnpm publish), then set up its trusted publisher (see https://github.com/brillout/release-me#github-action).`,
+        `Release aborted, because ${packageName} isn't on npm yet, and npm can't set up a trusted publisher for it until it is: publish its first version manually ($ pnpm publish), then set up its trusted publisher (see ${pc.underline(
+          'https://github.com/brillout/release-me#github-action',
+        )}).`,
       ),
     ),
   )
@@ -108,7 +110,9 @@ async function checkCommitOnGitHub(repo: string, commitHash: string, runWorkflow
   } catch (err) {
     const { code, exitCode, all: output } = err as execa.ExecaError & NodeJS.ErrnoException
     if (code === 'ENOENT')
-      return `The GitHub CLI ${pc.cyan('gh')} isn't installed ${logDetail('https://cli.github.com')}` as const
+      return `The GitHub CLI ${pc.cyan('gh')} isn't installed ${logDetail(
+        pc.underline('https://cli.github.com'),
+      )}` as const
     // `$ gh` exits with 4 when it requires authentication (`$ gh help exit-codes`), and GitHub replies 401 to an invalid token
     if (exitCode === 4 || output?.includes('(HTTP 401)')) {
       return `The GitHub CLI ${pc.cyan('gh')} isn't logged in ${logDetail('$ gh auth login')}` as const
