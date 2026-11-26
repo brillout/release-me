@@ -129,8 +129,8 @@ async function publish({ packageName, packageRootDir }: ReleaseMePackage, isComm
 async function pack(packageRootDir: string): Promise<string> {
   // `$ pnpm publish` runs prepublishOnly, whereas `$ pnpm pack` doesn't
   await run('pnpm run --if-present prepublishOnly', { cwd: packageRootDir })
-  // `$ pnpm pack` replaces `workspace:` and `catalog:` dependency versions
   const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'release-me-'))
+  // `$ pnpm pack` replaces `workspace:` and `catalog:` dependency versions
   await run(['pnpm', 'pack', '--pack-destination', outDir], { cwd: packageRootDir })
   const [tarball, ...others] = fs.readdirSync(outDir).filter((file) => file.endsWith('.tgz'))
   if (!tarball || others.length > 0) fail(`$ pnpm pack didn't create one tarball in ${outDir}.`)
