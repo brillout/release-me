@@ -1,3 +1,19 @@
+## [0.5.1](https://github.com/brillout/release-me/compare/v0.5.0...v0.5.1) (2026-11-26)
+
+
+### Bug Fixes
+
+* include the commits scoped to the package in its CHANGELOG.md, even if they don't modify its root directory ([#18](https://github.com/brillout/release-me/issues/18)) ([fa821f1](https://github.com/brillout/release-me/commit/fa821f14bc3bd53f5f4421b62c2f70ca59156f41))
+* push a local release's commit and tag atomically ([#14](https://github.com/brillout/release-me/issues/14)) ([b182f0a](https://github.com/brillout/release-me/commit/b182f0a6c8810b2451f83aa3f00a23d66c81ea35))
+
+
+### Features
+
+* keep GitHub Releases in sync with CHANGELOG.md ([#12](https://github.com/brillout/release-me/issues/12)) ([8aaf004](https://github.com/brillout/release-me/commit/8aaf004f3bf5005e375407f664698204522ceaa8))
+* without GitHub token, `github-release-sync` links to the Run workflow button ([#19](https://github.com/brillout/release-me/issues/19)) ([dddbe22](https://github.com/brillout/release-me/commit/dddbe2224290cfbf2a84141827e188502a4c4aee))
+
+
+
 # [0.5.0](https://github.com/brillout/release-me/compare/v0.4.19...v0.5.0) (2026-11-26)
 
 
