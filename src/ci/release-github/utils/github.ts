@@ -33,8 +33,9 @@ type ReleasesClient = {
 // Pause between write requests so bursts (e.g. backfilling many releases) stay under GitHub's
 // secondary rate limit — its burst/concurrency limit, separate from the hourly primary quota.
 // https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api
-// TODO/after-merge: 1000 ms? GitHub recommends waiting at least one second between write requests (https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api#pause-between-mutative-requests)
-const RATE_LIMIT_DELAY_MS = 500
+// GitHub recommends waiting at least one second between write requests:
+// https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api#pause-between-mutative-requests
+const RATE_LIMIT_DELAY_MS = 1000
 
 const pastTenseByAction = { create: 'Created', update: 'Updated', delete: 'Deleted' } as const
 
