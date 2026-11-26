@@ -17,9 +17,6 @@ Used by:
 &nbsp;&nbsp;&nbsp;&nbsp;[GitHub Release](#github-release)  
 [CLI](#cli)  
 
-> [!WARNING]
-> Don't use this: it's only meant for Vike's team & friends. That said, feel free to fork this project.
-
 <br/>
 
 ## Features
