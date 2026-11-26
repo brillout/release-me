@@ -1,3 +1,12 @@
+## [0.5.7](https://github.com/brillout/release-me/compare/v0.5.6...v0.5.7) (2026-11-26)
+
+
+### Bug Fixes
+
+* rename workflows to "Release Npm" and "Release GitHub" ([#27](https://github.com/brillout/release-me/issues/27)) ([3311113](https://github.com/brillout/release-me/commit/3311113a60c1e2f28a04fd9d298a69402214865c))
+
+
+
 ## [0.5.6](https://github.com/brillout/release-me/compare/v0.5.5...v0.5.6) (2026-11-26)
 
 
