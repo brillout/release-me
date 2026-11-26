@@ -49,7 +49,7 @@ function getWorkflowFile(fileName: string, option: WorkflowFile['option'], comma
 }
 // TODO/after-merge: rename release.yml to release-npm.yml (npm's trusted publisher of each package is bound to the workflow filename: it must then be updated on npmjs.com)
 const releaseWorkflowFile = getWorkflowFile('release.yml', 'npm', 'pnpm exec release-me ci-publish')
-const syncWorkflowFile = getWorkflowFile('release-github.yml', 'github', 'pnpm exec release-me sync-github-releases')
+const syncWorkflowFile = getWorkflowFile('release-github.yml', 'github', 'pnpm exec release-me github-release-sync-all')
 const workflowFiles = [releaseWorkflowFile, syncWorkflowFile]
 
 const releaseWorkflowFileName = releaseWorkflowFile.fileName

@@ -1,7 +1,7 @@
 export { deleteAllGitHubReleases }
 
-// `$ pnpm exec release-me delete-all-github-releases` deletes every GitHub Release of the repository — not only the ones
-// created by sync-github-releases. CHANGELOG.md and the Git tags are left untouched, so `$ pnpm exec release-me sync-github-releases`
+// `$ pnpm exec release-me github-release-delete-all` deletes every GitHub Release of the repository — not only the ones
+// created by github-release-sync-all. CHANGELOG.md and the Git tags are left untouched, so `$ pnpm exec release-me github-release-sync-all`
 // can re-create them.
 
 import readline from 'node:readline'

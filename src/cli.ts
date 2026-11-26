@@ -56,7 +56,7 @@ program.command('ci-publish', { hidden: true }).action(ciPublish)
 
 // Run by the GitHub Action (see ./ci/releaseWorkflowFile.ts), and locally to preview or backfill
 program
-  .command('sync-github-releases')
+  .command('github-release-sync-all')
   .description(
     `Create, update, and delete GitHub Releases so that they match CHANGELOG.md (see ${pc.underline(
       'https://github.com/brillout/release-me#github-release',
@@ -69,10 +69,10 @@ program
   })
 
 program
-  .command('delete-all-github-releases')
+  .command('github-release-delete-all')
   .description(
     `⚠️  Delete all GitHub Releases of the repository (CHANGELOG.md and Git tags are kept: ${pc.bold(
-      '$ pnpm exec release-me sync-github-releases',
+      '$ pnpm exec release-me github-release-sync-all',
     )} re-creates them).`,
   )
   .option('--dry-run', 'only log the deletions, without making them')
