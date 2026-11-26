@@ -11,8 +11,8 @@ Used by:
 [Features](#features)  
 [Get started](#get-started)  
 [Usage](#usage)  
-[Conventional Commits](#conventional-commits)  
 [Monorepo](#monorepo)  
+[Conventional Commits](#conventional-commits)  
 [GitHub Actions](#github-actions)  
 &nbsp;&nbsp;&nbsp;&nbsp;[Npm Release](#npm-release)  
 &nbsp;&nbsp;&nbsp;&nbsp;[GitHub Release](#github-release)  
@@ -96,26 +96,6 @@ Options:
 
 <br/>
 
-## Conventional Commits
-
-It generates `CHANGELOG.md` from your commits: follow [Conventional Commits](https://www.conventionalcommits.org).
-
-- `fix:` => bug fix or some polishing (e.g. improved error message).
-- `feat:` => new feature, i.e. new functionality.
-
-For breaking changes, append `BREAKING CHANGE:` to the commit message:
-
-```
-fix: make someFunction() take an argument object
-
-BREAKING CHANGE: Replace `someFunction(someArg)` with `someFunction({ someArg })`.
-```
-
-> [!NOTE]
-> When introducing a breaking change, in order to respect the [semver](https://semver.org/) convention, don't `$ pnpm exec release-me patch` but `$ pnpm exec release-me major` instead (or `$ pnpm exec release-me minor` if your package's version is `0.y.z`).
-
-<br/>
-
 ## Monorepo
 
 1. Add `@brillout/release-me` to the `devDependencies` of the monorepo root's `package.json`.
@@ -154,7 +134,27 @@ To release all packages at once, add `release` scripts to the monorepo root's `p
 > [!NOTE]
 > The `--yes` argument makes the release proceed without prompting for confirmation.
 
-### `CHANGELOG.md` & commit scope
+<br/>
+
+## Conventional Commits
+
+It generates `CHANGELOG.md` from your commits: follow [Conventional Commits](https://www.conventionalcommits.org).
+
+- `fix:` => bug fix or some polishing (e.g. improved error message).
+- `feat:` => new feature, i.e. new functionality.
+
+For breaking changes, append `BREAKING CHANGE:` to the commit message:
+
+```
+fix: make someFunction() take an argument object
+
+BREAKING CHANGE: Replace `someFunction(someArg)` with `someFunction({ someArg })`.
+```
+
+> [!NOTE]
+> When introducing a breaking change, in order to respect the [semver](https://semver.org/) convention, don't `$ pnpm exec release-me patch` but `$ pnpm exec release-me major` instead (or `$ pnpm exec release-me minor` if your package's version is `0.y.z`).
+
+### Monorepo
 
 Each package has its own `CHANGELOG.md` (`packages/my-package/CHANGELOG.md`), with the following commits:
 
