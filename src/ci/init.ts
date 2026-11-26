@@ -80,7 +80,7 @@ async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[]
   for (const [label, value] of fields) {
     console.log(`     ${label.padEnd(22)}${pc.bold(value)}`)
   }
-  console.log(`   ⚠️ ${pc.bold("A new connection expires if it isn't used within 2 days.")}`)
+  console.log(`    ${pc.bold(" ⚠️  A new connection expires if it isn't used within 2 days.")}`)
 
   for (const { packageName, packageRootDir } of packages) {
     const { repository } = getPackageJson(packageRootDir).packageJson
