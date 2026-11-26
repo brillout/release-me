@@ -7,12 +7,8 @@ import { findReleaseCommit, gitTagExists } from '../utils/git.ts'
 // Creating a release resolves its target commit by shelling out to git: stub it, so that the refusals run without a real repo
 vi.mock('../utils/git.ts', () => ({ gitTagExists: vi.fn(), findReleaseCommit: vi.fn() }))
 
-const client: ReleasesClient = {
-  list: async () => [],
-  create: async () => {},
-  update: async () => {},
-  delete: async () => {},
-}
+// Not called: the refusals happen before
+const client = {} as ReleasesClient
 
 describe('applyReleasePlan()', () => {
   // A create whose git tag is missing must never be tagged at the wrong commit. These two hard fails are
