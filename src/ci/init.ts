@@ -22,21 +22,19 @@ async function init() {
   const packages = getReleaseMePackages(await getFilesInsideDir(monorepoRootDir))
 
   const status = writeReleaseWorkflowFile(monorepoRootDir)
-  logTitle('GitHub Action', true)
+
+  // CLI output is read bottom to top: release.yml last
+  logTitle('npm trusted publisher', true)
+  await logNpmSetup(monorepoRootDir, packages, status === 'created' ? 'Set up' : "If you didn't already, set up")
+
+  logTitle('GitHub Action')
   if (status === 'up-to-date') {
-    await logNpmSetup(monorepoRootDir, packages, "If you didn't already, set up")
-    // Last: CLI output is read bottom to top
-    console.log()
     console.log(`${pc.bold(releaseWorkflowFilePath)} is up-to-date`)
     return
   }
   console.log(`${status === 'created' ? 'Created' : 'Updated'} ${pc.bold(releaseWorkflowFilePath)}`)
   await commitReleaseWorkflowFile(monorepoRootDir, status)
-
-  console.log()
-  console.log('Next steps:')
-  console.log(`1. Push the commit to the default branch ${pc.dim('$ git push')}`)
-  await logNpmSetup(monorepoRootDir, packages, status === 'created' ? '2. Set up' : "2. If you didn't already, set up")
+  console.log(`Push the commit to the default branch ${pc.dim('$ git push')}`)
 }
 
 /** The GitHub Action installs the pnpm version of the root package.json (pnpm/action-setup reads it) */
@@ -61,7 +59,7 @@ async function commitReleaseWorkflowFile(monorepoRootDir: string, status: 'creat
   console.log(`Committed ${pc.dim(`(${commitMessage})`)}`)
 }
 
-/** The steps to set up npm's trusted publishing, e.g. `intro` = `2. Set up` */
+/** The steps to set up npm's trusted publishing, e.g. `intro` = `Set up` */
 async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[], intro: string) {
   const repo = await getGitHubRepo(monorepoRootDir)
   const [owner, repoName] = repo ? repo.split('/') : []
