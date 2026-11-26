@@ -27,9 +27,9 @@ jobs:
         with:
           # Empty: the pushed tag, or the commit of "Use workflow from"
           ref: ${{ inputs.ref }}
-      # Node.js 26 bundles npm >= 11.5.1, which trusted publishing requires
       - uses: actions/setup-node@v7
         with:
+          # Node.js 26 bundles npm >= 11.5.1, which trusted publishing requires
           node-version: 26
       - uses: pnpm/action-setup@v6
       - run: pnpm install
