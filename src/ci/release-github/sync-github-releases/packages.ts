@@ -31,6 +31,7 @@ async function getPackages(monorepoRootDir: string) {
     if (!changeLogFileAlreadyExisted) return []
     // git reports forward-slash paths on every OS
     const changelogPath = path.relative(monorepoRootDir, changeLogFilePath).split(path.sep).join('/')
+    // path.resolve(): the same form as path.resolve(cwd, packageArg) in getPackagesToSync() (e.g. backslashes on Windows)
     return [{ packageName, packageRootDir: path.resolve(packageRootDir), changelogPath }]
   })
   return { packages, hasMultiplePackages }
