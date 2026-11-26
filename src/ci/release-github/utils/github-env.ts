@@ -10,14 +10,10 @@ import { createReleasesClient, type ReleasesClient } from './github.ts'
 import { getGitHubRepo } from '../../githubAction.ts'
 import { assertUsage, logDetail } from '../../../utils.ts'
 
-// How a run discovers what to act on, as whom, and against which branch: the repository, the auth
-// token, the default branch, and — on a push — which files changed. All read from the GitHub Actions
-// environment, with fallbacks for local runs. Kept apart from the API client (github.ts), which
-// shouldn't care where these values come from.
+// The inputs of a run (the repository, the token, the default branch, the pushed files), read from the GitHub Actions
+// environment, with fallbacks for local runs.
 
-// A GitHub Releases client for the repository this run targets, wired up from the environment. Returns
-// the repository (`owner/repo`) too, for the web links and log lines. dryRun is passed straight through to the
-// client, which gates and logs the writes.
+// The client of the repository's GitHub Releases, and the repository (for the web links and the log lines)
 async function createReleasesClientFromEnv(dryRun: boolean): Promise<{ client: ReleasesClient; repo: string }> {
   const repo = await getRepo()
   const token = await getGitHubToken()
@@ -41,8 +37,7 @@ async function getGitHubToken(): Promise<string> {
   )
 }
 
-// The GitHub REST API base URL. GITHUB_API_URL is provided on GitHub Actions (and points at the right
-// host on GitHub Enterprise); fall back to the public API for local runs.
+// GITHUB_API_URL is set by GitHub Actions (it differs on GitHub Enterprise)
 function getApiUrl(): string {
   return process.env.GITHUB_API_URL ?? 'https://api.github.com'
 }

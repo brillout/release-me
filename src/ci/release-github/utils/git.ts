@@ -1,6 +1,4 @@
-// Local git plumbing — runs the `git` CLI and shapes its output. Knows nothing of the GitHub Actions
-// environment (github-env.ts) nor the GitHub API (github.ts). Paths are relative to the repository root
-// (the current working directory, see githubReleaseSync()).
+// Paths are relative to the repository root (the current working directory, see githubReleaseSync())
 
 export { gitTagExists }
 export { findReleaseCommit }
@@ -9,8 +7,8 @@ export { getChangedFiles }
 
 import { execFileSync } from 'node:child_process'
 
-// Matches any CHANGELOG.md at any depth — git pathspecs aren't anchored to the repo root. (Not only the
-// package's current CHANGELOG.md: a changelog entry may have been added before its CHANGELOG.md was moved.)
+// Any CHANGELOG.md (in a pathspec, `*` also matches `/`), not only the package's: a changelog entry may have been added
+// before its CHANGELOG.md was moved
 const CHANGELOG_PATHSPEC = '*CHANGELOG.md'
 
 function git(args: string[]): string {
@@ -49,10 +47,9 @@ function findReleaseCommit(version: string): string | null {
   return gitLines(['log', '--reverse', '--format=%H', `-S[${version}](`, '--', CHANGELOG_PATHSPEC])[0] ?? null
 }
 
-// The date a version was released, as `YYYY-MM-DD`: the committer date of the commit its release points
-// to — the git tag's commit if the tag exists, otherwise the commit deduced from the changelog history
-// (the same commit apply-release-plan.ts would tag). null when neither resolves. The commit date is
-// what GitHub derives the release's own date (`created_at`) from, and what CHANGELOG.md headings show.
+// The release date (`YYYY-MM-DD`): the committer date of the release commit — the Git tag's, or else the one deduced
+// from the changelog history (the one apply-release-plan.ts tags). null if there's neither. (GitHub's `created_at` of
+// a release is also its commit's date.)
 function getReleaseDate(releaseTag: string, version: string): string | null {
   const commitish = gitTagExists(releaseTag) ? tagRef(releaseTag) : findReleaseCommit(version)
   if (!commitish) return null

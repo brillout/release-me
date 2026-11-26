@@ -38,10 +38,8 @@ function getReleasePlan({
   releaseBodyByVersion: ReleaseBodyByVersion
   tagScheme: TagScheme
 }): ReleasePlan {
-  // Reconcile from the changelog (the source of truth), not from the GitHub Releases: iterating the
-  // releases for updates would try to rewrite any release whose tag isn't in the changelog (e.g. a
-  // release of another package, or a manually-created one) with an `undefined` body. Driving both
-  // create and update off the changelog can only ever touch the versions the changelog declares.
+  // Driven by the changelog: a release whose tag isn't in it (another package's, or one created manually) is never
+  // updated
   const releaseByTag = new Map(githubReleases.map((release) => [release.tag_name, release]))
   const expectedTags = new Set<string>()
   const releasesToCreate: ReleaseToCreate[] = []
@@ -63,9 +61,7 @@ function getReleasePlan({
     if (!existingRelease) {
       releasesToCreate.push({ tag_name: releaseTag, body, version, isLatest: version === latestVersion })
     } else if (existingRelease.body?.trim() !== body) {
-      // Only the stored body is trimmed: GitHub can hand it back padded with surrounding whitespace,
-      // whereas our freshly built body has none — without the trim, every sync would see a phantom
-      // drift and re-update.
+      // GitHub can return the body padded with whitespace: without trim(), every sync would update it
       releasesToUpdate.push({ release_id: existingRelease.id, tag_name: releaseTag, body })
     }
   }

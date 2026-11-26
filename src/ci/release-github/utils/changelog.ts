@@ -1,14 +1,12 @@
 export { parseChangelog }
 export { buildReleaseBody }
 
-// Release info keyed by raw version (e.g. `0.4.257`, `0.1.0-beta.6`), newest first — two stages of the
-// same shape: the notes parsed straight from CHANGELOG.md (ReleaseNotesByVersion) become the body we
-// publish (ReleaseBodyByVersion) once buildReleaseBody() adds a date line and a footer.
+// By version (e.g. `0.4.257`, `0.1.0-beta.6`), newest first: the notes parsed from CHANGELOG.md, and the release bodies
+// built from them (see buildReleaseBody())
 export type ReleaseNotesByVersion = Record<string, string>
 export type ReleaseBodyByVersion = Record<string, string>
 
-// Parse a CHANGELOG.md into one notes entry per version. Decorating a version into its git tag is
-// getTagScheme()'s job, not ours.
+// The notes of each version of a CHANGELOG.md
 function parseChangelog(changelog: string): ReleaseNotesByVersion {
   // Match each version heading, ignoring any link release-me appends after the version
   // (`## [0.4.257](…)`) — only the version itself is captured.
@@ -26,12 +24,10 @@ function parseChangelog(changelog: string): ReleaseNotesByVersion {
   )
 }
 
-// The body we publish for one changelog version, assembled here in a single place from its parsed notes:
-//  - topped with the release date, when known. A created GitHub Release otherwise only records when the
-//    sync ran (its `published_at`), not when the version shipped — so we surface the real date, taken
-//    from the git tag (see getReleaseDate()). A null date (no tag, no deducible commit) drops the line.
-//  - tailed with a footer pointing back to the CHANGELOG.md it mirrors, to discourage editing the
-//    GitHub Release directly — the next sync would overwrite it.
+// The release body of a version: its notes, with
+//  - the release date on top, when known (see getReleaseDate()): a GitHub Release otherwise shows when it was synced
+//    (its `published_at`), not when the version was released, and
+//  - a footer linking to CHANGELOG.md, to discourage editing the GitHub Release (the next sync overwrites it).
 function buildReleaseBody(
   notes: string,
   { releaseDate, changelogUrl }: { releaseDate: string | null; changelogUrl: string },

@@ -20,14 +20,11 @@ type NewRelease = {
   make_latest: 'true' | 'false'
 }
 
-// A reference to an existing GitHub Release: the numeric id addresses it in the API; the tag_name rides
-// along only for the log line write() prints.
+// An existing GitHub Release: release_id for the API, tag_name for the log line
 type ReleaseRef = { release_id: number; tag_name: string }
 
-// A client for one repository's GitHub Releases. It binds the repository, token and API base URL once,
-// so callers just say what to do — not where, nor as whom. The write methods gate on --dry-run (logging
-// what they would do instead of doing it) and otherwise log what they did, so every caller — the sync
-// step and delete-all alike — narrates releases the same way.
+// The GitHub Releases of one repository. The writes log what they do — or, under --dry-run, what they would do
+// (instead of doing it).
 type ReleasesClient = {
   list(): Promise<Release[]>
   create(release: NewRelease): Promise<void>
@@ -49,7 +46,6 @@ function createReleasesClient({
   dryRun,
 }: { repo: string; token: string; apiUrl: string; dryRun: boolean }): ReleasesClient {
   const releasesPath = `/repos/${repo}/releases`
-  // Identical on every request of this client, so build them once.
   const headers = {
     Accept: 'application/vnd.github+json',
     Authorization: `Bearer ${token}`,
@@ -79,8 +75,6 @@ function createReleasesClient({
     return response.status === 204 ? (undefined as T) : ((await response.json()) as T)
   }
 
-  // Perform a write — or, under --dry-run, just announce it — and log the outcome. Shared by all three
-  // write methods so they gate, throttle, and narrate identically.
   async function write(
     action: keyof typeof pastTenseByAction,
     releaseTag: string,
@@ -90,8 +84,7 @@ function createReleasesClient({
       console.log(`[dry-run] Would ${action} release ${releaseTag}`)
       return
     }
-    // Throttle between writes (see RATE_LIMIT_DELAY_MS): the first doesn't wait, so a lone write — the
-    // common case of a single new release — pays nothing, while a backfill of N writes pays N-1 delays.
+    // Only between writes: a single write (e.g. one new release) doesn't wait
     if (hasWritten) await setTimeout(RATE_LIMIT_DELAY_MS)
     hasWritten = true
     await sendRequest()

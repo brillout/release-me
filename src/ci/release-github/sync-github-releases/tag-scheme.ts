@@ -3,14 +3,9 @@ export type { TagScheme }
 
 import { getGitTagPrefix } from '../../../utils/gitTag.ts'
 
-// A package's release-tag scheme, defined in one place so building a tag and recognizing one can't
-// drift apart. `build` turns a version into its tag; `owns` reports whether a release tag is this
-// package's — i.e. a candidate for deletion once its changelog entry is gone, never another package's
-// release nor a tag we don't create (e.g. `nightly`).
-//
-// The tags are the ones release-me creates (see getGitTagPrefix()): a single package has bare `vX.Y.Z` tags,
-// whereas several packages share the repo's tag namespace, so their tags are qualified with the package name
-// (e.g. `create-vike-core@0.0.391`) to avoid collisions.
+// The release tags of a package, see getGitTagPrefix() (e.g. `v0.4.259`, or `create-vike-core@0.0.391` if the repository
+// has several packages). `owns` tells whether a release is the package's, i.e. deleted once its version is removed from
+// CHANGELOG.md — never another package's release, nor a tag release-me doesn't create (e.g. `nightly`).
 type TagScheme = {
   build(version: string): string
   owns(releaseTag: string): boolean

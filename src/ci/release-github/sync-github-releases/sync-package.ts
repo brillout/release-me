@@ -15,7 +15,7 @@ import { getReleaseDate } from '../utils/git.ts'
 import type { ReleasesClient } from '../utils/github.ts'
 import type { SyncPackage } from './packages.ts'
 
-// The loop-invariant inputs of a sync run, built once in githubReleaseSync() and shared across every package.
+// The inputs shared by all packages
 type SyncContext = {
   client: ReleasesClient
   /** The repository, e.g. `vikejs/vike` */
@@ -30,9 +30,8 @@ async function syncPackage(pkg: SyncPackage, context: SyncContext): Promise<void
   const tagScheme = getTagScheme(pkg.packageName, context.hasMultiplePackages)
   const changelogNotes = parseChangelog(await readFile(pkg.changelogPath, 'utf8'))
   if (Object.keys(changelogNotes).length === 0) {
-    // A CHANGELOG.md that parses to zero versions points at a parser/format drift, not an
-    // intentional removal — so skip the package (loudly) rather than reconcile against an empty version
-    // set, which getReleasePlan() would read as "every release is gone from the changelog: delete them all".
+    // Zero versions means a CHANGELOG.md format that parseChangelog() doesn't support, not that all versions were
+    // removed: getReleasePlan() would delete all the package's releases.
     console.warn(`No versions parsed from ${pkg.changelogPath} — skipping it.`)
     return
   }
@@ -43,9 +42,7 @@ async function syncPackage(pkg: SyncPackage, context: SyncContext): Promise<void
   await applyReleasePlan({ plan, client: context.client })
 }
 
-// Turn each version's parsed changelog notes into the release body we publish (buildReleaseBody()). Separate
-// from the parsing (parseChangelog()) because each body is stamped with the version's release date,
-// which is resolved from git (getReleaseDate()) — something the pure changelog parsing knows nothing of.
+// The release body of each version, with its release date read from git (see getReleaseDate())
 function buildReleaseBodies(
   changelogNotes: ReleaseNotesByVersion,
   { tagScheme, changelogUrl }: { tagScheme: TagScheme; changelogUrl: string },

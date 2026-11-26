@@ -4,10 +4,8 @@ import type { ReleasePlan, ReleaseToCreate } from './release-plan.ts'
 import { findReleaseCommit, gitTagExists } from '../utils/git.ts'
 import type { NewRelease, ReleasesClient } from '../utils/github.ts'
 
-// Carry out a plan from getReleasePlan() against GitHub: create, then update, then delete. The client
-// gates each write on --dry-run and logs it (see createReleasesClient()); the one thing that must happen
-// here, before the client is even called, is resolving each create's target commit — so a dry run still
-// surfaces a missing-tag failure or a deduced-commit warning.
+// Apply the plan of getReleasePlan(). The target commits are resolved here, before calling the client (which skips the
+// writes under --dry-run): a dry run also shows a missing tag's failure or warning.
 async function applyReleasePlan({ plan, client }: { plan: ReleasePlan; client: ReleasesClient }): Promise<void> {
   for (const release of plan.releasesToCreate) {
     const targetCommitish = resolveTargetCommitish(release)
@@ -42,16 +40,15 @@ function resolveTargetCommitish(release: ReleaseToCreate): string | undefined {
   return commit
 }
 
-// The GitHub create-release payload for one planned release, tagged at the already-resolved commit.
+// The create-release payload of a planned release
 function buildNewRelease(release: ReleaseToCreate, targetCommitish: string | undefined): NewRelease {
   return {
     tag_name: release.tag_name,
     name: release.tag_name,
     body: release.body,
     target_commitish: targetCommitish,
-    // Only the newest version may be the repo's "Latest". create-release otherwise defaults
-    // make_latest=true, so backfilling an older release while a newer one already exists would
-    // wrongly mark the old one Latest.
+    // Only the newest version may be "Latest": make_latest defaults to true, so a backfilled older release would
+    // otherwise become "Latest"
     make_latest: release.isLatest ? 'true' : 'false',
   }
 }
