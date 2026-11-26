@@ -63,7 +63,7 @@ async function commitReleaseWorkflowFile(monorepoRootDir: string, status: 'creat
 async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[], intro: string) {
   const repo = await getGitHubRepo(monorepoRootDir)
   const [owner, repoName] = repo ? repo.split('/') : []
-  console.log(`${intro} ${packages.length === 1 ? "the package's" : "each package's"} trusted publisher on npmjs.com:`)
+  console.log(`${intro} ${packages.length === 1 ? "the package's" : "each package's"} trusted publisher:`)
   for (const { packageName } of packages) {
     console.log(`   ${pc.underline(`https://www.npmjs.com/package/${packageName}/access`)}`)
   }
