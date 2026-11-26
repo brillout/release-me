@@ -152,7 +152,7 @@ pnpm exec release-me commit
    ```
 
 > [!NOTE]
-> A package is only considered by `@brillout/release-me` if it defines a script that runs `release-me`.
+> A package is only considered by `@brillout/release-me` if and only if it defines a script that runs `release-me`.
 
 ### `CHANGELOG.md` & commit scope
 
