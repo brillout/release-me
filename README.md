@@ -131,7 +131,8 @@ Each package has its own `CHANGELOG.md` (`packages/my-package/CHANGELOG.md`), wi
 - [Npm Release](#npm-release) (`.github/workflows/release-npm.yml`) publishes to npm.
 - [GitHub Release](#github-release) (`.github/workflows/release-github.yml`) keeps GitHub Releases in sync with `CHANGELOG.md`.
 
-To set up only one of them, use `--npm` or `--github`.
+> [!NOTE]
+> To set up only one of them, use `--npm` or `--github`.
 
 ### Npm Release
 
