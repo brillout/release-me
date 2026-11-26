@@ -7,6 +7,7 @@ export type { ReleaseTarget }
 export { build }
 export { getCommitHash }
 export { getCommitReleaseVersion }
+export { getChangelogPath }
 export { getFilesInsideDir }
 export { getMonorepoRootDir }
 export { getPackageJson }
@@ -22,6 +23,7 @@ import * as fs from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
 import { runCommand, assertUsage, logDetail, logTitle, run, run__return } from './utils.ts'
+import { getGitTagPrefix, type GitTag, type GitTagPrefix } from './utils/gitTag.ts'
 import {
   abortIfNotOnNpm,
   abortIfRepositoryMismatch,
@@ -57,8 +59,6 @@ type CliArgs = {
   yes: boolean
   releaseTarget: ReleaseTarget
 }
-type GitTagPrefix = `v` | `${string}@`
-type GitTag = `${GitTagPrefix}${string}`
 async function releaseMe(args: CliArgs, packageRootDir: string) {
   // =======
   // Analyse
@@ -124,7 +124,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
 
   await updateDependencies(packageName, versionNew, versionOld, filesMonorepo)
 
-  const gitTagPrefix: GitTagPrefix = monorepoInfo.hasMultiplePackages ? `${packageName}@` : 'v'
+  const gitTagPrefix = getGitTagPrefix(packageName, monorepoInfo.hasMultiplePackages)
 
   const { changeLogFilePath, changeLogFileAlreadyExisted } = getChangelogPath(
     packageRootDir,
@@ -467,6 +467,7 @@ function getGitTag(versionNew: string, gitTagPrefix: GitTagPrefix): GitTag {
 }
 async function gitPush() {
   logTitle('Git push')
+  // TODO/after-merge: push the release commit and its tag atomically, like triggerStableRelease() does: otherwise release-github.yml may check out the release commit before its tag is pushed, and then refuse to create the latest release
   await run('git push')
   await run('git push --tags')
 }

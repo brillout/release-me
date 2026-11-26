@@ -1,3 +1,5 @@
+// TODO/after-merge: move to new dir src/ci/release-npm/cli/ (like src/ci/release-github/)
+
 export { ciPublish }
 
 // `$ pnpm exec release-me ci-publish`, run by the GitHub Action (see ./releaseWorkflowFile.ts), builds the released packages and publishes them to npm.
@@ -7,6 +9,7 @@ import * as os from 'node:os'
 import * as path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { logTitle, run } from '../utils.ts'
+import { fail } from './utils/fail.ts'
 import {
   isReleaseWorkflowFileUpToDate,
   releaseWorkflowFileName,
@@ -181,10 +184,4 @@ function getEnv(name: string): string {
   const value = process.env[name]
   if (value === undefined) fail(`The environment variable ${name} is missing.`)
   return value
-}
-
-/** Fails the GitHub Action, with the message shown as an error annotation */
-function fail(msg: string): never {
-  console.log(`::error::${msg}`)
-  process.exit(1)
 }

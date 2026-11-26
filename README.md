@@ -13,6 +13,7 @@ Used by:
 [Usage](#usage)  
 [Monorepo](#monorepo)  
 [GitHub Action](#github-action)  
+[GitHub Release](#github-release)  
 
 > [!WARNING]
 > Don't use this: it's only meant for Vike's team & friends. That said, feel free to fork this project.
@@ -26,9 +27,16 @@ Used by:
 - Generates Git release tags.
 - Pre-release support. (For example [`0.4.177-commit-ff3d6cd`](https://www.npmjs.com/package/vike/v/0.4.177-commit-ff3d6cd).)
 - Can publish via a GitHub Action instead of your machine: no npm login/2FA/token needed. (See [GitHub Action](#github-action).)
+- Keeps GitHub Releases in sync with `CHANGELOG.md`. (See [GitHub Release](#github-release).)
 - Asks for confirmation before publishing, and shows a preview of the changes made to `package.json` and `CHANGELOG.md`, enabling you to double check before publishing.
 
 <br/>
+
+<!--
+TODO/after-merge: update section:
+- `"@brillout/release-me": "^0.4.0"` => the version released with `$ pnpm exec release-me init --npm` and `--github`
+- It describes publishing from your machine (`$ pnpm exec release-me patch`) and then the GitHub Actions (`$ pnpm exec release-me init`): make it one setup path
+-->
 
 ## Get started
 
@@ -48,6 +56,13 @@ Run `$ pnpm add -D @brillout/release-me` and make sure you have the following:
     "@brillout/release-me": "^0.4.0"
   }
 }
+```
+
+Then set up the GitHub Actions of release-me (see [GitHub Action](#github-action) and [GitHub Release](#github-release)):
+
+```shell
+# Run then follow the steps it prints
+pnpm exec release-me init
 ```
 
 That's it: you can now use `pnpm exec release-me patch` to release a new patch version.
@@ -185,13 +200,15 @@ Consider adding `release` scripts to the monorepo root's `package.json`:
 
 <br/>
 
+<!-- TODO/after-merge: rename section to "Npm Release" (and update the links to #github-action) -->
+
 ## GitHub Action
 
 Instead of publishing from your machine (which requires npm 2FA), you can let `@brillout/release-me`'s GitHub Action publish releases to npm (without 2FA and without an npm secret token):
 
 ```shell
 # Run then follow the steps it prints
-pnpm exec release-me init
+pnpm exec release-me init --npm
 ```
 
 > [!NOTE]
@@ -199,3 +216,48 @@ pnpm exec release-me init
 
 > [!NOTE]
 > Stable releases get npm [provenance](https://docs.npmjs.com/generating-provenance-statements), commit releases don't.
+
+<br/>
+
+## GitHub Release
+
+You can let `@brillout/release-me`'s GitHub Action synchronize your GitHub Releases with `CHANGELOG.md`:
+
+```shell
+# Creates .github/workflows/release-github.yml
+pnpm exec release-me init --github
+```
+
+> [!NOTE]
+> To sync manually, press the **Run workflow** button of the GitHub Action `release-github.yml`.
+
+> [!NOTE]
+> `CHANGELOG.md` is the source of truth: GitHub Releases are created, updated, and deleted to match it. Edit `CHANGELOG.md` instead of a GitHub Release (the next sync overwrites it).
+
+> [!NOTE]
+> The first sync creates A LOT of GitHub Releases: one for every version in `CHANGELOG.md`.
+
+<details>
+<summary>Debug</summary>
+
+Preview the changes without making them:
+
+```shell
+pnpm exec release-me github-release-sync --dry-run
+```
+
+Sync only some packages (by name or directory):
+
+```shell
+pnpm exec release-me github-release-sync some-package packages/another-package
+```
+
+Delete all GitHub Releases of the repository (`CHANGELOG.md` and Git tags are kept, so that `github-release-sync` can re-create them):
+
+```shell
+pnpm exec release-me github-release-delete-all
+```
+
+Run locally, these commands use the environment variable `GITHUB_TOKEN`, or else the token of the GitHub CLI `gh` (`$ gh auth login`). Without `--dry-run`, the token needs write access to the repository's contents.
+
+</details>

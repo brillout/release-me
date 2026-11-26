@@ -1,6 +1,7 @@
+// TODO/after-merge: move to new dir src/ci/release-npm/ (like src/ci/release-github/)
+
 export { abortIfNotOnNpm }
 export { abortIfRepositoryMismatch }
-export { getGitHubRepo }
 export { getRepositoryMismatch }
 export { triggerCommitRelease }
 export { triggerStableRelease }
@@ -12,6 +13,7 @@ import execa from 'execa'
 import pc from '@brillout/picocolors'
 import { assertUsage, logDetail, logTitle, run } from '../utils.ts'
 import { releaseWorkflowFileName, releaseWorkflowFilePath } from './releaseWorkflowFile.ts'
+import { getGitHubRepo, parseGitHubRepo } from './utils/githubRepo.ts'
 import type { PackageJson } from '../releaseMe.ts'
 
 /** @param packageSpec The released package, e.g. `vike@0.4.271` */
@@ -163,25 +165,6 @@ function logWillPublish(packageSpec: string, workflowLink: string, hint: string)
     `GitHub Action ${pc.bold(releaseWorkflowFileName)} will publish ${pc.cyan(packageSpec)} to npm: ${workflowLink}`,
   )
   console.log(pc.dim(`(${hint})`))
-}
-
-/** The GitHub repository of `origin`, e.g. `vikejs/vike` */
-async function getGitHubRepo(cwd?: string): Promise<string | null> {
-  let remoteUrl: string
-  try {
-    remoteUrl = (await execa('git', ['remote', 'get-url', 'origin'], { cwd })).stdout.trim()
-  } catch {
-    return null
-  }
-  return parseGitHubRepo(remoteUrl)
-}
-function parseGitHubRepo(url: string): string | null {
-  // git@github.com:vikejs/vike.git
-  // https://github.com/vikejs/vike
-  // git+https://github.com/vikejs/vike.git
-  // ssh://git@github.com/vikejs/vike.git
-  const match = /github\.com[:/]([\w.-]+\/[\w.-]+?)(?:\.git)?\/?$/.exec(url)
-  return match?.[1] ?? null
 }
 
 function getWorkflowLink(repo: string | null) {

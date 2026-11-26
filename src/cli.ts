@@ -5,12 +5,16 @@ import pc from '@brillout/picocolors'
 import { releaseMe, type ReleaseTarget, type ReleaseType, releaseTypes } from './releaseMe.ts'
 import { init } from './ci/init.ts'
 import { ciPublish } from './ci/ci-publish.ts'
+import { githubReleaseSync } from './ci/release-github/cli/github-release-sync.ts'
+import { githubReleaseDeleteAll } from './ci/release-github/cli/github-release-delete-all.ts'
 
 program
   .name('release-me')
   .usage('[options] <release-target>')
   .showHelpAfterError()
   .allowExcessArguments(false)
+  // The options after a command are the command's (e.g. `$ release-me github-release-delete-all --yes`), not the program's
+  .enablePositionalOptions()
   .addArgument(new Argument('<release-target>').argParser(parseReleaseTarget))
   .option(
     '--force',
@@ -36,14 +40,46 @@ program
 program
   .command('init')
   .description(
-    `Create or update .github/workflows/release.yml, the GitHub Action that publishes to npm (see ${pc.underline(
+    `Create or update the GitHub Actions of release-me (default: the ones already set up, or else both), see ${pc.underline(
       'https://github.com/brillout/release-me#github-action',
-    )}).`,
+    )}.`,
+  )
+  .option('--npm', 'the GitHub Action .github/workflows/release.yml that publishes to npm')
+  .option(
+    '--github',
+    'the GitHub Action .github/workflows/release-github.yml that syncs GitHub Releases with CHANGELOG.md',
   )
   .action(init)
 
 // Run by the GitHub Action (see ./ci/releaseWorkflowFile.ts)
 program.command('ci-publish', { hidden: true }).action(ciPublish)
+
+// Run by the GitHub Action (see ./ci/releaseWorkflowFile.ts), and locally to preview or backfill
+program
+  .command('github-release-sync')
+  .description(
+    `Create, update, and delete GitHub Releases so that they match CHANGELOG.md (see ${pc.underline(
+      'https://github.com/brillout/release-me#github-release',
+    )}).`,
+  )
+  .argument('[packages...]', 'the packages to sync, by name or directory (default: all packages)')
+  .option('--dry-run', 'only log the changes, without making them')
+  .action(async (packageArgs: string[], options: { dryRun?: true }) => {
+    await githubReleaseSync({ packageArgs, dryRun: !!options.dryRun })
+  })
+
+program
+  .command('github-release-delete-all')
+  .description(
+    `⚠️  Delete all GitHub Releases of the repository (CHANGELOG.md and Git tags are kept: ${pc.bold(
+      '$ pnpm exec release-me github-release-sync',
+    )} re-creates them).`,
+  )
+  .option('--dry-run', 'only log the deletions, without making them')
+  .option('--yes', 'skip confirmation')
+  .action(async (options: { dryRun?: true; yes?: true }) => {
+    await githubReleaseDeleteAll({ dryRun: !!options.dryRun, yes: !!options.yes })
+  })
 
 await program.parseAsync()
 
