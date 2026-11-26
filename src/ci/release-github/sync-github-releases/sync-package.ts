@@ -22,6 +22,7 @@ type SyncContext = {
 // Sync one package: derive its expected releases from CHANGELOG.md (the source of truth), reconcile
 // them against the package's existing GitHub Releases into a plan, then apply that plan.
 async function syncPackage(pkg: SyncPackage, context: SyncContext): Promise<void> {
+  console.log(`Syncing GitHub releases of ${pkg.packageName} (${pkg.changelogPath})`)
   const tagScheme = getTagScheme(pkg.packageName, context.hasMultiplePackages)
   const changelogNotes = parseChangelog(await readFile(pkg.changelogPath, 'utf8'))
   if (Object.keys(changelogNotes).length === 0) {

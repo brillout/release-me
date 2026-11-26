@@ -16,7 +16,7 @@ async function githubReleaseSync({ packageArgs, dryRun }: { packageArgs: string[
   // The directories passed as arguments are relative to where the command is run
   const cwd = process.cwd()
   const monorepoRootDir = await getMonorepoRootDir()
-  // The git commands below resolve their paths against the current working directory
+  // The paths of the CHANGELOG.md files (read from disk, and passed to git) are relative to the repository root
   process.chdir(monorepoRootDir)
   // E.g. after upgrading release-me without re-running `$ pnpm exec release-me init`
   if (process.env.GITHUB_ACTIONS && !isWorkflowFileUpToDate(monorepoRootDir, releaseGitHubWorkflowFile)) {
@@ -33,8 +33,5 @@ async function githubReleaseSync({ packageArgs, dryRun }: { packageArgs: string[
   const { client, repo } = await createReleasesClientFromEnv(dryRun)
   const context: SyncContext = { client, repo, defaultBranch: getDefaultBranch(), hasMultiplePackages }
 
-  for (const pkg of packagesToSync) {
-    console.log(`Syncing GitHub releases of ${pkg.packageName} (${pkg.changelogPath})`)
-    await syncPackage(pkg, context)
-  }
+  for (const pkg of packagesToSync) await syncPackage(pkg, context)
 }
