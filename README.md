@@ -69,8 +69,6 @@ Used by:
 
 That's it: `$ pnpm run release` (or `$ pnpm exec release-me patch`) releases a new patch version.
 
-Installation example: [`8ff59fe`](https://github.com/brillout/test-e2e/commit/8ff59fea41c4956aeaf18b048a34faeaf98a47c5).
-
 <br/>
 
 ## Usage
