@@ -45,6 +45,7 @@ function getPackagesToSync(
   { packageArgs, cwd, pushedFiles }: { packageArgs: string[]; cwd: string; pushedFiles: string[] | null },
 ): SyncPackage[] {
   if (packageArgs.length > 0) {
+    const packageNames = packages.map((pkg) => pkg.packageName).join(', ')
     const selected = packageArgs.map((packageArg) => {
       const pkg = packages.find(
         (pkg) => pkg.packageName === packageArg || pkg.packageRootDir === path.resolve(cwd, packageArg),
@@ -53,9 +54,7 @@ function getPackagesToSync(
         pkg,
         `${pc.cyan(
           packageArg,
-        )} isn't the name or directory of a package to sync (the packages released by release-me that have a CHANGELOG.md: ${packages
-          .map((pkg) => pkg.packageName)
-          .join(', ')})`,
+        )} isn't the name or directory of a package to sync (the packages released by release-me that have a CHANGELOG.md: ${packageNames})`,
       )
       return pkg
     })
