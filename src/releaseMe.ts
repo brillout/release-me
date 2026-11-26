@@ -839,7 +839,7 @@ function assertInstalledAtRoot(monorepoRootDir: string) {
 
 type ReleaseMePackage = ReturnType<typeof getReleaseMePackages>[number]
 /**
- * The packages that release-me releases: the ones with a script that runs release-me (e.g. `"release": "release-me patch"`), except private ones.
+ * The packages that release-me releases: the ones with a script that runs release-me (e.g. `"release": "release-me patch"`).
  * If no package has such script: the root package (e.g. a repository with a single package, released with `$ pnpm exec release-me patch`).
  */
 function getReleaseMePackages(filesMonorepo: Files) {
@@ -847,21 +847,31 @@ function getReleaseMePackages(filesMonorepo: Files) {
   let rootPackage: (typeof packages)[number] | null = null
   for (const { filePathAbsolute, filePathRelative } of getFilesMonorepoPackageJson(filesMonorepo)) {
     const packageRootDir = path.dirname(filePathAbsolute)
-    const { packageJson } = getPackageJson(packageRootDir)
+    const { packageJson, packageJsonPath } = getPackageJson(packageRootDir)
     assertUsage(
       !packageJson.dependencies?.[thisPackageName],
       `${pc.cyan('@brillout/release-me')} shouldn't be inside ${pc.gray(packageRootDir)}/package.json#${pc.bold(
         'dependencies',
       )} as it should be only in package.json#${pc.bold('devDependencies')} instead.`,
     )
-    if (!packageJson.name || packageJson.private) continue
-    const pkg = {
-      packageName: packageJson.name,
-      packageRootDir,
-      packageRootDirRelative: path.dirname(filePathRelative),
+    const packageRootDirRelative = path.dirname(filePathRelative)
+    if (hasReleaseScript(packageJson)) {
+      // A script that runs release-me means the package is released: it must be releasable
+      const seeReadme = `see ${pc.underline(readmeMonorepo)}`
+      assertUsage(
+        packageJson.name,
+        `${packageJsonPath} has a script that runs release-me but no name — add a name, or remove the script, ${seeReadme}`,
+      )
+      assertUsage(
+        !packageJson.private,
+        `${pc.cyan(
+          packageJson.name,
+        )} has a script that runs release-me but it's private — make it public (remove package.json#private), or remove the script, ${seeReadme}`,
+      )
+      packages.push({ packageName: packageJson.name, packageRootDir, packageRootDirRelative })
+    } else if (packageRootDirRelative === '.' && packageJson.name && !packageJson.private) {
+      rootPackage = { packageName: packageJson.name, packageRootDir, packageRootDirRelative }
     }
-    if (hasReleaseScript(packageJson)) packages.push(pkg)
-    else if (pkg.packageRootDirRelative === '.') rootPackage = pkg
   }
   if (packages.length === 0 && rootPackage) packages.push(rootPackage)
   assertUsage(
