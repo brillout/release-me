@@ -48,7 +48,7 @@ Used by:
       "name": "my-package",
       "version": "0.1.2",
       "scripts": {
-        "build": "echo 'Some build step'",
+   +    "build": "echo 'Build step before releasing'",
    +    "release": "release-me patch",
    +    "release:minor": "release-me minor",
    +    "release:major": "release-me major",
