@@ -27,9 +27,11 @@ jobs:
         with:
           # Empty: the pushed tag, or the commit of "Use workflow from"
           ref: ${{ inputs.ref }}
+      # Node.js 26 bundles npm >= 11.5.1, which trusted publishing requires
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
       - uses: pnpm/action-setup@v6
-      # Trusted publishing requires npm >= 11.5.1, and removing a dist-tag requires npm >= 11.21.0
-      - run: npm install --global npm@latest
       - run: pnpm install
       - run: pnpm exec release-me ci-publish
         # SECURITY: the values are passed as env variables, instead of being inserted into `run:` (shell injection)
