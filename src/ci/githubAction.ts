@@ -3,11 +3,12 @@
 export { abortIfNotOnNpm }
 export { abortIfRepositoryMismatch }
 export { getRepositoryMismatch }
+export { logStableRelease }
 export { triggerCommitRelease }
-export { triggerStableRelease }
 
 // In repositories that use the GitHub Action (see ./releaseWorkflowFile.ts), `$ pnpm exec release-me` triggers the GitHub
-// Action instead of publishing to npm: it pushes the release tag (stable release) or runs the workflow (commit release).
+// Action instead of publishing to npm: by pushing the release tag (stable release, see gitPush()) or by running the
+// workflow (commit release).
 
 import execa from 'execa'
 import pc from '@brillout/picocolors'
@@ -16,12 +17,9 @@ import { releaseWorkflowFileName, releaseWorkflowFilePath } from './releaseWorkf
 import { getGitHubRepo, parseGitHubRepo } from './utils/githubRepo.ts'
 import type { PackageJson } from '../releaseMe.ts'
 
+// After gitPush() pushed the release tag, which triggers the GitHub Action that publishes to npm
 /** @param packageSpec The released package, e.g. `vike@0.4.271` */
-async function triggerStableRelease(gitTag: string, packageSpec: string) {
-  logTitle('Git push')
-  // - Push the release commit and its tag atomically: the tag triggers the GitHub Action that publishes to npm.
-  // - Only push this one tag: GitHub doesn't trigger any workflow when more than three tags are pushed at once.
-  await run(['git', 'push', '--atomic', 'origin', 'HEAD', `refs/tags/${gitTag}`])
+async function logStableRelease(gitTag: string, packageSpec: string) {
   logTitle('npm publish')
   const workflowLink = getWorkflowLink(await getGitHubRepo())
   logWillPublish(

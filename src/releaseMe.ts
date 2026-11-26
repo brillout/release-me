@@ -27,8 +27,8 @@ import { getGitTagPrefix, type GitTag, type GitTagPrefix } from './utils/gitTag.
 import {
   abortIfNotOnNpm,
   abortIfRepositoryMismatch,
+  logStableRelease,
   triggerCommitRelease,
-  triggerStableRelease,
 } from './ci/githubAction.ts'
 import { publishesViaGitHubAction, releaseWorkflowFileName, releaseWorkflowFilePath } from './ci/releaseWorkflowFile.ts'
 import * as path from 'path'
@@ -187,11 +187,8 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   const gitTag = getGitTag(versionNew, gitTagPrefix)
   await makeGitCommit(monorepoRootDir, gitTag)
   await makeGitTag(gitTag)
-  if (viaGitHubAction) {
-    await triggerStableRelease(gitTag, `${packageName}@${versionNew}`)
-  } else {
-    await gitPush()
-  }
+  await gitPush(gitTag)
+  if (viaGitHubAction) await logStableRelease(gitTag, `${packageName}@${versionNew}`)
 }
 
 function getPackageName(packageRootDir: string): { packageName: string; packageJsonPath: string } {
@@ -465,11 +462,13 @@ function getGitTag(versionNew: string, gitTagPrefix: GitTagPrefix): GitTag {
   const gitTag = `${gitTagPrefix}${versionNew}` as const
   return gitTag
 }
-async function gitPush() {
+async function gitPush(gitTag: GitTag) {
   logTitle('Git push')
-  // TODO/after-merge: push the release commit and its tag atomically, like triggerStableRelease() does: otherwise release-github.yml may check out the release commit before its tag is pushed, and then refuse to create the latest release
-  await run('git push')
-  await run('git push --tags')
+  // - Push the release commit and its tag atomically: with the GitHub Actions, the tag triggers the publish to npm
+  //   (release.yml), and the release commit triggers the sync of the GitHub Releases (release-github.yml), which refuses
+  //   to create the latest release if its tag isn't pushed yet.
+  // - Only push this one tag: GitHub doesn't trigger any workflow when more than three tags are pushed at once.
+  await run(['git', 'push', '--atomic', 'origin', 'HEAD', `refs/tags/${gitTag}`])
 }
 async function build(cwd?: string) {
   logTitle(`Build ${logDetail('$ pnpm run build')}`)
