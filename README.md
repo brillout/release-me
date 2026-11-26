@@ -204,15 +204,6 @@ You can let `@brillout/release-me`'s GitHub Action synchronize your GitHub Relea
 pnpm exec release-me init --github
 ```
 
-> [!NOTE]
-> `CHANGELOG.md` is the source of truth: upon each push of a `CHANGELOG.md` change to `main` (e.g. a release commit), GitHub Releases are created, updated, and deleted to match it. Edit `CHANGELOG.md` instead of a GitHub Release (the next sync overwrites it).
-
-> [!NOTE]
-> The first sync creates A LOT of GitHub Releases: one for every version in `CHANGELOG.md`.
-
-> [!NOTE]
-> To sync manually (all packages), press the **Run workflow** button of the GitHub Action `release-github.yml`.
-
 <details>
 <summary>Debug commands</summary>
 
@@ -237,3 +228,12 @@ pnpm exec release-me github-release-delete-all
 Run locally, these commands use the environment variable `GITHUB_TOKEN`, or else the token of the GitHub CLI `gh` (`$ gh auth login`). Without `--dry-run`, the token needs write access to the repository's contents.
 
 </details>
+
+> [!NOTE]
+> `CHANGELOG.md` is the source of truth: upon each push of a `CHANGELOG.md` change to `main` (e.g. a release commit), GitHub Releases are created, updated, and deleted to match it. Edit `CHANGELOG.md` instead of a GitHub Release (the next sync overwrites it).
+
+> [!NOTE]
+> The first sync creates A LOT of GitHub Releases: one for every version in `CHANGELOG.md`.
+
+> [!NOTE]
+> To sync manually (all packages), press the **Run workflow** button of the GitHub Action `release-github.yml`.
