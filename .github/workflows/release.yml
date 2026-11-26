@@ -11,7 +11,12 @@
 name: Release
 on:
   push:
-    tags: ['v[0-9]*', '**@[0-9]*'] # v1.2.3, some-package@1.2.3
+    # TODO/ai: fix fromatting
+    tags: [
+      # v1.2.3
+      'v[0-9]*',
+      # some-package@1.2.3
+      '**@[0-9]*']
   workflow_dispatch:
     inputs:
       ref: { description: 'Commit to commit-release: SHA, branch, or refs/pull/<number>/head (default: the selected branch). It runs with npm publish rights: review a pull request from a fork first. To re-publish a stable release, select its tag in "Use workflow from" instead.' }
