@@ -24,7 +24,7 @@ type NewRelease = {
 // along only for the log line write() prints.
 type ReleaseRef = { release_id: number; tag_name: string }
 
-// A client for one repository's GitHub Releases. It binds the owner/repo/token and API base URL once,
+// A client for one repository's GitHub Releases. It binds the repository, token and API base URL once,
 // so callers just say what to do — not where, nor as whom. The write methods gate on --dry-run (logging
 // what they would do instead of doing it) and otherwise log what they did, so every caller — the sync
 // step and delete-all alike — narrates releases the same way.
@@ -43,13 +43,12 @@ const RATE_LIMIT_DELAY_MS = 500
 const pastTenseByAction = { create: 'Created', update: 'Updated', delete: 'Deleted' } as const
 
 function createReleasesClient({
-  owner,
   repo,
   token,
   apiUrl,
   dryRun,
-}: { owner: string; repo: string; token: string; apiUrl: string; dryRun: boolean }): ReleasesClient {
-  const releasesPath = `/repos/${owner}/${repo}/releases`
+}: { repo: string; token: string; apiUrl: string; dryRun: boolean }): ReleasesClient {
+  const releasesPath = `/repos/${repo}/releases`
   // Identical on every request of this client, so build them once.
   const headers = {
     Accept: 'application/vnd.github+json',

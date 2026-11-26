@@ -9,9 +9,9 @@ import pc from '@brillout/picocolors'
 import { createReleasesClientFromEnv } from '../utils/github-env.ts'
 
 async function githubReleaseDeleteAll({ dryRun, yes }: { dryRun: boolean; yes: boolean }): Promise<void> {
-  const { client, owner, repo } = await createReleasesClientFromEnv(dryRun)
+  const { client, repo } = await createReleasesClientFromEnv(dryRun)
 
-  console.log(`Fetching releases for ${owner}/${repo} …`)
+  console.log(`Fetching releases for ${repo} …`)
   const githubReleases = await client.list()
   if (githubReleases.length === 0) {
     console.log('No releases to delete.')
@@ -22,7 +22,7 @@ async function githubReleaseDeleteAll({ dryRun, yes }: { dryRun: boolean; yes: b
     const confirmed = await askConfirmation(
       pc.blue(
         pc.bold(
-          `Press <ENTER> to delete all ${githubReleases.length} GitHub Releases of ${owner}/${repo}, or <CTRL-C> to abort.`,
+          `Press <ENTER> to delete all ${githubReleases.length} GitHub Releases of ${repo}, or <CTRL-C> to abort.`,
         ),
       ),
     )

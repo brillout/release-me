@@ -16,11 +16,9 @@ import type { ReleasesClient } from '../utils/github.ts'
 import type { SyncPackage } from './packages.ts'
 
 // The loop-invariant inputs of a sync run, built once in githubReleaseSync() and shared across every package.
-// owner/repo ride along so each package's changelog URL can be built (see getChangelogUrl); the client
-// also binds them internally for its own API calls.
 type SyncContext = {
   client: ReleasesClient
-  owner: string
+  /** The repository, e.g. `vikejs/vike` */
   repo: string
   defaultBranch: string
   hasMultiplePackages: boolean
@@ -61,6 +59,6 @@ function buildReleaseBodies(
 }
 
 // The GitHub web (blob) URL of the package's CHANGELOG.md, which each release body's footer links back to.
-function getChangelogUrl(pkg: SyncPackage, { owner, repo, defaultBranch }: SyncContext): string {
-  return `https://github.com/${owner}/${repo}/blob/${defaultBranch}/${pkg.changelogPath}`
+function getChangelogUrl(pkg: SyncPackage, { repo, defaultBranch }: SyncContext): string {
+  return `https://github.com/${repo}/blob/${defaultBranch}/${pkg.changelogPath}`
 }

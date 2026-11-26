@@ -30,14 +30,8 @@ async function githubReleaseSync({ packageArgs, dryRun }: { packageArgs: string[
     return
   }
 
-  const { client, owner, repo } = await createReleasesClientFromEnv(dryRun)
-  const context: SyncContext = {
-    client,
-    owner,
-    repo,
-    defaultBranch: getDefaultBranch(),
-    hasMultiplePackages,
-  }
+  const { client, repo } = await createReleasesClientFromEnv(dryRun)
+  const context: SyncContext = { client, repo, defaultBranch: getDefaultBranch(), hasMultiplePackages }
 
   for (const pkg of packagesToSync) {
     console.log(`Syncing GitHub releases of ${pkg.packageName} (${pkg.changelogPath})`)

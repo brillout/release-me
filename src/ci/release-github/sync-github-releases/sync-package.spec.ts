@@ -34,8 +34,7 @@ describe('syncPackage()', () => {
     const { client, calls } = createFakeClient()
     const context: SyncContext = {
       client,
-      owner: 'vikejs',
-      repo: 'vike',
+      repo: 'vikejs/vike',
       defaultBranch: 'main',
       hasMultiplePackages: false,
     }

@@ -2,7 +2,6 @@ export { createReleasesClientFromEnv }
 export { getDefaultBranch }
 export { getPushedFiles }
 
-import assert from 'node:assert'
 import { readFileSync } from 'node:fs'
 import execa from 'execa'
 import pc from '@brillout/picocolors'
@@ -17,15 +16,13 @@ import { assertUsage, logDetail } from '../../../utils.ts'
 // shouldn't care where these values come from.
 
 // A GitHub Releases client for the repository this run targets, wired up from the environment. Returns
-// the resolved owner/repo too — callers need them for the web links and log lines the client doesn't
-// expose. dryRun is passed straight through to the client, which gates and logs the writes.
-async function createReleasesClientFromEnv(
-  dryRun: boolean,
-): Promise<{ client: ReleasesClient; owner: string; repo: string }> {
-  const { owner, repo } = await getRepository()
+// the repository (`owner/repo`) too, for the web links and log lines. dryRun is passed straight through to the
+// client, which gates and logs the writes.
+async function createReleasesClientFromEnv(dryRun: boolean): Promise<{ client: ReleasesClient; repo: string }> {
+  const repo = await getRepo()
   const token = await getGitHubToken()
-  const client = createReleasesClient({ owner, repo, token, apiUrl: getApiUrl(), dryRun })
-  return { client, owner, repo }
+  const client = createReleasesClient({ repo, token, apiUrl: getApiUrl(), dryRun })
+  return { client, repo }
 }
 
 // GitHub Actions: the token of the run (see release-github.yml). Locally: GITHUB_TOKEN, or else the token of the GitHub CLI.
@@ -54,15 +51,14 @@ function getDefaultBranch(): string {
   return process.env.GITHUB_DEFAULT_BRANCH ?? 'main'
 }
 
-async function getRepository(): Promise<{ owner: string; repo: string }> {
-  const repository = process.env.GITHUB_REPOSITORY ?? (await getGitHubRepo())
+/** The repository, e.g. `vikejs/vike` */
+async function getRepo(): Promise<string> {
+  const repo = process.env.GITHUB_REPOSITORY ?? (await getGitHubRepo())
   assertUsage(
-    repository,
+    repo,
     `Couldn't determine the GitHub repository of ${pc.cyan('origin')} ${logDetail('$ git remote get-url origin')}.`,
   )
-  const [owner, repo] = repository.split('/')
-  assert(owner && repo, `Cannot parse owner/repo from repository: ${repository}`)
-  return { owner, repo }
+  return repo
 }
 
 // The files the triggering push changed, or null when this isn't a push (manual workflow_dispatch, or

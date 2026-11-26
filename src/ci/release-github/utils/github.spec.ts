@@ -6,8 +6,7 @@ vi.mock('node:timers/promises', () => ({ setTimeout: () => Promise.resolve() }))
 
 function createClient(dryRun: boolean) {
   return createReleasesClient({
-    owner: 'owner',
-    repo: 'repo',
+    repo: 'owner/repo',
     token: 'token',
     apiUrl: 'https://api.github.com',
     dryRun,
