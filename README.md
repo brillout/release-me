@@ -97,7 +97,7 @@ Used by:
 
 ## Conventional Commits
 
-`@brillout/release-me` generates `CHANGELOG.md` from your commits: follow [Conventional Commits](https://www.conventionalcommits.org).
+Follow [Conventional Commits](https://www.conventionalcommits.org):
 
 - `fix:` => bug fix or some polishing (e.g. improved error message).
 - `feat:` => new feature, i.e. new functionality.
