@@ -5,18 +5,12 @@ export { githubReleaseSync }
 // - CHANGELOG.md is the source of truth: GitHub Releases are completely derived from it.
 // - Run by the GitHub Action .github/workflows/release-github.yml (see ../../releaseWorkflowFile.ts), or locally (e.g. with --dry-run).
 
-import * as fs from 'node:fs'
-import * as path from 'node:path'
-import {
-  getPackagesToSync,
-  syncPackage,
-  type SyncContext,
-  type SyncPackage,
-} from '../sync-github-releases/sync-package.ts'
+import { getPackages, getPackagesToSync } from '../sync-github-releases/packages.ts'
+import { syncPackage, type SyncContext } from '../sync-github-releases/sync-package.ts'
 import { createReleasesClientFromEnv, getDefaultBranch, getPushedFiles } from '../utils/github-env.ts'
 import { isWorkflowFileUpToDate, releaseGitHubWorkflowFile } from '../../releaseWorkflowFile.ts'
 import { fail } from '../../fail.ts'
-import { getChangelogPath, getFilesInsideDir, getMonorepoRootDir, getReleaseMePackages } from '../../../releaseMe.ts'
+import { getMonorepoRootDir } from '../../../releaseMe.ts'
 
 async function githubReleaseSync({ packageArgs, dryRun }: { packageArgs: string[]; dryRun: boolean }): Promise<void> {
   // The directories passed as arguments are relative to where the command is run
@@ -29,20 +23,8 @@ async function githubReleaseSync({ packageArgs, dryRun }: { packageArgs: string[
     fail(releaseGitHubWorkflowFile.outdated)
   }
 
-  // The packages released by release-me. When there are several, they share the repository's tags, so their release
-  // tags are qualified with the package name (see getTagScheme()).
-  const releaseMePackages = getReleaseMePackages(await getFilesInsideDir(monorepoRootDir))
-  const hasMultiplePackages = releaseMePackages.length > 1
-  const allPackages: SyncPackage[] = releaseMePackages.flatMap(({ packageName, packageRootDir }) => {
-    const { changeLogFilePath } = getChangelogPath(packageRootDir, monorepoRootDir, hasMultiplePackages)
-    // Not released yet
-    if (!fs.existsSync(changeLogFilePath)) return []
-    // git reports forward-slash paths on every OS
-    const changelogPath = path.relative(monorepoRootDir, changeLogFilePath).split(path.sep).join('/')
-    return [{ packageName, packageRootDir: path.resolve(packageRootDir), changelogPath }]
-  })
-
-  const packagesToSync = getPackagesToSync(allPackages, { packageArgs, cwd, pushedFiles: getPushedFiles() })
+  const { packages, hasMultiplePackages } = await getPackages(monorepoRootDir)
+  const packagesToSync = getPackagesToSync(packages, { packageArgs, cwd, pushedFiles: getPushedFiles() })
   if (packagesToSync.length === 0) {
     console.log('No CHANGELOG.md changes detected — nothing to sync.')
     return
