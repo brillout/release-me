@@ -206,7 +206,7 @@ pnpm exec release-me init
 
 ## GitHub Releases
 
-Instead of creating GitHub Releases manually, you can let `@brillout/release-me`'s GitHub Action create them from `CHANGELOG.md` (and keep them in sync with it):
+You can let `@brillout/release-me`'s GitHub Action synchronize your GitHub Releases with `CHANGELOG.md`:
 
 ```shell
 # Creates .github/workflows/release-github.yml and .github/workflows/release.yml (see GitHub Action)
