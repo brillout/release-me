@@ -1,4 +1,5 @@
 export { createReleasesClient }
+export { GitHubApiError }
 export type { Release }
 export type { NewRelease }
 export type { ReleasesClient }
@@ -40,6 +41,17 @@ const RATE_LIMIT_DELAY_MS = 1000
 
 const pastTenseByAction = { create: 'Created', update: 'Updated', delete: 'Deleted' } as const
 
+// A failed GitHub API request: its status and response body let the caller tell apart the failures it can handle
+class GitHubApiError extends Error {
+  readonly status: number
+  readonly responseBody: string
+  constructor(message: string, status: number, responseBody: string) {
+    super(message)
+    this.status = status
+    this.responseBody = responseBody
+  }
+}
+
 function createReleasesClient({
   repo,
   token,
@@ -68,8 +80,10 @@ function createReleasesClient({
 
     if (!response.ok) {
       const errorBody = await response.text()
-      throw new Error(
+      throw new GitHubApiError(
         `GitHub API request failed (${method} ${pathname}): ${response.status} ${response.statusText}\n${errorBody}`,
+        response.status,
+        errorBody,
       )
     }
 

@@ -21,7 +21,8 @@ type SyncContext = {
 
 // Sync one package: derive its expected releases from CHANGELOG.md (the source of truth), reconcile
 // them against the package's existing GitHub Releases into a plan, then apply that plan.
-async function syncPackage(pkg: SyncPackage, context: SyncContext): Promise<void> {
+/** @returns The tags of the releases it skipped (see applyReleasePlan()) */
+async function syncPackage(pkg: SyncPackage, context: SyncContext): Promise<string[]> {
   console.log(`Syncing GitHub releases of ${pkg.packageName} (${pkg.changelogPath})`)
   const tagScheme = getTagScheme(pkg.packageName, context.hasMultiplePackages)
   const changelogNotes = parseChangelog(await readFile(pkg.changelogPath, 'utf8'))
@@ -29,7 +30,7 @@ async function syncPackage(pkg: SyncPackage, context: SyncContext): Promise<void
     // Zero versions means a CHANGELOG.md format that parseChangelog() doesn't support, not that all versions were
     // removed: getReleasePlan() would delete all the package's releases.
     console.warn(`No versions parsed from ${pkg.changelogPath} — skipping it.`)
-    return
+    return []
   }
   const changelogUrl = getChangelogUrl(pkg, context)
   const releaseBodyByVersion = buildReleaseBodies(changelogNotes, {
@@ -39,7 +40,7 @@ async function syncPackage(pkg: SyncPackage, context: SyncContext): Promise<void
   })
   const githubReleases = await context.client.list()
   const plan = getReleasePlan({ githubReleases, releaseBodyByVersion, tagScheme, packageName: pkg.packageName })
-  await applyReleasePlan({ plan, client: context.client, changelogPath: pkg.changelogPath })
+  return applyReleasePlan({ plan, client: context.client, changelogPath: pkg.changelogPath })
 }
 
 // The GitHub web (blob) URL of the package's CHANGELOG.md, which each release body's footer links back to.

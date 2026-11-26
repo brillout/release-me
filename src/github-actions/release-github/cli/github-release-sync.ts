@@ -53,7 +53,34 @@ async function githubReleaseSync({ packageArgs, dryRun }: { packageArgs: string[
   const { client, repo } = await createReleasesClientFromEnv(dryRun)
   const context: SyncContext = { client, repo, defaultBranch: getDefaultBranch(), hasMultiplePackages }
 
-  for (const pkg of packagesToSync) await syncPackage(pkg, context)
+  const skippedReleaseTags: string[] = []
+  for (const pkg of packagesToSync) skippedReleaseTags.push(...(await syncPackage(pkg, context)))
+  if (skippedReleaseTags.length > 0) failSkipped(skippedReleaseTags)
+}
+
+// After all other releases are synced: the releases whose missing git tag the token isn't allowed to create (see
+// isTagCreationForbidden())
+function failSkipped(skippedReleaseTags: string[]): never {
+  const releases = skippedReleaseTags.map((releaseTag) => pc.bold(releaseTag)).join(', ')
+  const cause = `GitHub only lets a token with the ${pc.bold('workflows')} permission tag a commit whose ${pc.bold(
+    '.github/workflows/',
+  )} differs from the current one`
+  const syncCmd = '$ pnpm exec release-me github-release-sync'
+  if (process.env.GITHUB_ACTIONS) {
+    fail(
+      `Couldn't create the GitHub Releases ${releases}: their git tags are missing, and the GitHub Action isn't allowed to create them (${cause}, which the GitHub Action can't get). Create them from your machine instead (once): run ${pc.cyan(
+        syncCmd,
+      )} ${logDetail('if GitHub refuses your token too, run $ gh auth refresh -s workflow first')}.`,
+    )
+  }
+  console.error(
+    pc.red(
+      `Couldn't create the GitHub Releases ${releases}: their git tags are missing, and your token isn't allowed to create them (${cause}). Run ${pc.cyan(
+        '$ gh auth refresh -s workflow',
+      )} (or give ${pc.bold('GITHUB_TOKEN')} the ${pc.bold('Workflows')} permission), then re-run ${pc.cyan(syncCmd)}.`,
+    ),
+  )
+  process.exit(1)
 }
 
 async function logRunWorkflow(packageArgs: string[]) {
