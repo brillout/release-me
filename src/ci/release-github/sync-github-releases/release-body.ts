@@ -12,13 +12,13 @@ type ReleaseBodyByVersion = Record<string, string>
 // The release body of each version, with its release date read from git (see getReleaseDate())
 function buildReleaseBodies(
   changelogNotes: ReleaseNotesByVersion,
-  { tagScheme, changelogUrl }: { tagScheme: TagScheme; changelogUrl: string },
+  { tagScheme, changelogPath, changelogUrl }: { tagScheme: TagScheme; changelogPath: string; changelogUrl: string },
 ): ReleaseBodyByVersion {
   return Object.fromEntries(
-    Object.entries(changelogNotes).map(([version, notes]) => [
-      version,
-      buildReleaseBody(notes, { releaseDate: getReleaseDate(tagScheme.build(version), version), changelogUrl }),
-    ]),
+    Object.entries(changelogNotes).map(([version, notes]) => {
+      const releaseDate = getReleaseDate(tagScheme.build(version), { version, changelogPath })
+      return [version, buildReleaseBody(notes, { releaseDate, changelogUrl })]
+    }),
   )
 }
 

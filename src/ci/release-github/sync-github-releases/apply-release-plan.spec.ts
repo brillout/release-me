@@ -9,6 +9,7 @@ vi.mock('../utils/git.ts', () => ({ gitTagExists: vi.fn(), findReleaseCommit: vi
 
 // Not called: the refusals happen before
 const client = {} as ReleasesClient
+const changelogPath = 'CHANGELOG.md'
 
 describe('applyReleasePlan()', () => {
   // A create whose git tag is missing must never be tagged at the wrong commit. These two hard fails are
@@ -24,7 +25,7 @@ describe('applyReleasePlan()', () => {
     it('hard-fails the latest release (it must already be tagged)', async () => {
       vi.mocked(gitTagExists).mockReturnValue(false)
 
-      await expect(applyReleasePlan({ plan: createPlan(true), client })).rejects.toThrow(
+      await expect(applyReleasePlan({ plan: createPlan(true), client, changelogPath })).rejects.toThrow(
         /latest release must already be tagged/,
       )
     })
@@ -33,7 +34,9 @@ describe('applyReleasePlan()', () => {
       vi.mocked(gitTagExists).mockReturnValue(false)
       vi.mocked(findReleaseCommit).mockReturnValue(null)
 
-      await expect(applyReleasePlan({ plan: createPlan(false), client })).rejects.toThrow(/couldn't be deduced/)
+      await expect(applyReleasePlan({ plan: createPlan(false), client, changelogPath })).rejects.toThrow(
+        /couldn't be deduced/,
+      )
     })
   })
 })

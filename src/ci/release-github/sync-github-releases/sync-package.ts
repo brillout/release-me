@@ -32,10 +32,14 @@ async function syncPackage(pkg: SyncPackage, context: SyncContext): Promise<void
     return
   }
   const changelogUrl = getChangelogUrl(pkg, context)
-  const releaseBodyByVersion = buildReleaseBodies(changelogNotes, { tagScheme, changelogUrl })
+  const releaseBodyByVersion = buildReleaseBodies(changelogNotes, {
+    tagScheme,
+    changelogPath: pkg.changelogPath,
+    changelogUrl,
+  })
   const githubReleases = await context.client.list()
   const plan = getReleasePlan({ githubReleases, releaseBodyByVersion, tagScheme })
-  await applyReleasePlan({ plan, client: context.client })
+  await applyReleasePlan({ plan, client: context.client, changelogPath: pkg.changelogPath })
 }
 
 // The GitHub web (blob) URL of the package's CHANGELOG.md, which each release body's footer links back to.

@@ -7,11 +7,6 @@ export { getChangedFiles }
 
 import { execFileSync } from 'node:child_process'
 
-// Any CHANGELOG.md (in a pathspec, `*` also matches `/`), not only the package's: a changelog entry may have been added
-// before its CHANGELOG.md was moved
-// TODO/after-merge: only search the package's CHANGELOG.md, following its renames (`$ git log --follow`): with several packages, another package's CHANGELOG.md may have added `[<version>](` first, and the missing tag would then be created at that package's release commit
-const CHANGELOG_PATHSPEC = '*CHANGELOG.md'
-
 function git(args: string[]): string {
   return execFileSync('git', args, { encoding: 'utf8' })
 }
@@ -47,17 +42,30 @@ function gitRevExists(rev: string): boolean {
 }
 
 // The commit that introduced this version's changelog entry — i.e. the release commit, which is where
-// its tag belongs. Pickaxe (`-S`, a literal-string search) the changelog history for the heading's
-// link opener `[<version>](`; the oldest commit that changed its count is the one that added it.
-function findReleaseCommit(version: string): string | null {
-  return gitLines(['log', '--reverse', '--format=%H', `-S[${version}](`, '--', CHANGELOG_PATHSPEC])[0] ?? null
+// its tag belongs. Among the commits of the package's CHANGELOG.md that add or remove (`-G`) the version's heading, the
+// oldest is the one that added it. The history follows the renames of CHANGELOG.md: its entry may have been added
+// before it was moved (e.g. from the repository root to the package's directory).
+function findReleaseCommit(version: string, changelogPath: string): string | null {
+  // The version's heading, with or without link, like parseChangelog(): `## [0.4.257](…)` or `## 0.1.0 (…)`. A POSIX
+  // extended regex, where the version ends at `]`, a space, or the line end (`0.1.1` mustn't match `0.1.10`).
+  const headingRegex = `^##? \\[?${escapeRegex(version)}(]| |$)`
+  // Newest first: `--follow` doesn't work with `--reverse`
+  return gitLines(['log', '--follow', '--format=%H', `-G${headingRegex}`, '--', changelogPath]).at(-1) ?? null
+}
+
+// Escape the special characters of a POSIX extended regex
+function escapeRegex(text: string): string {
+  return text.replace(/[\\.[()*+?{|^$]/g, '\\$&')
 }
 
 // The release date (`YYYY-MM-DD`): the committer date of the release commit — the Git tag's, or else the one deduced
 // from the changelog history (the one apply-release-plan.ts tags). null if there's neither. (GitHub's `created_at` of
 // a release is also its commit's date.)
-function getReleaseDate(releaseTag: string, version: string): string | null {
-  const commitish = gitTagExists(releaseTag) ? tagRef(releaseTag) : findReleaseCommit(version)
+function getReleaseDate(
+  releaseTag: string,
+  { version, changelogPath }: { version: string; changelogPath: string },
+): string | null {
+  const commitish = gitTagExists(releaseTag) ? tagRef(releaseTag) : findReleaseCommit(version, changelogPath)
   if (!commitish) return null
   // %cs is the committer date in short form (YYYY-MM-DD).
   return git(['log', '-1', '--format=%cs', commitish]).trim()
