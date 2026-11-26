@@ -36,6 +36,7 @@ import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
 
 const thisPackageName = '@brillout/release-me'
+const readmeMonorepo = 'https://github.com/brillout/release-me#monorepo'
 const thisCommand = '$ pnpm exec release-me'
 
 process.on('uncaughtException', clean)
@@ -811,11 +812,10 @@ function analyzeMonorepo(filesMonorepo: Files, packageRootDir: string, packageNa
   const currentPackages = monorepoPackages.filter((pkg) => pkg.isCurrentPackage)
   assertUsage(
     currentPackages.length === 1,
-    // TODO/ai add link to readme
     `${pc.cyan(packageName)} isn't enabled for @brillout/release-me — add a script that runs release-me to ${path.join(
       packageRootDir,
       'package.json',
-    )} (e.g. ${pc.bold('"release": "release-me patch"')}).`,
+    )} (e.g. ${pc.bold('"release": "release-me patch"')}), see ${readmeMonorepo}`,
   )
   assert(currentPackages[0]!.packageName === packageName)
   return {
@@ -866,7 +866,7 @@ function getReleaseMePackages(filesMonorepo: Files) {
     packages.length > 0,
     `No package to release: add a script that runs release-me to the package.json of each package to release (e.g. ${pc.bold(
       '"release": "release-me patch"',
-    )}).`,
+    )}), see ${readmeMonorepo}`,
   )
   return packages
 }
