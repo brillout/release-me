@@ -11,9 +11,11 @@ Used by:
 [Features](#features)  
 [Get started](#get-started)  
 [Usage](#usage)  
+[Conventional Commits](#conventional-commits)  
 [Monorepo](#monorepo)  
-[Npm Release](#npm-release)  
-[GitHub Release](#github-release)  
+[GitHub Actions](#github-actions)  
+&nbsp;&nbsp;&nbsp;&nbsp;[Npm Release](#npm-release)  
+&nbsp;&nbsp;&nbsp;&nbsp;[GitHub Release](#github-release)  
 
 > [!WARNING]
 > Don't use this: it's only meant for Vike's team & friends. That said, feel free to fork this project.
@@ -22,83 +24,97 @@ Used by:
 
 ## Features
 
-- Generates `CHANGELOG.md`.
-- Monorepo support.
-- Generates Git release tags.
-- Pre-release support. (For example [`0.4.177-commit-ff3d6cd`](https://www.npmjs.com/package/vike/v/0.4.177-commit-ff3d6cd).)
+- Generates `CHANGELOG.md` from your commits. (See [Conventional Commits](#conventional-commits).)
+- Creates the release commit and its Git tag.
+- Shows a preview of the changes made to `package.json` and `CHANGELOG.md`, and asks for confirmation before releasing.
+- Commit releases: publish any commit as a pre-release, e.g. [`0.4.177-commit-ff3d6cd`](https://www.npmjs.com/package/vike/v/0.4.177-commit-ff3d6cd).
+- Monorepo support. (See [Monorepo](#monorepo).)
 - Can publish via a GitHub Action instead of your machine: no npm login/2FA/token needed. (See [Npm Release](#npm-release).)
 - Keeps GitHub Releases in sync with `CHANGELOG.md`. (See [GitHub Release](#github-release).)
-- Asks for confirmation before publishing, and shows a preview of the changes made to `package.json` and `CHANGELOG.md`, enabling you to double check before publishing.
 
 <br/>
 
 ## Get started
 
-### Installation
+1. Add `@brillout/release-me` to the `devDependencies` of your repository's root `package.json`, and add a `build` script (release-me runs it before releasing):
 
-Run `$ pnpm add -D @brillout/release-me` and make sure you have the following:
+   ```shell
+   pnpm add -D @brillout/release-me
+   ```
 
-```json5
-// package.json
-{
-  "name": "my-package",
-  "version": "0.1.2",
-  "scripts": {
-    "build": "echo 'Some build step (release-me runs the build script before releasing)'"
-  },
-  "devDependencies": {
-    "@brillout/release-me": "^0.6.0"
-  }
-}
-```
+   ```diff
+    // package.json
+    {
+      "name": "my-package",
+      "version": "0.1.2",
+      "scripts": {
+        "build": "echo 'Some build step'",
+   +    "release": "release-me patch",
+   +    "release:minor": "release-me minor",
+   +    "release:major": "release-me major",
+   +    "release:commit": "release-me commit"
+      },
+      "devDependencies": {
+        "@brillout/release-me": "^0.6.0"
+      }
+    }
+   ```
 
-Then set up the GitHub Actions of release-me (see [Npm Release](#npm-release) and [GitHub Release](#github-release)):
+   The `release` scripts are optional: we recommend them, as they show anyone discovering your project how new versions are released.
 
-```shell
-# Run then follow the steps it prints
-pnpm exec release-me init
-```
+2. Set up the GitHub Actions of release-me (see [GitHub Actions](#github-actions)):
 
-That's it: you can now use `pnpm exec release-me patch` to release a new patch version.
+   ```shell
+   # Run, then follow the steps it prints
+   pnpm exec release-me init
+   ```
 
-We recommend adding the following scripts:
-
-```diff
- // package.json
- {
-   "name": "my-package",
-   "version": "0.1.2",
-   "scripts": {
-     "build": "echo 'Some build step (release-me runs the build script before releasing)'"
-+    "release": "release-me patch",
-+    "release:minor": "release-me minor",
-+    "release:major": "release-me major",
-+    "release:commit": "release-me commit"
-   },
-   "devDependencies": {
-     "@brillout/release-me": "^0.6.0"
-   }
- }
-```
-
-It's a convenient way to communicate how new versions are released to anyone who's discovering your project.
+That's it: `$ pnpm run release` (or `$ pnpm exec release-me patch`) releases a new patch version.
 
 Installation example: [`8ff59fe`](https://github.com/brillout/test-e2e/commit/8ff59fea41c4956aeaf18b048a34faeaf98a47c5).
 
-A `CHANGELOG.md` file will be automatically generated and updated, see the following section.
+<br/>
+
+## Usage
+
+```shell
+pnpm exec release-me patch    # Release a new patch version (0.1.2 => 0.1.3)
+pnpm exec release-me minor    # Release a new minor version (0.1.2 => 0.2.0)
+pnpm exec release-me major    # Release a new major version (0.1.2 => 1.0.0)
+pnpm exec release-me v0.1.5   # Release a specific version
+pnpm exec release-me commit   # Release the current commit (0.1.2-commit-ff3d6cd)
+```
+
+> [!NOTE]
+> With the `release` scripts (see [Get started](#get-started)), use `$ pnpm run release`, `$ pnpm run release:minor`, etc.
+
+A release (other than a commit release):
+1. Checks that the repository has no uncommitted changes, and that its current branch is `main` and up-to-date with `origin/main`.
+2. Updates the version in `package.json`, and adds the release's entry to `CHANGELOG.md`.
+3. Shows a preview of the changes, and asks for confirmation.
+4. Runs the `build` script, then publishes to npm (or lets the GitHub Action publish it, see [Npm Release](#npm-release)).
+5. Commits the changes (`release: v0.1.3`), tags the commit (`v0.1.3`), and pushes both.
+
+Options:
+- `--yes`: skip the confirmation.
+- `--force`: release even in unexpected situations, e.g. from another branch than `main`, or without `CHANGELOG.md` entry.
+
+> [!NOTE]
+> A commit release (`$ pnpm exec release-me commit`) doesn't change your repository (no release commit, no Git tag), and it has no npm dist-tag: installing it requires its exact version, e.g. `$ pnpm add my-package@0.1.2-commit-ff3d6cd`.
+
+> [!NOTE]
+> If your package has a `PROJECT_VERSION.ts` file, it must contain `const PROJECT_VERSION = '0.1.2'` (the current version): release-me updates it as well.
 
 <br/>
 
 ## Conventional Commits
 
-For proper `CHANGELOG.md` generation make sure to follow [Conventional Commits](https://www.conventionalcommits.org).
-
-In other words:
+release-me generates `CHANGELOG.md` from your commits: follow [Conventional Commits](https://www.conventionalcommits.org).
 
 - `fix:` => bug fix or some polishing (e.g. improved error message).
 - `feat:` => new feature, i.e. new functionality.
 
-For breaking changes append `BREAKING CHANGE:` to the commit message:
+For breaking changes, append `BREAKING CHANGE:` to the commit message:
 
 ```
 fix: make someFunction() take an argument object
@@ -107,47 +123,17 @@ BREAKING CHANGE: Replace `someFunction(someArg)` with `someFunction({ someArg })
 ```
 
 > [!NOTE]
-> When introducing a breaking change, in order to respect the [semver](https://semver.org/) convention, don't `pnpm exec release-me patch` but do `pnpm exec release-me major` instead (or `pnpm exec release-me minor` if your package's version is `0.y.z`).
-
-<br/>
-
-## Usage
-
-Release a new patch/minor/major version:
-
-```shell
-pnpm exec release-me patch
-```
-```shell
-pnpm exec release-me minor
-```
-```shell
-pnpm exec release-me major
-```
+> When introducing a breaking change, in order to respect the [semver](https://semver.org/) convention, don't `$ pnpm exec release-me patch` but `$ pnpm exec release-me major` instead (or `$ pnpm exec release-me minor` if your package's version is `0.y.z`).
 
 > [!NOTE]
-> We recommend defining `package.json#scripts` (see above) and use `$ pnpm run` instead of `$ pnpm exec`.
-
-Release specific version:
-
-```shell
-pnpm exec release-me v0.1.2
-```
-
-You can also publish pre-releases such as [`0.4.177-commit-ff3d6cd`](https://www.npmjs.com/package/vike/v/0.4.177-commit-ff3d6cd):
-
-```shell
-pnpm exec release-me commit
-```
+> If the release has no `CHANGELOG.md` entry (e.g. no `fix:` nor `feat:` commit since the last release), it aborts (use `--force` to release nevertheless).
 
 <br/>
 
 ## Monorepo
 
-### Installation
-
-1. Add `@brillout/release-me` to the `devDependencies` of the monorepo root's `package.json`
-2. For each package you want to release via `@brillout/release-me`, add scripts that run `release-me`
+1. Add `@brillout/release-me` to the `devDependencies` of the monorepo root's `package.json`.
+2. Add the `release` scripts to each package you want to release:
    ```diff
     // packages/my-package/package.json
     {
@@ -163,21 +149,9 @@ pnpm exec release-me commit
    ```
 
 > [!NOTE]
-> A package is considered by `@brillout/release-me` if and only if it defines a script that runs `release-me`.
+> A package is released by `@brillout/release-me` if and only if it defines a script that runs `release-me`.
 
-### `CHANGELOG.md` & commit scope
-
-When releasing a package from a monorepo, the following commits are added to the `CHANGELOG.md` of the package:
-
-- If the commit has a scope (e.g. `fix(some-package): some commit`), it is included only if the scope matches the package's `package.json#name`.
-- If the commit has no scope (e.g. `fix: some commit`), it is included only if it modifies a file within the package's root directory (i.e. the directory where the package's `package.json` lives).
-
-> [!NOTE]
-> By default, `CHANGELOG.md` lives at the directory of each package directory (`$packageRootDir/CHANGELOG.md`), except if the repository has only one package and `CHANGELOG.md` already exists at `$monorepoRootDir/CHANGELOG.md`.
-
-### Release script
-
-Consider adding `release` scripts to the monorepo root's `package.json`:
+To release all packages at once, add `release` scripts to the monorepo root's `package.json`:
 
 ```diff
   // package.json
@@ -186,7 +160,7 @@ Consider adding `release` scripts to the monorepo root's `package.json`:
 +     "release": "pnpm --recursive --sequential run release --yes",
 +     "release:minor": "pnpm --recursive --sequential run release:minor --yes",
 +     "release:major": "pnpm --recursive --sequential run release:major --yes",
-+     "release:commit": "pnpm --recursive --sequential run release:commit --yes",
++     "release:commit": "pnpm --recursive --sequential run release:commit --yes"
     }
   }
 ```
@@ -194,26 +168,60 @@ Consider adding `release` scripts to the monorepo root's `package.json`:
 > [!NOTE]
 > The `--yes` argument makes the release proceed without prompting for confirmation.
 
+### `CHANGELOG.md` & commit scope
+
+Each package has its own `CHANGELOG.md` (`packages/my-package/CHANGELOG.md`), with the following commits:
+
+- If the commit has a scope (e.g. `fix(some-package): some commit`), it is included only if the scope matches the package's `package.json#name`.
+- If the commit has no scope (e.g. `fix: some commit`), it is included only if it modifies a file within the package's root directory (i.e. the directory where the package's `package.json` lives).
+
+> [!NOTE]
+> If the repository has only one package and `CHANGELOG.md` already exists at the monorepo root, then `CHANGELOG.md` lives at the monorepo root.
+
+### Git tags & dependencies
+
+- With several packages, the Git tags include the package name, e.g. `my-package@0.1.3` (instead of `v0.1.3`).
+- The packages of the monorepo that depend on the released package get its new version (except for `workspace:` and `link:` dependencies).
+
 <br/>
 
-## Npm Release
+## GitHub Actions
 
-Instead of publishing from your machine (which requires npm 2FA), you can let `@brillout/release-me`'s GitHub Action publish releases to npm (without 2FA and without an npm secret token):
+`$ pnpm exec release-me init` sets up both GitHub Actions of release-me:
+- [Npm Release](#npm-release) (`.github/workflows/release-npm.yml`) publishes to npm.
+- [GitHub Release](#github-release) (`.github/workflows/release-github.yml`) keeps GitHub Releases in sync with `CHANGELOG.md`.
+
+To set up only one of them, use `--npm` or `--github`.
+
+> [!NOTE]
+> The workflow files are copies of release-me's own: don't modify them. After upgrading release-me, run `$ pnpm exec release-me init` again: releases abort while the workflow files don't match the installed release-me.
+
+> [!NOTE]
+> The GitHub Actions install the pnpm version of the root `package.json#packageManager` (e.g. `"packageManager": "pnpm@10.0.0"`), which `$ pnpm exec release-me init` requires.
+
+### Npm Release
+
+Instead of publishing from your machine (which requires npm 2FA), you can let `@brillout/release-me`'s GitHub Action publish to npm (without 2FA and without an npm secret token):
 
 ```shell
-# Creates .github/workflows/release-npm.yml (run then follow the steps it prints)
+# Creates .github/workflows/release-npm.yml (run, then follow the steps it prints)
 pnpm exec release-me init --npm
 ```
 
+Then:
+- `$ pnpm exec release-me patch` pushes the release commit and its Git tag: the Git tag triggers the GitHub Action, which builds and publishes the release.
+- `$ pnpm exec release-me commit` triggers the GitHub Action (with the GitHub CLI `gh`) for the current commit, which must be pushed. You can also commit-release any commit by pressing the **Run workflow** button of the GitHub Action `release-npm.yml`.
+
 > [!NOTE]
-> It uses [npm's trusted publishing](https://docs.npmjs.com/trusted-publishers).
+> It uses [npm's trusted publishing](https://docs.npmjs.com/trusted-publishers): each package needs a trusted publisher on npmjs.com (`$ pnpm exec release-me init` prints the steps), and its `package.json#repository` must match the GitHub repository. npm can't set up a trusted publisher for a package that isn't on npm yet: publish its first version manually (`$ pnpm publish`).
 
 > [!NOTE]
 > Stable releases get npm [provenance](https://docs.npmjs.com/generating-provenance-statements), commit releases don't.
 
-<br/>
+> [!WARNING]
+> Anyone with write access to the repository can publish: only give it to people you trust, and only commit-release commits you trust (e.g. review a pull request before commit-releasing it).
 
-## GitHub Release
+### GitHub Release
 
 You can let `@brillout/release-me`'s GitHub Action synchronize your GitHub Releases with `CHANGELOG.md`:
 
@@ -221,6 +229,17 @@ You can let `@brillout/release-me`'s GitHub Action synchronize your GitHub Relea
 # Creates .github/workflows/release-github.yml
 pnpm exec release-me init --github
 ```
+
+It syncs upon each push of a `CHANGELOG.md` change to `main` (e.g. a release commit).
+
+> [!NOTE]
+> `CHANGELOG.md` is the source of truth: GitHub Releases are created, updated, and deleted to match it. Edit `CHANGELOG.md` instead of a GitHub Release (the next sync overwrites it).
+
+> [!NOTE]
+> The first sync creates A LOT of GitHub Releases: one for every version in `CHANGELOG.md`.
+
+> [!NOTE]
+> To sync manually (all packages), press the **Run workflow** button of the GitHub Action `release-github.yml`.
 
 <details>
 <summary>Debug commands</summary>
@@ -246,12 +265,3 @@ pnpm exec release-me github-release-delete-all
 Run locally, these commands use the environment variable `GITHUB_TOKEN`, or else the token of the GitHub CLI `gh` (`$ gh auth login`). Without `--dry-run`, the token needs write access to the repository's contents.
 
 </details>
-
-> [!NOTE]
-> To sync manually, press the **Run workflow** button of the GitHub Action `release-github.yml`.
-
-> [!NOTE]
-> `CHANGELOG.md` is the source of truth: GitHub Releases are created, updated, and deleted to match it. Edit `CHANGELOG.md` instead of a GitHub Release (the next sync overwrites it).
-
-> [!NOTE]
-> The first sync creates A LOT of GitHub Releases: one for every version in `CHANGELOG.md`.
