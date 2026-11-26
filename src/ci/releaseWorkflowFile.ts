@@ -1,3 +1,5 @@
+// TODO/after-merge: rename file and exports
+
 export { isReleaseWorkflowFileUpToDate }
 export { isWorkflowFileUpToDate }
 export { publishesViaGitHubAction }
