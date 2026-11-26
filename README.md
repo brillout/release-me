@@ -219,7 +219,8 @@ pnpm exec release-me init
 > [!NOTE]
 > The first sync creates A LOT of GitHub Releases: one for every version in `CHANGELOG.md`.
 
-It syncs upon each push to `main` that changes a `CHANGELOG.md` (e.g. a release commit), and upon pressing its **Run workflow** button (it then syncs all packages). It creates the missing releases (older ones too), rewrites the ones whose notes differ from `CHANGELOG.md`, and deletes the ones whose version isn't in `CHANGELOG.md` anymore.
+> [!NOTE]
+> To sync manually, press the **Run workflow** button of the GitHub Action `release-github.yml`.
 
 Preview the changes without making them:
 
