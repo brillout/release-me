@@ -253,7 +253,7 @@ function readJson(filePathRelative: string, dir: string) {
 function getPnpmPackages() {
   const pnpmWorkspaceYaml = readYaml('pnpm-workspace.yaml', monorepoRootDir)
   const pnpmPackages = pnpmWorkspaceYaml.packages
-  // TODO: resolve globbing:
+  // TO-DO/eventually: resolve globbing:
   // ```yaml
   // packages:
   //   - 'packages/*'
