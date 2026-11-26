@@ -172,7 +172,6 @@ For the first sync, manually run it by pressing the **Run workflow** button of t
 > [!NOTE]
 > The first sync creates A LOT of GitHub Releases: one for every version listed in `CHANGELOG.md`.
 
-
 <details>
 <summary>Debug commands</summary>
 
