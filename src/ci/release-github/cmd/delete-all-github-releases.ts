@@ -6,7 +6,7 @@ export { deleteAllGitHubReleases }
 
 import readline from 'node:readline'
 import pc from '@brillout/picocolors'
-import { createReleasesClientFromEnv } from './utils/github-env.ts'
+import { createReleasesClientFromEnv } from '../utils/github-env.ts'
 
 async function deleteAllGitHubReleases({ dryRun, yes }: { dryRun: boolean; yes: boolean }): Promise<void> {
   const { client, owner, repo } = await createReleasesClientFromEnv(dryRun)
