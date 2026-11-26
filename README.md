@@ -184,17 +184,17 @@ pnpm exec release-me init --npm
 ```
 
 > [!NOTE]
-> `$ pnpm exec release-me commit` commit-releases the current commit (which must be pushed to GitHub). To commit-release any other commit, press the **Run workflow** button of the GitHub Action `release-npm.yml`.
-
-> [!NOTE]
-> The GitHub Action `release-npm.yml` uses [npm's trusted publishing](https://docs.npmjs.com/trusted-publishers).
-
-> [!NOTE]
-> Stable releases get npm [provenance](https://docs.npmjs.com/generating-provenance-statements), commit releases don't.
+> To make a commit-release:
+> - Run `$ pnpm exec release-me commit` to commit-release the current commit (i.e. `$ git show HEAD`), or
+> - press the **Run workflow** button of the GitHub Action `release-npm.yml`.
 
 > [!WARNING]
 > - Only commit-release commits you trust (e.g. review a pull request before commit-releasing it)
 > - Anyone with write access can publish: only give repository write access to people you trust
+
+> [!NOTE]
+> - The GitHub Action `release-npm.yml` uses [npm's trusted publishing](https://docs.npmjs.com/trusted-publishers)
+> - Stable releases get npm [provenance](https://docs.npmjs.com/generating-provenance-statements), commit releases don't
 
 ### GitHub Release
 
