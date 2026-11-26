@@ -5,6 +5,7 @@ import pc from '@brillout/picocolors'
 import { releaseMe, type ReleaseTarget, type ReleaseType, releaseTypes } from './releaseMe.ts'
 import { init } from './ci/init.ts'
 import { ciPublish } from './ci/ci-publish.ts'
+import { syncGitHubReleases } from './ci/sync-github-releases/sync.ts'
 
 program
   .name('release-me')
@@ -44,6 +45,19 @@ program
 
 // Run by the GitHub Action (see ./ci/releaseWorkflowFile.ts)
 program.command('ci-publish', { hidden: true }).action(ciPublish)
+
+// Run by the GitHub Action (see ./ci/releaseWorkflowFile.ts), and locally to preview or backfill
+program
+  .command('sync-github-releases')
+  .description(
+    `Create, update, and delete GitHub Releases so that they match CHANGELOG.md (see ${pc.underline(
+      'https://github.com/brillout/release-me#github-releases',
+    )}).`,
+  )
+  .option('--dry-run', 'only log the changes, without making them')
+  .action(async (options: { dryRun?: true }) => {
+    await syncGitHubReleases({ dryRun: !!options.dryRun })
+  })
 
 await program.parseAsync()
 

@@ -26,6 +26,7 @@ Used by:
 - Generates Git release tags.
 - Pre-release support. (For example [`0.4.177-commit-ff3d6cd`](https://www.npmjs.com/package/vike/v/0.4.177-commit-ff3d6cd).)
 - Can publish via a GitHub Action instead of your machine: no npm login/2FA/token needed. (See [GitHub Action](#github-action).)
+- Keeps GitHub Releases in sync with `CHANGELOG.md`. (See [GitHub Releases](#github-releases).)
 - Asks for confirmation before publishing, and shows a preview of the changes made to `package.json` and `CHANGELOG.md`, enabling you to double check before publishing.
 
 <br/>
@@ -199,3 +200,23 @@ pnpm exec release-me init
 
 > [!NOTE]
 > Stable releases get npm [provenance](https://docs.npmjs.com/generating-provenance-statements), commit releases don't.
+
+### GitHub Releases
+
+`$ pnpm exec release-me init` also creates `.github/workflows/sync-github-releases.yml`, a GitHub Action that keeps the GitHub Releases in sync with `CHANGELOG.md`:
+- It creates the missing releases (older ones too), rewrites the ones whose notes differ from `CHANGELOG.md`, and deletes the ones whose version isn't in `CHANGELOG.md` anymore.
+- It runs upon each push to `main` that changes a `CHANGELOG.md` (e.g. a release commit), and upon pressing its **Run workflow** button (it then syncs all packages).
+
+`CHANGELOG.md` is the source of truth: edit it instead of a GitHub Release (the next sync overwrites GitHub Releases).
+
+> [!NOTE]
+> The first sync creates a GitHub Release for every version in `CHANGELOG.md`.
+
+Preview the changes without making them:
+
+```shell
+pnpm exec release-me sync-github-releases --dry-run
+```
+
+> [!NOTE]
+> Run locally, it uses the environment variable `GITHUB_TOKEN`, or else the token of the GitHub CLI `gh` (`$ gh auth login`). Without `--dry-run`, the token needs write access to the repository's contents.

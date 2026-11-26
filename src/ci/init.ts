@@ -1,10 +1,10 @@
 export { init }
 
-// `$ pnpm exec release-me init` creates (or updates) .github/workflows/release.yml
+// `$ pnpm exec release-me init` creates (or updates) .github/workflows/release.yml and .github/workflows/sync-github-releases.yml
 
 import pc from '@brillout/picocolors'
 import { getGitHubRepo, getRepositoryMismatch } from './githubAction.ts'
-import { releaseWorkflowFileName, releaseWorkflowFilePath, writeReleaseWorkflowFile } from './releaseWorkflowFile.ts'
+import { releaseWorkflowFileName, writeWorkflowFiles } from './releaseWorkflowFile.ts'
 import {
   assertInstalledAtRoot,
   getFilesInsideDir,
@@ -21,19 +21,28 @@ async function init() {
   assertPackageManager(monorepoRootDir)
   const packages = getReleaseMePackages(await getFilesInsideDir(monorepoRootDir))
 
-  const status = writeReleaseWorkflowFile(monorepoRootDir)
+  const results = writeWorkflowFiles(monorepoRootDir)
+  const releaseWorkflowStatus = results.find(
+    ({ workflowFile }) => workflowFile.fileName === releaseWorkflowFileName,
+  )!.status
 
-  // CLI output is read bottom to top: release.yml last
+  // CLI output is read bottom to top: the workflow files last
   logTitle('npm trusted publisher', true)
-  await logNpmSetup(monorepoRootDir, packages, status === 'created' ? 'Set up' : "If you didn't already, set up")
+  await logNpmSetup(
+    monorepoRootDir,
+    packages,
+    releaseWorkflowStatus === 'created' ? 'Set up' : "If you didn't already, set up",
+  )
 
   logTitle('GitHub Action')
-  if (status === 'up-to-date') {
-    console.log(`${pc.bold(releaseWorkflowFilePath)} is up-to-date`)
-    return
+  for (const { workflowFile, status } of results) {
+    const filePath = pc.bold(workflowFile.filePath)
+    if (status === 'up-to-date') console.log(`${filePath} is up-to-date`)
+    else console.log(`${status === 'created' ? 'Created' : 'Updated'} ${filePath}`)
   }
-  console.log(`${status === 'created' ? 'Created' : 'Updated'} ${pc.bold(releaseWorkflowFilePath)}`)
-  await commitReleaseWorkflowFile(monorepoRootDir, status)
+  const filePathsChanged = results.filter(({ status }) => status !== 'up-to-date').map((r) => r.workflowFile.filePath)
+  if (filePathsChanged.length === 0) return
+  await commitWorkflowFiles(monorepoRootDir, filePathsChanged, releaseWorkflowStatus === 'created')
   console.log(`Push the commit to the default branch ${pc.dim('$ git push')}`)
 }
 
@@ -50,12 +59,11 @@ function assertPackageManager(monorepoRootDir: string) {
   )
 }
 
-async function commitReleaseWorkflowFile(monorepoRootDir: string, status: 'created' | 'updated') {
-  const commitMessage =
-    status === 'created' ? 'ci: set up release-me GitHub Action' : 'ci: update release-me GitHub Action'
-  await run(['git', 'add', '--', releaseWorkflowFilePath], { cwd: monorepoRootDir })
-  // Only commit the workflow file (`$ git commit -- <file>` ignores other staged changes)
-  await run(['git', 'commit', '--quiet', '-m', commitMessage, '--', releaseWorkflowFilePath], { cwd: monorepoRootDir })
+async function commitWorkflowFiles(monorepoRootDir: string, filePaths: string[], isSetup: boolean) {
+  const commitMessage = isSetup ? 'ci: set up release-me GitHub Action' : 'ci: update release-me GitHub Action'
+  await run(['git', 'add', '--', ...filePaths], { cwd: monorepoRootDir })
+  // Only commit the workflow files (`$ git commit -- <file>` ignores other staged changes)
+  await run(['git', 'commit', '--quiet', '-m', commitMessage, '--', ...filePaths], { cwd: monorepoRootDir })
   console.log(`Committed ${pc.dim(`(${commitMessage})`)}`)
 }
 

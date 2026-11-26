@@ -7,6 +7,8 @@
     "dev": "tsc --watch",
     "// === Build ===": "",
     "build": "rm -rf dist/ && tsc",
+    "// === Test ===": "",
+    "test": "vitest run",
     "========= Formatting": "",
     "format": "pnpm run format:biome",
     "format:prettier": "git ls-files | egrep '\\.(json|js|jsx|css|ts|tsx|vue|mjs|cjs)$' | grep --invert-match package.json | xargs pnpm exec prettier --write",
@@ -31,7 +33,8 @@
     "@types/node": "^20.8.5",
     "@types/semver": "^7.5.3",
     "prettier": "^2.8.7",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
   },
   "// ./src/cli.ts — For @brillout/release-me's own releases: runs the source (Node.js strips its types)": "",
   "// ./dist/cli.js — For @brillout/release-me users": "",
@@ -42,7 +45,8 @@
   },
   "files": [
     "dist/",
-    ".github/workflows/release.yml"
+    ".github/workflows/release.yml",
+    ".github/workflows/sync-github-releases.yml"
   ],
   "packageManager": "pnpm@12.23.0",
   "type": "module",
