@@ -37,8 +37,7 @@ function getReleasePlan({
   const releasesToCreate: ReleaseToCreate[] = []
   const releasesToUpdate: ReleasePlan['releasesToUpdate'] = []
 
-  // releaseBodyByVersion is newest-first; the newest version is the one eligible to be the repo's
-  // "Latest". Capture it before reversing.
+  // The newest version is the one that may be the repo's "Latest" (releaseBodyByVersion is newest-first)
   const entries = Object.entries(releaseBodyByVersion)
   const latestVersion = entries[0]?.[0]
 
