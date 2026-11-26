@@ -187,9 +187,12 @@ Consider adding `release` scripts to the monorepo root's `package.json`:
 
 ## GitHub Action
 
-Instead of publishing from your machine (which requires npm 2FA), you can let `@brillout/release-me`'s GitHub Action publish releases to npm (without 2FA and without an npm secret token).
+Instead of publishing from your machine (which requires npm 2FA), you can let `@brillout/release-me`'s GitHub Action publish releases to npm (without 2FA and without an npm secret token):
 
-Run `$ pnpm exec release-me init` then follow the steps it prints.
+```shell
+# Run then follow the steps it prints
+pnpm exec release-me init
+```
 
 > [!NOTE]
 > It uses [npm's trusted publishing](https://docs.npmjs.com/trusted-publishers).
