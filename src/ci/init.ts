@@ -85,7 +85,7 @@ async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[]
     console.log(`        ${label.padEnd(22)}${pc.bold(value)}`)
   }
   console.log(`   3. Click ${pc.bold('Set up connection')}`)
-  console.log(`   ${pc.bold('⚠️  Make sure to use the connection within 2 days (e.g. publish commit-release) after creating it, otherwise the connection creation is canclled')}`)
+  console.log(`   ${pc.bold('⚠️  Make sure to use the connection within 2 days (e.g. make a commit release) after creating it (otherwise the connection creation is cancelled)')}`)
 
   for (const { packageName, packageRootDir } of packages) {
     const { repository } = getPackageJson(packageRootDir).packageJson
