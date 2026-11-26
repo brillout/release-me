@@ -1,4 +1,4 @@
-// TODO/after-merge: move to new dir src/ci/release-npm/cmd/ (like src/ci/release-github/)
+// TODO/after-merge: move to new dir src/ci/release-npm/cli/ (like src/ci/release-github/)
 
 export { ciPublish }
 

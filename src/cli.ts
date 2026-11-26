@@ -5,8 +5,8 @@ import pc from '@brillout/picocolors'
 import { releaseMe, type ReleaseTarget, type ReleaseType, releaseTypes } from './releaseMe.ts'
 import { init } from './ci/init.ts'
 import { ciPublish } from './ci/ci-publish.ts'
-import { syncGitHubReleases } from './ci/release-github/cmd/github-release-sync.ts'
-import { deleteAllGitHubReleases } from './ci/release-github/cmd/github-release-delete-all.ts'
+import { syncGitHubReleases } from './ci/release-github/cli/github-release-sync.ts'
+import { deleteAllGitHubReleases } from './ci/release-github/cli/github-release-delete-all.ts'
 
 program
   .name('release-me')
