@@ -111,7 +111,7 @@ BREAKING CHANGE: Replace `someFunction(someArg)` with `someFunction({ someArg })
 ```
 
 > [!NOTE]
-> When introducing a breaking change, in order to respect the [semver](https://semver.org/) convention, don't `$ pnpm exec release-me patch` but `$ pnpm exec release-me major` instead (or `$ pnpm exec release-me minor` if your package's version is `0.y.z`).
+> When introducing a breaking change, in order to respect the [semver](https://semver.org) convention, don't `$ pnpm exec release-me patch` but `$ pnpm exec release-me major` instead (or `$ pnpm exec release-me minor` if your package's version is `0.y.z`).
 
 ### Monorepo
 
