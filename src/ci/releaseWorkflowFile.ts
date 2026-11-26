@@ -40,6 +40,7 @@ function getWorkflowFile(fileName: string, command: string): WorkflowFile {
   )} and ${initCommand}, then push the commit it makes (if any).`
   return { fileName, filePath, command, outdated }
 }
+// TODO/after-merge: rename release.yml to release-npm.yml (npm's trusted publisher of each package is bound to the workflow filename: it must then be updated on npmjs.com)
 const releaseWorkflowFile = getWorkflowFile('release.yml', 'pnpm exec release-me ci-publish')
 const syncWorkflowFile = getWorkflowFile('release-github.yml', 'pnpm exec release-me sync-github-releases')
 const workflowFiles = [releaseWorkflowFile, syncWorkflowFile]
