@@ -8,6 +8,7 @@ type ReleaseNotesByVersion = Record<string, string>
 function parseChangelog(changelog: string): ReleaseNotesByVersion {
   // Match each version heading, ignoring any link release-me appends after the version
   // (`## [0.4.257](…)`) — only the version itself is captured.
+  // TODO/after-merge: also match the headings without link (e.g. `## 0.1.0 (2023-05-24)`: conventional-changelog writes a package's first release like that). Such a version gets no GitHub Release, and its heading ends up in the notes of the next version. Then findReleaseCommit() should also find such a heading (it searches `[<version>](`): otherwise, if its tag is missing, the run fails.
   const matches = [...changelog.matchAll(/^##? \[(\d+\.\d+\.\d+[^\]]*)\](?:\([^)]+\))?/gm)]
 
   return Object.fromEntries(
