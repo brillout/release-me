@@ -1,10 +1,8 @@
 export { parseChangelog }
-export { buildReleaseBody }
+export type { ReleaseNotesByVersion }
 
-// By version (e.g. `0.4.257`, `0.1.0-beta.6`), newest first: the notes parsed from CHANGELOG.md, and the release bodies
-// built from them (see buildReleaseBody())
-export type ReleaseNotesByVersion = Record<string, string>
-export type ReleaseBodyByVersion = Record<string, string>
+// By version (e.g. `0.4.257`, `0.1.0-beta.6`), newest first
+type ReleaseNotesByVersion = Record<string, string>
 
 // The notes of each version of a CHANGELOG.md
 function parseChangelog(changelog: string): ReleaseNotesByVersion {
@@ -22,29 +20,4 @@ function parseChangelog(changelog: string): ReleaseNotesByVersion {
       return [version, notes]
     }),
   )
-}
-
-// The release body of a version: its notes, with
-//  - the release date on top, when known (see getReleaseDate()): a GitHub Release otherwise shows when it was synced
-//    (its `published_at`), not when the version was released, and
-//  - a footer linking to CHANGELOG.md, to discourage editing the GitHub Release (the next sync overwrites it).
-function buildReleaseBody(
-  notes: string,
-  { releaseDate, changelogUrl }: { releaseDate: string | null; changelogUrl: string },
-): string {
-  const dateLine = releaseDate ? `_${formatReleaseDate(releaseDate)}_\n\n` : ''
-  const footer = `<sub>Automatically synced from [\`CHANGELOG.md\`](${changelogUrl})</sub>`
-  return `${dateLine}${notes}\n\n${footer}`
-}
-
-// Render an ISO date (`2026-05-06`) in a human-friendly long form (`May 6, 2026`). Formatted in UTC so
-// the day matches getReleaseDate()'s committer date regardless of the runner's timezone.
-const releaseDateFormatter = new Intl.DateTimeFormat('en-US', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-  timeZone: 'UTC',
-})
-function formatReleaseDate(isoDate: string): string {
-  return releaseDateFormatter.format(new Date(`${isoDate}T00:00:00Z`))
 }

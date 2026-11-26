@@ -2,7 +2,7 @@ export { getReleasePlan }
 export type { ReleasePlan }
 export type { ReleaseToCreate }
 
-import type { ReleaseBodyByVersion } from '../utils/changelog.ts'
+import type { ReleaseBodyByVersion } from './release-body.ts'
 import type { Release } from '../utils/github.ts'
 import type { TagScheme } from './tag-scheme.ts'
 
