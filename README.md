@@ -32,12 +32,6 @@ Used by:
 
 <br/>
 
-<!--
-TODO/after-merge: update section:
-- `"@brillout/release-me": "^0.4.0"` => the version released with `$ pnpm exec release-me init --npm` and `--github`
-- It describes publishing from your machine (`$ pnpm exec release-me patch`) and then the GitHub Actions (`$ pnpm exec release-me init`): make it one setup path
--->
-
 ## Get started
 
 ### Installation
@@ -53,7 +47,7 @@ Run `$ pnpm add -D @brillout/release-me` and make sure you have the following:
     "build": "echo 'Some build step (release-me runs the build script before releasing)'"
   },
   "devDependencies": {
-    "@brillout/release-me": "^0.4.0"
+    "@brillout/release-me": "^0.6.0"
   }
 }
 ```
@@ -82,7 +76,7 @@ We recommend adding the following scripts:
 +    "release:commit": "release-me commit"
    },
    "devDependencies": {
-     "@brillout/release-me": "^0.4.0"
+     "@brillout/release-me": "^0.6.0"
    }
  }
 ```
