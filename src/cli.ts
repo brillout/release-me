@@ -43,10 +43,10 @@ program
   )
   .action(init)
 
-// Run by the GitHub Action (see ./ci/releaseWorkflowFile.ts)
+// Run by the GitHub Action (see ./ci/workflowFiles.ts)
 program.command('ci-publish', { hidden: true }).action(ciPublish)
 
-// Run by the GitHub Action (see ./ci/releaseWorkflowFile.ts), and locally to preview or backfill
+// Run by the GitHub Action (see ./ci/workflowFiles.ts), and locally to preview or backfill
 program
   .command('sync-github-releases')
   .description(

@@ -4,7 +4,7 @@ export { init }
 
 import pc from '@brillout/picocolors'
 import { getGitHubRepo, getRepositoryMismatch } from './githubAction.ts'
-import { releaseWorkflowFileName, writeWorkflowFiles } from './releaseWorkflowFile.ts'
+import { releaseWorkflowFileName, writeWorkflowFiles } from './workflowFiles.ts'
 import {
   assertInstalledAtRoot,
   getFilesInsideDir,
