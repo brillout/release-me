@@ -500,8 +500,6 @@ async function bumpPnpmLockFile(monorepoRootDir: string) {
       // - There is no pnpm setting to skip that prompt (`--force` skips it but it also forces a full reinstall).
       // - `--lockfile-only` skips the node_modules validation altogether, and it's also faster (nothing is downloaded, no lifecycle script is run).
       '--lockfile-only',
-      // Peer dependency issues don't abort the release, even if the repository sets strict-peer-dependencies: pnpm then only warns about them (it writes pnpm-lock.yaml either way)
-      '--config.strict-peer-dependencies=false',
     ].join(' '),
     { cwd: monorepoRootDir, timeout: 10 * 60 * 1000 },
   )
