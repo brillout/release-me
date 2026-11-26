@@ -93,13 +93,13 @@ Used by:
    ```
 
 > [!NOTE]
-> Make sure to follow [Conventional Commits](#conventional-commits), so that `@brillout/release-me` can generate `CHANGELOG.md` from your commits.
+> Make sure to follow [Conventional Commits](#conventional-commits).
 
 <br/>
 
 ## Conventional Commits
 
-Follow [Conventional Commits](https://www.conventionalcommits.org):
+Follow [Conventional Commits](https://www.conventionalcommits.org), so that `@brillout/release-me` can generate `CHANGELOG.md` from your commits:
 
 - `fix:` => bug fix or some polishing (e.g. improved error message).
 - `feat:` => new feature, i.e. new functionality.
