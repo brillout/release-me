@@ -31,8 +31,6 @@ async function ciPublish() {
   // The input `package` (commit release only, empty: all packages)
   const selectedPackage = getEnv('SELECTED_PACKAGE')
   if (!isCommitRelease && selectedPackage) {
-    // Only possible with "Run workflow": a tag selected in "Use workflow from" and an empty input `ref`
-    // The fields as "Run workflow" shows them (the descriptions of the inputs `package` and `ref`)
     fail(
       `The field "Package" (${selectedPackage}) is only for commit releases, but this run re-publishes the stable release ${releaseTag} (the tag selected in "Use workflow from"). To re-publish ${releaseTag}, run the workflow again with an empty "Package" field. To commit-release ${selectedPackage} instead, run it again with ${releaseTag} in the field "Commit to commit-release".`,
     )
