@@ -23,7 +23,7 @@ import assert from 'assert'
 import * as semver from 'semver'
 import { runCommand, assertUsage, logDetail, logTitle, run, run__return } from './utils.ts'
 import { abortIfNotOnNpm, triggerCommitRelease, triggerStableRelease } from './ci/githubAction.ts'
-import { publishesViaGitHubAction, releaseWorkflowFileName, releaseWorkflowPath } from './ci/releaseWorkflow.ts'
+import { publishesViaGitHubAction, releaseWorkflowFileName, releaseWorkflowPath } from './ci/releaseWorkflowFile.ts'
 import * as path from 'path'
 /*
 //  "js-yaml": "4.1.0",

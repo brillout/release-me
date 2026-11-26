@@ -42,7 +42,7 @@ program
   )
   .action(init)
 
-// Run by the GitHub Action (see ./ci/releaseWorkflow.ts)
+// Run by the GitHub Action (see ./ci/releaseWorkflowFile.ts)
 program.command('ci-publish', { hidden: true }).action(ciPublish)
 
 await program.parseAsync()

@@ -4,13 +4,13 @@ export { parseGitHubRepo }
 export { triggerCommitRelease }
 export { triggerStableRelease }
 
-// In repositories that use the GitHub Action (see ./releaseWorkflow.ts), `$ pnpm exec release-me` triggers the GitHub
+// In repositories that use the GitHub Action (see ./releaseWorkflowFile.ts), `$ pnpm exec release-me` triggers the GitHub
 // Action instead of publishing to npm: it pushes the release tag (stable release) or runs the workflow (commit release).
 
 import execa from 'execa'
 import pc from '@brillout/picocolors'
 import { assertUsage, logDetail, logTitle, run } from '../utils.ts'
-import { releaseWorkflowFileName, releaseWorkflowPath } from './releaseWorkflow.ts'
+import { releaseWorkflowFileName, releaseWorkflowPath } from './releaseWorkflowFile.ts'
 
 /** @param packageSpec The released package, e.g. `vike@0.4.271` */
 async function triggerStableRelease(gitTag: string, packageSpec: string) {

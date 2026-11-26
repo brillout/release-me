@@ -1,13 +1,13 @@
 export { ciPublish }
 
-// `$ pnpm exec release-me ci-publish`, run by the GitHub Action (see ./releaseWorkflow.ts), builds the released packages and publishes them to npm.
+// `$ pnpm exec release-me ci-publish`, run by the GitHub Action (see ./releaseWorkflowFile.ts), builds the released packages and publishes them to npm.
 
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { logTitle, run } from '../utils.ts'
-import { isReleaseWorkflowUpToDate, releaseWorkflowFileName, releaseWorkflowOutdated } from './releaseWorkflow.ts'
+import { isReleaseWorkflowUpToDate, releaseWorkflowFileName, releaseWorkflowOutdated } from './releaseWorkflowFile.ts'
 import {
   build,
   getCommitHash,
