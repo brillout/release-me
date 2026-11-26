@@ -77,7 +77,7 @@ Used by:
    pnpm exec release-me init
    ```
 
-That's it: `$ pnpm run release` releases a new patch version (see [CLI](#cli)).
+5. Make sure to follow [Conventional Commits](#conventional-commits) (`@brillout/release-me` generates `CHANGELOG.md` from your commits).
 
 ### Monorepo
 
