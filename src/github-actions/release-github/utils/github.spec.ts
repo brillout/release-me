@@ -9,9 +9,9 @@ describe('createReleasesClient()', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     const client = createReleasesClient({ repo: 'owner/repo', token: 'token', dryRun: true })
 
-    await client.create({ tag_name: 'v1.0.0', name: 'v1.0.0', body: 'Notes', make_latest: 'true' })
-    await client.update({ id: 1, tag_name: 'v0.9.0', body: 'Fresh' })
-    await client.delete({ id: 2, tag_name: 'v0.8.0', body: 'Notes' })
+    await client.create({ tag_name: 'v1.0.0', name: 'vike@1.0.0', body: 'Notes', make_latest: 'true' })
+    await client.update({ id: 1, tag_name: 'v0.9.0', name: 'vike@0.9.0', body: 'Fresh' })
+    await client.delete({ id: 2, tag_name: 'v0.8.0', name: 'vike@0.8.0', body: 'Notes' })
 
     expect(fetchSpy).not.toHaveBeenCalled()
     expect(logSpy.mock.calls.flat()).toEqual([

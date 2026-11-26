@@ -9,6 +9,7 @@ import { setTimeout } from 'node:timers/promises'
 type Release = {
   id: number
   tag_name: string
+  name: string | null
   body: string | null
 }
 
@@ -25,8 +26,8 @@ type NewRelease = {
 type ReleasesClient = {
   list(): Promise<Release[]>
   create(release: NewRelease): Promise<void>
-  /** Sets the body of the release to `release.body` */
-  update(release: Release & { body: string }): Promise<void>
+  /** Sets the name and body of the release to `release.name` and `release.body` */
+  update(release: Release & { name: string; body: string }): Promise<void>
   delete(release: Release): Promise<void>
 }
 
@@ -110,7 +111,7 @@ function createReleasesClient({
     // https://docs.github.com/en/rest/releases/releases#update-a-release
     update(release): Promise<void> {
       return write('update', release.tag_name, () =>
-        request(`${releasesPath}/${release.id}`, { method: 'PATCH', body: { body: release.body } }),
+        request(`${releasesPath}/${release.id}`, { method: 'PATCH', body: { name: release.name, body: release.body } }),
       )
     },
     // https://docs.github.com/en/rest/releases/releases#delete-a-release
