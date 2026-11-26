@@ -212,4 +212,4 @@ pnpm exec release-me patch --force   # Release even in unexpected situations (e.
 ```
 
 > [!NOTE]
-> A commit release doesn't change your repository (no release commit, no Git tag), and it has no npm dist-tag: installing it requires its exact version, e.g. `$ pnpm add my-package@0.1.2-commit-ff3d6cd`.
+> A commit release doesn't change your repository (no release commit, no Git tag), and it has no npm dist-tag.
