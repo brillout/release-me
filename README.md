@@ -217,7 +217,7 @@ pnpm exec release-me init
 > `CHANGELOG.md` is the source of truth: GitHub Releases are created, updated, and deleted to match it. Edit `CHANGELOG.md` instead of a GitHub Release (the next sync overwrites it).
 
 > [!NOTE]
-> The first sync creates a GitHub Release for every version in `CHANGELOG.md`.
+> The first sync creates A LOT of GitHub Releases: one for every version in `CHANGELOG.md`.
 
 It syncs upon each push to `main` that changes a `CHANGELOG.md` (e.g. a release commit), and upon pressing its **Run workflow** button (it then syncs all packages). It creates the missing releases (older ones too), rewrites the ones whose notes differ from `CHANGELOG.md`, and deletes the ones whose version isn't in `CHANGELOG.md` anymore.
 
