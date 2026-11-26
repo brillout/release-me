@@ -52,7 +52,6 @@ async function ciPublish() {
     published.push(await publish(pkg, isCommitRelease))
   }
   writeSummary(published, isCommitRelease)
-  writeDone()
 }
 
 /** The package that the Git tag releases */
@@ -155,13 +154,6 @@ function writeSummary(published: string[], isCommitRelease: boolean) {
   if (!GITHUB_STEP_SUMMARY) return
   const lines = published.map((spec) => (isCommitRelease ? `- \`${spec}\` — \`npm install ${spec}\`` : `- \`${spec}\``))
   fs.appendFileSync(GITHUB_STEP_SUMMARY, `### Published to npm\n\n${lines.join('\n')}\n`)
-}
-
-/** Tells release.yml that ci-publish ran: a release-me older than ci-publish exits without error and without publishing */
-function writeDone() {
-  const { GITHUB_OUTPUT } = process.env
-  if (!GITHUB_OUTPUT) return
-  fs.appendFileSync(GITHUB_OUTPUT, 'done=true\n')
 }
 
 function isPublished(packageName: string, version: string): boolean {
