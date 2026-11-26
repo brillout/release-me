@@ -1,3 +1,17 @@
+# [0.5.0](https://github.com/brillout/release-me/compare/v0.4.19...v0.5.0) (2026-11-26)
+
+
+### Features
+
+* publish via GitHub Action using npm trusted publishing ([#7](https://github.com/brillout/release-me/issues/7)) ([2ceb172](https://github.com/brillout/release-me/commit/2ceb17236534cb1b6cca76a67c0124c0b2927189))
+
+
+### BREAKING CHANGES
+
+* In a monorepo, add `@brillout/release-me` to the `devDependencies` of the root `package.json` and remove it from all other `package.json`, see https://github.com/brillout/release-me#monorepo
+
+
+
 ## [0.4.19](https://github.com/brillout/release-me/compare/v0.4.18...v0.4.19) (2026-10-04)
 
 
