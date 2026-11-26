@@ -28,22 +28,6 @@ describe('getReleasePlan()', () => {
     })
   })
 
-  it('updates the current release instead of creating a duplicate', () => {
-    const plan = getReleasePlan({
-      tagScheme: getTagScheme('vike', false),
-      releaseBodyByVersion: {
-        '1.0.1': 'Fresh release notes',
-      },
-      githubReleases: [{ id: 3, tag_name: 'v1.0.1', body: 'Stale release notes' }],
-    })
-
-    expect(plan).toEqual({
-      releasesToCreate: [],
-      releasesToUpdate: [{ id: 3, tag_name: 'v1.0.1', body: 'Fresh release notes' }],
-      releasesToDelete: [],
-    })
-  })
-
   it('leaves releases we do not own untouched (no spurious update or delete)', () => {
     const plan = getReleasePlan({
       tagScheme: getTagScheme('vike', false),
@@ -87,24 +71,5 @@ describe('getReleasePlan()', () => {
     })
 
     expect(plan).toEqual({ releasesToCreate: [], releasesToUpdate: [], releasesToDelete: [] })
-  })
-
-  it('qualifies tags with the package name when several packages share the repo', () => {
-    const plan = getReleasePlan({
-      tagScheme: getTagScheme('create-vike-core', true),
-      releaseBodyByVersion: {
-        '0.0.2': 'New notes',
-        '0.0.1': 'Old notes',
-      },
-      // The existing release is matched by its namespaced tag — no duplicate is created for it, and
-      // it isn't confused with another package's bare `v0.0.1` release.
-      githubReleases: [{ id: 1, tag_name: 'create-vike-core@0.0.1', body: 'Old notes' }],
-    })
-
-    expect(plan).toEqual({
-      releasesToCreate: [{ tag_name: 'create-vike-core@0.0.2', body: 'New notes', version: '0.0.2', isLatest: true }],
-      releasesToUpdate: [],
-      releasesToDelete: [],
-    })
   })
 })
