@@ -84,13 +84,6 @@ pnpm exec release-me commit   # Release the current commit (0.1.2-commit-ff3d6cd
 > [!NOTE]
 > With the `release` scripts (see [Get started](#get-started)), use `$ pnpm run release`, `$ pnpm run release:minor`, etc.
 
-A release (other than a commit release):
-1. Checks that the repository has no uncommitted changes, and that its current branch is `main` and up-to-date with `origin/main`.
-2. Updates the version in `package.json`, and adds the release's entry to `CHANGELOG.md`.
-3. Shows a preview of the changes, and asks for confirmation.
-4. Runs the `build` script, then publishes to npm (or lets the GitHub Action publish it, see [Npm Release](#npm-release)).
-5. Commits the changes (`release: v0.1.3`), tags the commit (`v0.1.3`), and pushes both.
-
 Options:
 - `--yes`: skip the confirmation.
 - `--force`: release even in unexpected situations, e.g. from another branch than `main`, or without `CHANGELOG.md` entry.
@@ -204,9 +197,8 @@ Instead of publishing from your machine (which requires npm 2FA), you can let `@
 pnpm exec release-me init --npm
 ```
 
-Then:
-- `$ pnpm exec release-me patch` pushes the release commit and its Git tag: the Git tag triggers the GitHub Action, which builds and publishes the release.
-- `$ pnpm exec release-me commit` triggers the GitHub Action (with the GitHub CLI `gh`) for the current commit, which must be pushed. You can also commit-release any commit by pressing the **Run workflow** button of the GitHub Action `release-npm.yml`.
+> [!NOTE]
+> To commit-release any commit, press the **Run workflow** button of the GitHub Action `release-npm.yml` (`$ pnpm exec release-me commit` does it for the current commit, which must be pushed).
 
 > [!NOTE]
 > It uses [npm's trusted publishing](https://docs.npmjs.com/trusted-publishers): each package needs a trusted publisher on npmjs.com (`$ pnpm exec release-me init` prints the steps), and its `package.json#repository` must match the GitHub repository. npm can't set up a trusted publisher for a package that isn't on npm yet: publish its first version manually (`$ pnpm publish`).
