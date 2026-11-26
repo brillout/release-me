@@ -1,3 +1,14 @@
+## [0.5.2](https://github.com/brillout/release-me/compare/v0.5.1...v0.5.2) (2026-11-26)
+
+
+### Bug Fixes
+
+* explain how to set up npm's trusted publisher when the GitHub Action can't authenticate ([#22](https://github.com/brillout/release-me/issues/22)) ([c0f2bbf](https://github.com/brillout/release-me/commit/c0f2bbfb1d2ec31b0c1e9c095901158b92139e52))
+* name GitHub Releases `<package>@<version>` ([#21](https://github.com/brillout/release-me/issues/21)) ([beabfd5](https://github.com/brillout/release-me/commit/beabfd52c766fb5bc17c9fcc88ff0941b638e63e))
+* only <ENTER> confirms the release ([#20](https://github.com/brillout/release-me/issues/20)) ([dee72c8](https://github.com/brillout/release-me/commit/dee72c87215a41d31849ef8d9b0c9e3897001d49))
+
+
+
 ## [0.5.1](https://github.com/brillout/release-me/compare/v0.5.0...v0.5.1) (2026-11-26)
 
 
