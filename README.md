@@ -193,6 +193,9 @@ pnpm exec release-me github-release-sync
 > The first sync creates A LOT of GitHub Releases: one for every version listed in `CHANGELOG.md`.
 
 > [!NOTE]
+> If an old version doesn't have a Git tag, the sync creates the tag at the commit that added the version to `CHANGELOG.md`. The GitHub Action isn't allowed to create such tag if the commit's `.github/workflows/` differs from the current one (GitHub requires the `workflows` permission, which the GitHub Action can't get): the GitHub Action then skips these releases, syncs all others, and fails. Create the skipped releases from your machine by running `$ pnpm exec release-me github-release-sync` (if GitHub refuses your token as well, run `$ gh auth refresh -s workflow` first).
+
+> [!NOTE]
 > `CHANGELOG.md` is the source of truth: **upon each push of a `CHANGELOG.md` change to `main`, GitHub Releases are created, updated, and deleted to match exactly `CHANGELOG.md`**. Always edit `CHANGELOG.md` instead of a GitHub Release: the next sync overwrites any edit made to a GitHub Release.
 
 <br/>

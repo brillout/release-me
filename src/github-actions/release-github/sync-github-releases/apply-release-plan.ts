@@ -2,23 +2,43 @@ export { applyReleasePlan }
 
 import type { ReleasePlan, ReleaseToCreate } from './release-plan.ts'
 import { findReleaseCommit, gitTagExists } from '../utils/git.ts'
-import type { NewRelease, ReleasesClient } from '../utils/github.ts'
+import { GitHubApiError, type NewRelease, type ReleasesClient } from '../utils/github.ts'
 
 // Apply the plan of getReleasePlan(). The target commits are resolved here, before calling the client (which skips the
 // writes under --dry-run): a dry run also shows a missing tag's failure or warning.
+/** @returns The tags of the releases it skipped, because the token isn't allowed to create their git tag (see isTagCreationForbidden()) */
 async function applyReleasePlan({
   plan,
   client,
   changelogPath,
-}: { plan: ReleasePlan; client: ReleasesClient; changelogPath: string }): Promise<void> {
+}: { plan: ReleasePlan; client: ReleasesClient; changelogPath: string }): Promise<string[]> {
+  const skippedReleaseTags: string[] = []
   for (const release of plan.releasesToCreate) {
     const targetCommitish = resolveTargetCommitish(release, changelogPath)
-    await client.create(buildNewRelease(release, targetCommitish))
+    try {
+      await client.create(buildNewRelease(release, targetCommitish))
+    } catch (err) {
+      // Only a missing tag (`targetCommitish` is set) is created by the request
+      if (targetCommitish === undefined || !isTagCreationForbidden(err)) throw err
+      // Skip it, so that the other releases are still synced (the caller fails the run once everything else is synced)
+      console.warn(`Skipped release ${release.tag_name}: the token isn't allowed to create its git tag`)
+      skippedReleaseTags.push(release.tag_name)
+    }
   }
 
   for (const release of plan.releasesToUpdate) await client.update(release)
 
   for (const release of plan.releasesToDelete) await client.delete(release)
+
+  return skippedReleaseTags
+}
+
+// GitHub refuses (403) to let a token without the `workflows` permission create a git tag at a commit whose
+// .github/workflows/ differs from the current one — typically the old commit of a backfilled release. The GitHub
+// Action's GITHUB_TOKEN can't get that permission.
+function isTagCreationForbidden(err: unknown): boolean {
+  // GitHub's secondary rate limit also answers 403
+  return err instanceof GitHubApiError && err.status === 403 && !/rate limit/i.test(err.responseBody)
 }
 
 // The commit a to-be-created release is tagged at (its GitHub `target_commitish`):
