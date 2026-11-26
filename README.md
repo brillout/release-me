@@ -193,7 +193,8 @@ pnpm exec release-me init --npm
 > Stable releases get npm [provenance](https://docs.npmjs.com/generating-provenance-statements), commit releases don't.
 
 > [!WARNING]
-> Anyone with write access to the repository can publish: only give write access to people you trust, and only commit-release commits you trust (e.g. review a pull request before commit-releasing it).
+> - Only commit-release commits you trust (e.g. review a pull request before commit-releasing it)
+> - Anyone with write access can publish: only give repository write access to people you trust
 
 ### GitHub Release
 
