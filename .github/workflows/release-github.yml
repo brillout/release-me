@@ -24,6 +24,8 @@ permissions:
 concurrency:
   group: sync-github-releases
   cancel-in-progress: false
+  # Keep every pending run: by default, a new pending run cancels the older one, whose packages (a push only syncs the packages whose CHANGELOG.md it changes) would then not be synced
+  queue: max
 
 jobs:
   sync_github_releases:
