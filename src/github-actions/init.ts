@@ -3,14 +3,14 @@ export { init }
 // `$ pnpm exec release-me init [--npm] [--github]` creates (or updates) .github/workflows/release.yml and/or .github/workflows/release-github.yml (see getWorkflowFilesToInit())
 
 import pc from '@brillout/picocolors'
-import { getRepositoryMismatch } from './githubAction.ts'
+import { getRepositoryMismatch } from './release-npm/githubAction.ts'
 import { getGitHubRepo } from './utils/githubRepo.ts'
 import {
   getWorkflowFilesToInit,
-  releaseWorkflowFileName,
+  releaseNpmWorkflowFile,
   writeWorkflowFiles,
   type WorkflowFileOptions,
-} from './releaseWorkflowFile.ts'
+} from './workflowFiles.ts'
 import {
   assertInstalledAtRoot,
   getFilesInsideDir,
@@ -28,22 +28,20 @@ async function init(options: WorkflowFileOptions) {
   const packages = getReleaseMePackages(await getFilesInsideDir(monorepoRootDir))
 
   const results = writeWorkflowFiles(monorepoRootDir, getWorkflowFilesToInit(monorepoRootDir, options))
-  const releaseWorkflowStatus = results.find(
-    ({ workflowFile }) => workflowFile.fileName === releaseWorkflowFileName,
-  )?.status
+  const releaseNpmWorkflowStatus = results.find(({ workflowFile }) => workflowFile === releaseNpmWorkflowFile)?.status
 
   // CLI output is read bottom to top: the workflow files last
-  if (releaseWorkflowStatus) {
+  if (releaseNpmWorkflowStatus) {
     logTitle('npm trusted publisher', true)
     await logNpmSetup(
       monorepoRootDir,
       packages,
-      releaseWorkflowStatus === 'created' ? 'Set up' : "If you didn't already, set up",
+      releaseNpmWorkflowStatus === 'created' ? 'Set up' : "If you didn't already, set up",
     )
   }
 
   // The first title has no margin
-  logTitle('GitHub Action', releaseWorkflowStatus ? undefined : true)
+  logTitle('GitHub Action', releaseNpmWorkflowStatus ? undefined : true)
   for (const { workflowFile, status } of results) {
     const filePath = pc.bold(workflowFile.filePath)
     if (status === 'up-to-date') console.log(`${filePath} is up-to-date`)
@@ -95,9 +93,9 @@ async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[]
   const fields = [
     ['Organization or user', owner ?? '<owner>'],
     ['Repository', repoName ?? '<repo>'],
-    ['Workflow filename', releaseWorkflowFileName],
+    ['Workflow filename', releaseNpmWorkflowFile.fileName],
     ['Allow npm publish', '✅'],
-    // `$ npm dist-tag rm` removes the dist-tag that `$ npm publish` requires for commit releases (see ./ci-publish.ts)
+    // `$ npm dist-tag rm` removes the dist-tag that `$ npm publish` requires for commit releases (see ./release-npm/cli/ci-publish.ts)
     ['Allow npm dist-tag', '✅'],
   ] as const
   for (const [label, value] of fields) {

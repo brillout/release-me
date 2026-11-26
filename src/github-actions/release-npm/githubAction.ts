@@ -1,21 +1,19 @@
-// TODO/after-merge: move to new dir src/ci/release-npm/ (like src/ci/release-github/)
-
 export { abortIfNotOnNpm }
 export { abortIfRepositoryMismatch }
 export { getRepositoryMismatch }
 export { logStableRelease }
 export { triggerCommitRelease }
 
-// In repositories that use the GitHub Action (see ./releaseWorkflowFile.ts), `$ pnpm exec release-me` triggers the GitHub
+// In repositories that use the GitHub Action (see ../workflowFiles.ts), `$ pnpm exec release-me` triggers the GitHub
 // Action instead of publishing to npm: by pushing the release tag (stable release, see gitPush()) or by running the
 // workflow (commit release).
 
 import execa from 'execa'
 import pc from '@brillout/picocolors'
-import { assertUsage, logDetail, logTitle, run } from '../utils.ts'
-import { releaseWorkflowFileName, releaseWorkflowFilePath } from './releaseWorkflowFile.ts'
-import { getGitHubRepo, parseGitHubRepo } from './utils/githubRepo.ts'
-import type { PackageJson } from '../releaseMe.ts'
+import { assertUsage, logDetail, logTitle, run } from '../../utils.ts'
+import { releaseNpmWorkflowFile } from '../workflowFiles.ts'
+import { getGitHubRepo, parseGitHubRepo } from '../utils/githubRepo.ts'
+import type { PackageJson } from '../../releaseMe.ts'
 
 // After gitPush() pushed the release tag, which triggers the GitHub Action that publishes to npm
 /** @param packageSpec The released package, e.g. `vike@0.4.271` */
@@ -47,7 +45,9 @@ async function triggerCommitRelease(packageName: string, versionNew: string, com
   )
   const ghUnavailable = await checkCommitOnGitHub(repo, commitHash, runWorkflow)
   if (ghUnavailable) {
-    console.log(`${ghUnavailable}, so release-me can't trigger the GitHub Action ${pc.bold(releaseWorkflowFileName)}.`)
+    console.log(
+      `${ghUnavailable}, so release-me can't trigger the GitHub Action ${pc.bold(releaseNpmWorkflowFile.fileName)}.`,
+    )
     console.log(
       `To commit-release ${pc.cyan(packageSpec)}, push its commit (if it isn't on GitHub yet), then ${runWorkflow}.`,
     )
@@ -57,7 +57,7 @@ async function triggerCommitRelease(packageName: string, versionNew: string, com
     'gh',
     'workflow',
     'run',
-    releaseWorkflowFileName,
+    releaseNpmWorkflowFile.fileName,
     '--repo',
     repo,
     '-f',
@@ -159,13 +159,12 @@ async function checkCommitOnGitHub(repo: string, commitHash: string, runWorkflow
 }
 
 function logWillPublish(packageSpec: string, workflowLink: string, hint: string) {
-  console.log(
-    `GitHub Action ${pc.bold(releaseWorkflowFileName)} will publish ${pc.cyan(packageSpec)} to npm: ${workflowLink}`,
-  )
+  const workflow = pc.bold(releaseNpmWorkflowFile.fileName)
+  console.log(`GitHub Action ${workflow} will publish ${pc.cyan(packageSpec)} to npm: ${workflowLink}`)
   console.log(pc.dim(`(${hint})`))
 }
 
 function getWorkflowLink(repo: string | null) {
-  if (!repo) return pc.bold(releaseWorkflowFilePath)
-  return pc.underline(`https://github.com/${repo}/actions/workflows/${releaseWorkflowFileName}`)
+  if (!repo) return pc.bold(releaseNpmWorkflowFile.filePath)
+  return pc.underline(`https://github.com/${repo}/actions/workflows/${releaseNpmWorkflowFile.fileName}`)
 }

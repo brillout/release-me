@@ -1,14 +1,8 @@
-// TODO/after-merge: rename file and exports
-// TODO/after-merge: rename dir src/ci/ to src/github-actions/
-
 export { getWorkflowFilesToInit }
-export { isReleaseWorkflowFileUpToDate }
 export { isWorkflowFileUpToDate }
 export { publishesViaGitHubAction }
-export { releaseWorkflowFileName }
-export { releaseWorkflowFileOutdated }
-export { releaseWorkflowFilePath }
 export { releaseGitHubWorkflowFile }
+export { releaseNpmWorkflowFile }
 export { writeWorkflowFiles }
 export type { WorkflowFile }
 export type { WorkflowFileOptions }
@@ -47,17 +41,13 @@ function getWorkflowFile(fileName: string, option: WorkflowFile['option'], comma
   return { fileName, filePath, option, command, outdated }
 }
 // TODO/after-merge: rename release.yml to release-npm.yml (npm's trusted publisher of each package is bound to the workflow filename: it must then be updated on npmjs.com)
-const releaseWorkflowFile = getWorkflowFile('release.yml', 'npm', 'pnpm exec release-me ci-publish')
+const releaseNpmWorkflowFile = getWorkflowFile('release.yml', 'npm', 'pnpm exec release-me ci-publish')
 const releaseGitHubWorkflowFile = getWorkflowFile(
   'release-github.yml',
   'github',
   'pnpm exec release-me github-release-sync',
 )
-const workflowFiles = [releaseWorkflowFile, releaseGitHubWorkflowFile]
-
-const releaseWorkflowFileName = releaseWorkflowFile.fileName
-const releaseWorkflowFilePath = releaseWorkflowFile.filePath
-const releaseWorkflowFileOutdated = releaseWorkflowFile.outdated
+const workflowFiles = [releaseNpmWorkflowFile, releaseGitHubWorkflowFile]
 
 const thisPackageRootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
@@ -69,7 +59,7 @@ function publishesViaGitHubAction(monorepoRootDir: string): boolean {
       throw new Error(pc.red(pc.bold(`Release aborted, because ${workflowFile.outdated}`)))
     }
   }
-  return workflowFilesSetUp.includes(releaseWorkflowFile)
+  return workflowFilesSetUp.includes(releaseNpmWorkflowFile)
 }
 
 /** The workflow files of release-me that the repository has */
@@ -94,9 +84,6 @@ function getWorkflowFilesToInit(monorepoRootDir: string, options: WorkflowFileOp
   return workflowFiles
 }
 
-function isReleaseWorkflowFileUpToDate(monorepoRootDir: string): boolean {
-  return isWorkflowFileUpToDate(monorepoRootDir, releaseWorkflowFile)
-}
 function isWorkflowFileUpToDate(monorepoRootDir: string, workflowFile: WorkflowFile): boolean {
   return readWorkflowFile(monorepoRootDir, workflowFile) === getWorkflowFileExpected(workflowFile)
 }

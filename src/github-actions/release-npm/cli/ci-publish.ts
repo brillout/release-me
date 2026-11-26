@@ -1,20 +1,14 @@
-// TODO/after-merge: move to new dir src/ci/release-npm/cli/ (like src/ci/release-github/)
-
 export { ciPublish }
 
-// `$ pnpm exec release-me ci-publish`, run by the GitHub Action (see ./releaseWorkflowFile.ts), builds the released packages and publishes them to npm.
+// `$ pnpm exec release-me ci-publish`, run by the GitHub Action (see ../../workflowFiles.ts), builds the released packages and publishes them to npm.
 
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import { execFileSync } from 'node:child_process'
-import { logTitle, run } from '../utils.ts'
-import { fail } from './utils/fail.ts'
-import {
-  isReleaseWorkflowFileUpToDate,
-  releaseWorkflowFileName,
-  releaseWorkflowFileOutdated,
-} from './releaseWorkflowFile.ts'
+import { logTitle, run } from '../../../utils.ts'
+import { fail } from '../../utils/fail.ts'
+import { isWorkflowFileUpToDate, releaseNpmWorkflowFile } from '../../workflowFiles.ts'
 import {
   build,
   getCommitHash,
@@ -26,12 +20,12 @@ import {
   updatePackageJsonVersion,
   updateVersionMacro,
   type ReleaseMePackage,
-} from '../releaseMe.ts'
+} from '../../../releaseMe.ts'
 
 async function ciPublish() {
   const monorepoRootDir = await getMonorepoRootDir()
   // E.g. after upgrading release-me without re-running `$ pnpm exec release-me init`
-  if (!isReleaseWorkflowFileUpToDate(monorepoRootDir)) fail(releaseWorkflowFileOutdated)
+  if (!isWorkflowFileUpToDate(monorepoRootDir, releaseNpmWorkflowFile)) fail(releaseNpmWorkflowFile.outdated)
   // Stable release: its Git tag (`v1.2.3` or `some-package@1.2.3`). Commit release: empty.
   const releaseTag = getEnv('RELEASE_TAG')
   const isCommitRelease = !releaseTag
@@ -132,7 +126,7 @@ async function publish({ packageName, packageRootDir }: ReleaseMePackage, isComm
     } catch {
       const npmVersion = execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim()
       console.log(
-        `::warning::Couldn't remove the npm dist-tag commit of ${packageName}: with trusted publishing, it requires npm >= 11.21.0 (this run uses npm ${npmVersion}) and, on npmjs.com, "Allow npm dist-tag" enabled for the trusted publisher ${releaseWorkflowFileName} of ${packageName}.`,
+        `::warning::Couldn't remove the npm dist-tag commit of ${packageName}: with trusted publishing, it requires npm >= 11.21.0 (this run uses npm ${npmVersion}) and, on npmjs.com, "Allow npm dist-tag" enabled for the trusted publisher ${releaseNpmWorkflowFile.fileName} of ${packageName}.`,
       )
     }
   }

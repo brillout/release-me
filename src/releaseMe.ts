@@ -3,7 +3,7 @@ export { releaseTypes }
 export type { CliArgs }
 export type { ReleaseType }
 export type { ReleaseTarget }
-// Used by ./ci/
+// Used by ./github-actions/
 export { build }
 export { getCommitHash }
 export { getCommitReleaseVersion }
@@ -29,8 +29,8 @@ import {
   abortIfRepositoryMismatch,
   logStableRelease,
   triggerCommitRelease,
-} from './ci/githubAction.ts'
-import { publishesViaGitHubAction, releaseWorkflowFileName, releaseWorkflowFilePath } from './ci/releaseWorkflowFile.ts'
+} from './github-actions/release-npm/githubAction.ts'
+import { publishesViaGitHubAction, releaseNpmWorkflowFile } from './github-actions/workflowFiles.ts'
 import * as path from 'path'
 /*
 //  "js-yaml": "4.1.0",
@@ -776,7 +776,7 @@ function logAnalysis(
   console.log(
     `Publish to npm: ${
       viaGitHubAction
-        ? `GitHub Action ${pc.bold(releaseWorkflowFileName)} ${logDetail(releaseWorkflowFilePath)}`
+        ? `GitHub Action ${pc.bold(releaseNpmWorkflowFile.fileName)} ${logDetail(releaseNpmWorkflowFile.filePath)}`
         : `locally ${logDetail('$ pnpm publish')}`
     }`,
   )
