@@ -42,13 +42,20 @@ function gitRevExists(rev: string): boolean {
 }
 
 // The commit that introduced this version's changelog entry — i.e. the release commit, which is where
-// its tag belongs. Pickaxe (`-S`, a literal-string search) the history of the package's CHANGELOG.md for the heading's
-// link opener `[<version>](`; the oldest commit that changed its count is the one that added it. The history follows
-// the renames of CHANGELOG.md: its entry may have been added before it was moved (e.g. from the repository root to the
-// package's directory).
+// its tag belongs. Among the commits of the package's CHANGELOG.md that add or remove (`-G`) the version's heading, the
+// oldest is the one that added it. The history follows the renames of CHANGELOG.md: its entry may have been added
+// before it was moved (e.g. from the repository root to the package's directory).
 function findReleaseCommit(version: string, changelogPath: string): string | null {
+  // The version's heading, with or without link, like parseChangelog(): `## [0.4.257](…)` or `## 0.1.0 (…)`. A POSIX
+  // extended regex, where the version ends at `]`, a space, or the line end (`0.1.1` mustn't match `0.1.10`).
+  const headingRegex = `^##? \\[?${escapeRegex(version)}(]| |$)`
   // Newest first: `--follow` doesn't work with `--reverse`
-  return gitLines(['log', '--follow', '--format=%H', `-S[${version}](`, '--', changelogPath]).at(-1) ?? null
+  return gitLines(['log', '--follow', '--format=%H', `-G${headingRegex}`, '--', changelogPath]).at(-1) ?? null
+}
+
+// Escape the special characters of a POSIX extended regex
+function escapeRegex(text: string): string {
+  return text.replace(/[\\.[()*+?{|^$]/g, '\\$&')
 }
 
 // The release date (`YYYY-MM-DD`): the committer date of the release commit — the Git tag's, or else the one deduced

@@ -57,9 +57,13 @@ describe('parseChangelog()', () => {
 
   it('parses oldest vike-vue entries (no-link headings, dash bullets)', () => {
     const changelogNotes = parseChangelog(readFixture('changelog-vike-vue.md'))
-    expect(Object.keys(changelogNotes)).toEqual(['0.2.3', '0.2.2', '0.2.1', '0.2.0', '0.1.1'])
+    expect(Object.keys(changelogNotes)).toEqual(['0.2.3', '0.2.2', '0.2.1', '0.2.0', '0.1.1', '0.1.0'])
     expect(changelogNotes['0.2.1']).toContain('Fix peer dependency')
     expect(changelogNotes['0.2.0']).toContain('Add `Head` config option')
+    expect(changelogNotes['0.1.1']).toBe(
+      '- Add README content to [npm package](https://www.npmjs.com/package/vike-vue)',
+    )
+    expect(changelogNotes['0.1.0']).toBe('- Initial version')
   })
 
   it('parses oldest vike-solid entries (single # headings, mixed formats)', () => {
@@ -71,8 +75,10 @@ describe('parseChangelog()', () => {
 
   it('parses oldest vike-react entries (no-link initial version)', () => {
     const changelogNotes = parseChangelog(readFixture('changelog-vike-react.md'))
-    expect(Object.keys(changelogNotes)).toEqual(['0.1.6', '0.1.5', '0.1.4', '0.1.3', '0.1.2', '0.1.1'])
+    expect(Object.keys(changelogNotes)).toEqual(['0.1.6', '0.1.5', '0.1.4', '0.1.3', '0.1.2', '0.1.1', '0.1.0'])
     expect(changelogNotes['0.1.6']).toContain("fix 'vike-react' type")
     expect(changelogNotes['0.1.1']).toContain('fix ESM import paths')
+    expect(changelogNotes['0.1.1']).not.toContain('0.1.0')
+    expect(changelogNotes['0.1.0']).toBe('')
   })
 })
