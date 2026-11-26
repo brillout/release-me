@@ -152,7 +152,7 @@ pnpm exec release-me commit
    ```
 
 > [!NOTE]
-> A package is considered by `@brillout/release-me` if it defines a script that runs `release-me` (private packages are skipped).
+> A package is considered by `@brillout/release-me` if and only if it defines a script that runs `release-me` (private packages are skipped).
 
 ### `CHANGELOG.md` & commit scope
 
