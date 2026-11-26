@@ -1,3 +1,12 @@
+## [0.5.4](https://github.com/brillout/release-me/compare/v0.5.3...v0.5.4) (2026-11-26)
+
+
+### Bug Fixes
+
+* `release-github.yml` skips the dependencies' install scripts ([#24](https://github.com/brillout/release-me/issues/24)) ([a347aad](https://github.com/brillout/release-me/commit/a347aad9ccf224e93cd041474c56de277fee4002))
+
+
+
 ## [0.5.3](https://github.com/brillout/release-me/compare/v0.5.2...v0.5.3) (2026-11-26)
 
 
