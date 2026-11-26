@@ -1,3 +1,12 @@
+## [0.5.3](https://github.com/brillout/release-me/compare/v0.5.2...v0.5.3) (2026-11-26)
+
+
+### Bug Fixes
+
+* `github-release-sync` syncs all other releases when GitHub refuses to create a missing tag ([#23](https://github.com/brillout/release-me/issues/23)) ([f9bc3ed](https://github.com/brillout/release-me/commit/f9bc3ed9b6a67e0f113f06802ee2b0736ae3bbb8))
+
+
+
 ## [0.5.2](https://github.com/brillout/release-me/compare/v0.5.1...v0.5.2) (2026-11-26)
 
 
