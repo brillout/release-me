@@ -1,6 +1,8 @@
 export { abortIfNotOnNpm }
 export { abortIfRepositoryMismatch }
+export { getNotOnNpmReason }
 export { getRepositoryMismatch }
+export { isMissingOnNpm }
 export { logStableRelease }
 export { triggerCommitRelease }
 
@@ -75,22 +77,23 @@ async function triggerCommitRelease(packageName: string, versionNew: string, com
 
 /** The GitHub Action can't publish a package that isn't on npm yet: npm can't set up a trusted publisher for it */
 async function abortIfNotOnNpm(packageName: string) {
+  // No response (e.g. offline, or behind a proxy): let the release proceed
+  if (!(await isMissingOnNpm(packageName))) return
+  throw new Error(pc.red(pc.bold(`Release aborted, because ${getNotOnNpmReason(packageName)}.`)))
+}
+/** Whether npm's registry replies that the package `packageName` doesn't exist (`false` if it doesn't reply) */
+async function isMissingOnNpm(packageName: string): Promise<boolean> {
   // The registry of trusted publishing
   const response = await fetch(`https://registry.npmjs.org/${packageName.replace('/', '%2F')}`, {
     method: 'HEAD',
     signal: AbortSignal.timeout(10_000),
   }).catch(() => null)
-  // No response (e.g. offline, or behind a proxy): let the release proceed
-  if (response?.status !== 404) return
-  throw new Error(
-    pc.red(
-      pc.bold(
-        `Release aborted, because ${packageName} isn't on npm yet, and npm can't set up a trusted publisher for it until it is: publish its first version manually ($ pnpm publish), then set up its trusted publisher (see ${pc.underline(
-          'https://github.com/brillout/release-me#npm-release',
-        )}).`,
-      ),
-    ),
-  )
+  return response?.status === 404
+}
+function getNotOnNpmReason(packageName: string) {
+  return `${packageName} isn't on npm yet, and npm can't set up a trusted publisher for it until it is: publish its first version manually ($ pnpm publish), then set up its trusted publisher (see ${pc.underline(
+    'https://github.com/brillout/release-me#npm-release',
+  )})` as const
 }
 
 /** Otherwise the GitHub Action fails to publish, after the release is pushed */
