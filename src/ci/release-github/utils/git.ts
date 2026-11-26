@@ -20,8 +20,10 @@ function gitLines(args: string[]): string[] {
   return git(args).split('\n').filter(Boolean)
 }
 
-// The files that changed between two commits — used to scope a push to the packages it touched (see getPushedFiles())
-function getChangedFiles(beforeSha: string, headSha: string): string[] {
+// The files that changed between two commits — used to scope a push to the packages it touched (see getPushedFiles()).
+// null if the first commit is missing, e.g. after a force-push (no ref reaches the overwritten commit anymore).
+function getChangedFiles(beforeSha: string, headSha: string): string[] | null {
+  if (!gitRevExists(`${beforeSha}^{commit}`)) return null
   return gitLines(['diff', '--name-only', beforeSha, headSha])
 }
 
@@ -32,9 +34,12 @@ function tagRef(releaseTag: string): string {
 }
 
 function gitTagExists(releaseTag: string): boolean {
-  // `rev-parse --verify` exits non-zero (so git() throws) when the tag is missing.
+  return gitRevExists(tagRef(releaseTag))
+}
+function gitRevExists(rev: string): boolean {
+  // `rev-parse --verify` exits non-zero (so git() throws) when the rev is missing.
   try {
-    git(['rev-parse', '-q', '--verify', tagRef(releaseTag)])
+    git(['rev-parse', '-q', '--verify', rev])
     return true
   } catch {
     return false

@@ -57,7 +57,8 @@ async function getRepo(): Promise<string> {
 }
 
 // The files the triggering push changed, or null when this isn't a push (manual workflow_dispatch, or
-// a local run) — the caller then falls back to syncing every package.
+// a local run) or when they can't be determined (e.g. after a force-push) — the caller then falls back to syncing every
+// package.
 function getPushedFiles(): string[] | null {
   if (process.env.GITHUB_EVENT_NAME !== 'push') return null
   const beforeSha = getCommitBeforePush()
