@@ -20,7 +20,7 @@ on:
   # Commit release
   workflow_dispatch:
     inputs:
-      ref: { description: 'Commit to commit-release: SHA, branch, or refs/pull/<number>/head (default: the selected branch). It runs with npm publish rights: review a pull request before commit-releasing it. To re-publish a stable release, select its tag in "Use workflow from" instead.' }
+      ref: { description: 'Commit to commit-release: SHA, branch, or refs/pull/<number>/head (default: the selected branch). It runs with full npm publish rights: ALWAYS REVIEW a pull request before commit-releasing it. To re-publish a stable release, select its tag in "Use workflow from" instead.' }
       package: { description: 'Package (commit-release only, default: all)' }
 
 jobs:
@@ -42,7 +42,6 @@ jobs:
       - uses: pnpm/action-setup@v6
       - run: pnpm install
       - run: pnpm exec release-me ci-publish
-        # SECURITY: the values are passed as env variables, instead of being inserted into `run:` (shell injection)
         env:
           # - Stable release: the release tag (pushed, or selected in "Use workflow from" with an empty input `ref`)
           # - Commit release: empty
