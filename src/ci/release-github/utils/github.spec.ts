@@ -7,12 +7,7 @@ describe('createReleasesClient()', () => {
   it('under --dry-run, logs what it would do and sends no request', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 204 }))
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    const client = createReleasesClient({
-      repo: 'owner/repo',
-      token: 'token',
-      apiUrl: 'https://api.github.com',
-      dryRun: true,
-    })
+    const client = createReleasesClient({ repo: 'owner/repo', token: 'token', dryRun: true })
 
     await client.create({ tag_name: 'v1.0.0', name: 'v1.0.0', body: 'Notes', make_latest: 'true' })
     await client.update({ id: 1, tag_name: 'v0.9.0', body: 'Fresh' })

@@ -17,7 +17,7 @@ import { assertUsage, logDetail } from '../../../utils.ts'
 async function createReleasesClientFromEnv(dryRun: boolean): Promise<{ client: ReleasesClient; repo: string }> {
   const repo = await getRepo()
   const token = await getGitHubToken()
-  const client = createReleasesClient({ repo, token, apiUrl: getApiUrl(), dryRun })
+  const client = createReleasesClient({ repo, token, dryRun })
   return { client, repo }
 }
 
@@ -35,11 +35,6 @@ async function getGitHubToken(): Promise<string> {
       '$ gh auth login',
     )}.`,
   )
-}
-
-// GITHUB_API_URL is set by GitHub Actions (it differs on GitHub Enterprise)
-function getApiUrl(): string {
-  return process.env.GITHUB_API_URL ?? 'https://api.github.com'
 }
 
 function getDefaultBranch(): string {

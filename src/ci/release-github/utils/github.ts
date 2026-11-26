@@ -41,9 +41,8 @@ const pastTenseByAction = { create: 'Created', update: 'Updated', delete: 'Delet
 function createReleasesClient({
   repo,
   token,
-  apiUrl,
   dryRun,
-}: { repo: string; token: string; apiUrl: string; dryRun: boolean }): ReleasesClient {
+}: { repo: string; token: string; dryRun: boolean }): ReleasesClient {
   const releasesPath = `/repos/${repo}/releases`
   const headers = {
     Accept: 'application/vnd.github+json',
@@ -58,7 +57,8 @@ function createReleasesClient({
     pathname: string,
     { body, method = 'GET' }: { body?: unknown; method?: 'GET' | 'PATCH' | 'POST' | 'DELETE' } = {},
   ): Promise<T> {
-    const response = await fetch(new URL(pathname, apiUrl), {
+    // Only GitHub.com is supported (like the rest of release-me, e.g. getGitHubRepo())
+    const response = await fetch(`https://api.github.com${pathname}`, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
