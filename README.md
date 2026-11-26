@@ -93,7 +93,9 @@ Installation example: [`8ff59fe`](https://github.com/brillout/test-e2e/commit/8f
 
 A `CHANGELOG.md` file will be automatically generated and updated, see the following section.
 
-### Conventional Commits
+<br/>
+
+## Conventional Commits
 
 For proper `CHANGELOG.md` generation make sure to follow [Conventional Commits](https://www.conventionalcommits.org).
 
