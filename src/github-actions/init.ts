@@ -21,7 +21,7 @@ import { getNpmUnavailableReason, getPublishingStatus } from './release-npm/npmT
 import { getPackageJsonSteps } from './packageJsonSteps.ts'
 import { getManual, logManualSteps, runSteps, type Step, type StepOutcome } from './steps.ts'
 import { getGitHubRepo } from './utils/githubRepo.ts'
-import { getCurrentBranch, getDefaultBranch, gitPush, isAheadOfOrigin } from './utils/gitPush.ts'
+import { getCurrentBranch, getDefaultBranch, gitPush, isAheadOfOrigin } from './utils/git.ts'
 import {
   getWorkflowFilesToInit,
   releaseGitHubWorkflowFile,

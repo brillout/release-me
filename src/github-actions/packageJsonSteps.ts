@@ -11,7 +11,7 @@ import * as path from 'path'
 import execa from 'execa'
 import pc from '@brillout/picocolors'
 import { getRepositoryMismatch } from './release-npm/githubAction.ts'
-import { hasUncommittedChanges } from './utils/gitPush.ts'
+import { hasUncommittedChanges } from './utils/git.ts'
 import type { Step } from './steps.ts'
 import { getPackageJson, hasReleaseScript, type PackageJson, type ReleaseMePackage } from '../releaseMe.ts'
 
