@@ -19,8 +19,11 @@ type Step = {
   getNotPossibleReason?: (isChecked: (step: Step) => boolean) => string | null
   /** Not listed: it always runs (also if the user skips the steps), e.g. committing the workflow files */
   alwaysRun?: true
-  /** @returns Whether it succeeded */
-  run: () => Promise<boolean>
+  /**
+   * @param isDone Whether a step before it succeeded
+   * @returns Whether it succeeded
+   */
+  run: (isDone: (step: Step) => boolean) => Promise<boolean>
   /**
    * What the user can do instead, if the step isn't run or fails (`null`: nothing, or the caller logs it), given the
    * steps that were done
@@ -66,7 +69,7 @@ async function runSteps(steps: Step[]): Promise<Map<Step, StepOutcome>> {
       outcomes.set(step, 'not-possible')
       continue
     }
-    outcomes.set(step, (await step.run()) ? 'done' : 'failed')
+    outcomes.set(step, (await step.run((s) => outcomes.get(s) === 'done')) ? 'done' : 'failed')
   }
   return outcomes
 }

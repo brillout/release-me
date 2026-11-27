@@ -23,7 +23,7 @@ import { highlightCommand } from '../../utils.ts'
 
 const npmConnectionCommand = '$ pnpm exec release-me npm-connection'
 
-type ConnectStep = Step & { packageName: string; isConnected: boolean; isFailed: boolean }
+type ConnectStep = Step & { packageName: string }
 /** Creates the trusted publisher of the package `packageName` (`$ npm trust github`) */
 function getConnectStep(
   packageName: string,
@@ -32,21 +32,14 @@ function getConnectStep(
   /** Upon failure, e.g. revoke the old trusted publisher (if npm allows only one) and retry */
   onFailure?: () => Promise<boolean>,
 ): ConnectStep {
-  const step: ConnectStep = {
+  return {
     packageName,
-    isConnected: false,
-    isFailed: false,
     label: `Connect ${pc.cyan(packageName)} to GitHub ${pc.dim('($ npm trust github, npm asks for 2FA)')}`,
     notPossibleReason,
-    run: async () => {
-      step.isConnected = (await createTrustedPublisher(packageName, repo)) || (!!onFailure && (await onFailure()))
-      step.isFailed = !step.isConnected
-      return step.isConnected
-    },
+    run: async () => (await createTrustedPublisher(packageName, repo)) || (!!onFailure && (await onFailure())),
     // See getTrustedPublisherManual()
     manual: null,
   }
-  return step
 }
 
 /**
@@ -79,7 +72,7 @@ function getCommitReleaseStep({
   const workflowLink = getWorkflowLink(releaseNpmWorkflowFile, repo)
   const workflow = pc.bold(releaseNpmWorkflowFile.fileName)
   // The packages to commit-release: the ones connected (or to connect), and the ones to keep
-  const getPackageNames = (isConnected: (step: ConnectStep) => boolean) =>
+  const getPackageNames = (isConnected: (step: Step) => boolean) =>
     [...connectSteps.filter(isConnected).map(({ packageName }) => packageName), ...packagesToKeep].filter(
       (p, i, all) => all.indexOf(p) === i,
     )
@@ -99,8 +92,8 @@ function getCommitReleaseStep({
       }
       return null
     },
-    run: async () => {
-      const packageNames = getPackageNames((step) => step.isConnected)
+    run: async (isDone) => {
+      const packageNames = getPackageNames(isDone)
       // All packages: one commit release (the workflow input `package` is empty)
       const isAll = allPackageNames.every((p) => packageNames.includes(p))
       for (const packageName of isAll ? [''] : packageNames) {
@@ -119,7 +112,7 @@ function getCommitReleaseStep({
     },
     manual: (isDone) => {
       // No new connection
-      if (getPackageNames((step) => step.isConnected).length === 0) return null
+      if (getPackageNames(isDone).length === 0) return null
       const isPushed = isWorkflowOnGitHub || (!!pushStep && isDone(pushStep))
       return `${pc.bold(
         'Within 2 days',

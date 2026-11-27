@@ -15,6 +15,7 @@ import {
   type ConnectStep,
 } from './release-npm/connectionSteps.ts'
 import {
+  createTrustedPublisher,
   describeTrustedPublisher,
   describeWorkflow,
   getNpmUnavailableReason,
@@ -105,7 +106,7 @@ async function npmConnection() {
         )
         if (!isConfirmed) return false
         for (const t of old) if (!(await revoke(packageName, t.id!))) return false
-        return getConnectStep(packageName, repo, null).run()
+        return createTrustedPublisher(packageName, repo)
       }
       connectStep = getConnectStep(packageName, repo, null, revokeOldAndRetry)
       connectSteps.push(connectStep)
@@ -152,11 +153,12 @@ async function npmConnection() {
 
   logTitle('Set up')
   const outcomes = await runSteps(steps)
-  const connected = connectSteps.filter((step) => step.isConnected).map(({ packageName }) => packageName)
+  const isConnected = (step: ConnectStep) => outcomes.get(step) === 'done'
+  const connected = connectSteps.filter(isConnected).map(({ packageName }) => packageName)
   if (connected.length > 0) {
     console.log(`${pc.green('✅')} npm <=> GitHub connection set up: ${connected.map((p) => pc.bold(p)).join(', ')}`)
   }
-  const notConnected = connectSteps.filter((step) => !step.isConnected).map(({ packageName }) => packageName)
+  const notConnected = connectSteps.filter((step) => !isConnected(step)).map(({ packageName }) => packageName)
   const manualNpm = notConnected.length > 0 ? [getTrustedPublisherManual(notConnected, repo)] : []
   // Before the commit release
   if (requiredSteps.length > 0) {

@@ -18,7 +18,7 @@ import {
 } from './release-npm/connectionSteps.ts'
 import { getNpmUnavailableReason, getPublishingStatus } from './release-npm/npmTrust.ts'
 import { getPackageJsonSteps } from './packageJsonSteps.ts'
-import { getManual, logManualSteps, runSteps, type Step } from './steps.ts'
+import { getManual, logManualSteps, runSteps, type Step, type StepOutcome } from './steps.ts'
 import { getGhUnavailableReason } from './utils/gh.ts'
 import { getGitHubRepo } from './utils/githubRepo.ts'
 import { getCurrentBranch, getDefaultBranch, gitPush, isAheadOfOrigin } from './utils/gitPush.ts'
@@ -106,13 +106,13 @@ async function init(options: WorkflowFileOptions) {
 
   if (steps.some((step) => !step.alwaysRun)) logTitle('Set up')
   const outcomes = await runSteps(steps)
-  if (npm) npm.logConnected()
+  if (npm) npm.logConnected(outcomes)
 
   // The manual steps of npm's trusted publishers: after the package.json steps
-  const manualNpm = npm?.getManual() ?? []
+  const manualNpm = npm?.getManual(outcomes) ?? []
   const isTerminal = process.stdin.isTTY && process.stdout.isTTY
   const hints = [
-    ...(npm?.getHints() ?? []),
+    ...(npm?.getHints(outcomes) ?? []),
     // Without terminal, release-me can't ask which steps to run
     !isTerminal &&
       steps.some((step) => !step.alwaysRun && !step.notPossibleReason) &&
@@ -271,16 +271,19 @@ async function getNpmSteps(packages: ReleaseMePackage[], repo: string | null, re
 
   return {
     connectSteps,
-    logConnected() {
-      const connected = connectSteps.filter((step) => step.isConnected).map(({ packageName }) => packageName)
+    logConnected(outcomes: Map<Step, StepOutcome>) {
+      const connected = connectSteps
+        .filter((step) => outcomes.get(step) === 'done')
+        .map(({ packageName }) => packageName)
       if (connected.length === 0) return
       console.log(`${pc.green('✅')} npm <=> GitHub connection set up${getPackagesLabel(connected)}`)
     },
     /** The manual steps of the trusted publishers that weren't set up */
-    getManual(): string[][] {
+    getManual(outcomes: Map<Step, StepOutcome>): string[][] {
       const notConnected = connectSteps
-        .map(({ packageName, isConnected }) => !isConnected && packageName)
-        .filter((p): p is string => !!p && !manualPackages.includes(p) && !notOnNpm.includes(p))
+        .filter((step) => outcomes.get(step) !== 'done')
+        .map(({ packageName }) => packageName)
+        .filter((p) => !manualPackages.includes(p) && !notOnNpm.includes(p))
       const packageNamesManual = [...manualPackages, ...notConnected]
       const manual: string[][] = notOnNpm.map((packageName) => [
         `Publish the first version of ${pc.cyan(packageName)} manually (${highlightCommand(
@@ -296,9 +299,9 @@ async function getNpmSteps(packages: ReleaseMePackage[], repo: string | null, re
       }
       return manual
     },
-    getHints(): string[] {
+    getHints(outcomes: Map<Step, StepOutcome>): string[] {
       // E.g. npm allows only one trusted publisher per package, and the package already has one
-      if (connectSteps.some((step) => step.isFailed)) {
+      if (connectSteps.some((step) => outcomes.get(step) === 'failed')) {
         return [...hints, `${pc.bold('👉')} To replace the existing connection, run ${pc.bold(npmConnectionCommand)}`]
       }
       return hints
