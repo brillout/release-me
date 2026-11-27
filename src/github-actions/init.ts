@@ -17,7 +17,7 @@ import {
   npmConnectionCommand,
   type ConnectStep,
 } from './release-npm/connectionSteps.ts'
-import { getPublishingStatus } from './release-npm/npmRegistry.ts'
+import { getPublishingStatus, type PublishingStatus } from './release-npm/npmRegistry.ts'
 import { getNpmUnavailableReason } from './release-npm/npmTrust.ts'
 import { getPackageJsonSteps, type PackageJsonStep } from './packageJsonSteps.ts'
 import { logManualSteps, runSteps, type Step, type StepOutcome } from './steps.ts'
@@ -209,7 +209,7 @@ async function getNpmSteps(packages: ReleaseMePackage[], repo: string | null, re
   const isManualOnly = !repo || !!renamed
   const connectSteps: ConnectStep[] = []
   // The packages to publish first
-  const notOnNpm: string[] = []
+  let notOnNpm: string[] = []
 
   if (!repo) {
     console.log(
@@ -226,34 +226,33 @@ async function getNpmSteps(packages: ReleaseMePackage[], repo: string | null, re
     const statuses = await Promise.all(
       packageNames.map(async (packageName) => ({ packageName, ...(await getPublishingStatus(packageName, repo)) })),
     )
-    const inUse = statuses.filter(({ status }) => status === 'in-use').map(({ packageName }) => packageName)
+    const withStatus = (status: PublishingStatus['status']) =>
+      statuses.filter((s) => s.status === status).map(({ packageName }) => packageName)
+    const inUse = withStatus('in-use')
+    const toConnect = withStatus('not-in-use')
+    notOnNpm = withStatus('not-on-npm')
     if (inUse.length > 0) {
       console.log(`${pc.green('✅')} npm <=> GitHub connection up-to-date${getPackagesLabel(inUse, packageNames)}`)
       console.log(formatHint(`For more info, run ${pc.bold(npmConnectionCommand)}`))
     }
-    const toConnect = statuses.filter(({ status }) => status === 'not-in-use')
     if (toConnect.length > 0) {
-      const names = toConnect.map(({ packageName }) => packageName)
-      console.log(`${pc.red('❌')} npm <=> GitHub connection not in use yet${getPackagesLabel(names, packageNames)}`)
+      console.log(
+        `${pc.red('❌')} npm <=> GitHub connection not in use yet${getPackagesLabel(toConnect, packageNames)}`,
+      )
     }
     for (const { packageName, status } of statuses) {
       if (status === 'not-on-npm') console.log(`${pc.yellow('⚠️')}  ${pc.cyan(packageName)} isn't on npm yet`)
       if (status === 'unknown') console.log(`${pc.yellow('⚠️')}  ${pc.cyan(packageName)}: npm's registry didn't reply`)
     }
     const npmUnavailableReason = toConnect.length > 0 ? await getNpmUnavailableReason() : null
+    // Why release-me can't connect it (yet)
+    const notPossibleReasons = {
+      'not-in-use': npmUnavailableReason,
+      'not-on-npm': `it isn't on npm yet: publish its first version manually (${highlightCommand('$ pnpm publish')})`,
+      unknown: "npm's registry didn't reply",
+    }
     for (const { packageName, status } of statuses) {
-      if (status === 'in-use') continue
-      if (status === 'not-in-use') {
-        connectSteps.push(getConnectStep(packageName, repo, npmUnavailableReason))
-      } else if (status === 'not-on-npm') {
-        const publish = highlightCommand('$ pnpm publish')
-        connectSteps.push(
-          getConnectStep(packageName, repo, `it isn't on npm yet: publish its first version manually (${publish})`),
-        )
-        notOnNpm.push(packageName)
-      } else {
-        connectSteps.push(getConnectStep(packageName, repo, "npm's registry didn't reply"))
-      }
+      if (status !== 'in-use') connectSteps.push(getConnectStep(packageName, repo, notPossibleReasons[status]))
     }
   }
 
