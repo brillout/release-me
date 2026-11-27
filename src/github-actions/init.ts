@@ -12,14 +12,12 @@ import {
   getCommitReleaseStep,
   getConnectStep,
   getTrustedPublisherManual,
-  isReleaseNpmOnGitHub,
   npmConnectionCommand,
   type ConnectStep,
 } from './release-npm/connectionSteps.ts'
 import { getNpmUnavailableReason, getPublishingStatus } from './release-npm/npmTrust.ts'
 import { getPackageJsonSteps } from './packageJsonSteps.ts'
 import { getManual, logManualSteps, runSteps, type Step, type StepOutcome } from './steps.ts'
-import { getGhUnavailableReason } from './utils/gh.ts'
 import { getGitHubRepo } from './utils/githubRepo.ts'
 import { getCurrentBranch, getDefaultBranch, gitPush, isAheadOfOrigin } from './utils/gitPush.ts'
 import {
@@ -91,19 +89,17 @@ async function init(options: WorkflowFileOptions) {
   if (pushStep) steps.push(pushStep)
 
   // Commit release
-  if (npm && repo && npm.connectSteps.some((step) => !step.notPossibleReason)) {
-    steps.push(
-      getCommitReleaseStep({
-        repo,
-        allPackageNames: packages.map(({ packageName }) => packageName),
-        connectSteps: npm.connectSteps,
-        ghUnavailableReason: await getGhUnavailableReason(),
-        isWorkflowOnGitHub: await isReleaseNpmOnGitHub(monorepoRootDir, defaultBranch),
-        requiredSteps: packageJsonSteps.filter((step) => step.requiredByGitHubAction),
-        pushStep,
-      }),
-    )
-  }
+  const commitReleaseStep =
+    npm && repo
+      ? await getCommitReleaseStep(monorepoRootDir, {
+          repo,
+          allPackageNames: packages.map(({ packageName }) => packageName),
+          connectSteps: npm.connectSteps,
+          packageJsonSteps,
+          pushStep,
+        })
+      : null
+  if (commitReleaseStep) steps.push(commitReleaseStep)
 
   // The first sync of GitHub Releases (afterwards, the GitHub Action syncs them upon each CHANGELOG.md change)
   if (releaseGitHubResult?.status === 'created') steps.push(await getGitHubReleaseSyncStep())

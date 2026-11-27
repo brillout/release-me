@@ -11,7 +11,6 @@ import {
   getCommitReleaseStep,
   getConnectStep,
   getTrustedPublisherManual,
-  isReleaseNpmOnGitHub,
   type ConnectStep,
 } from './release-npm/connectionSteps.ts'
 import {
@@ -26,11 +25,9 @@ import {
   type PublishingStatus,
   type TrustedPublisher,
 } from './release-npm/npmTrust.ts'
-import { getPackageJsonSteps, type PackageJsonStep } from './packageJsonSteps.ts'
+import { getPackageJsonSteps } from './packageJsonSteps.ts'
 import { logManualSteps, runSteps, type Step } from './steps.ts'
-import { getGhUnavailableReason } from './utils/gh.ts'
 import { getGitHubRepo } from './utils/githubRepo.ts'
-import { getDefaultBranch } from './utils/gitPush.ts'
 import { isWorkflowFileUpToDate, releaseNpmWorkflowFile } from './workflowFiles.ts'
 import { assertInstalledAtRoot, getFilesInsideDir, getMonorepoRootDir, getReleaseMePackages } from '../releaseMe.ts'
 import { askConfirmation } from '../utils/askConfirmation.ts'
@@ -127,25 +124,17 @@ async function npmConnection() {
   }
   const steps: Step[] = [...connectSteps, ...deleteSteps]
   // The package.json changes that the GitHub Action requires: `$ pnpm exec release-me init` makes them
-  let requiredSteps: PackageJsonStep[] = []
-  if (connectSteps.some((step) => !step.notPossibleReason) || packagesToKeep.length > 0) {
-    requiredSteps = (await getPackageJsonSteps(monorepoRootDir, packages, repo, true)).filter(
-      (step) => step.requiredByGitHubAction,
-    )
-    const defaultBranch = await getDefaultBranch(monorepoRootDir)
-    steps.push(
-      getCommitReleaseStep({
-        repo,
-        allPackageNames: packageNames,
-        connectSteps,
-        packagesToKeep,
-        ghUnavailableReason: await getGhUnavailableReason(),
-        isWorkflowOnGitHub: await isReleaseNpmOnGitHub(monorepoRootDir, defaultBranch),
-        requiredSteps,
-        pushStep: null,
-      }),
-    )
-  }
+  const packageJsonSteps = await getPackageJsonSteps(monorepoRootDir, packages, repo, true)
+  const commitReleaseStep = await getCommitReleaseStep(monorepoRootDir, {
+    repo,
+    allPackageNames: packageNames,
+    connectSteps,
+    packagesToKeep,
+    packageJsonSteps,
+    pushStep: null,
+  })
+  if (commitReleaseStep) steps.push(commitReleaseStep)
+  const requiredSteps = commitReleaseStep ? packageJsonSteps.filter((step) => step.requiredByGitHubAction) : []
   if (steps.length === 0) {
     if (trustedPublishers) console.log(`${pc.green('✅')} Nothing to fix`)
     return

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import pc from '@brillout/picocolors'
-import { getCommitReleaseStep, getConnectStep } from './connectionSteps.ts'
+import { createCommitReleaseStep, getConnectStep } from './connectionSteps.ts'
 import type { PackageJsonStep } from '../packageJsonSteps.ts'
 import type { Step } from '../steps.ts'
 
@@ -17,18 +17,18 @@ const getRequiredStep = (requiredByGitHubAction: string): PackageJsonStep => ({
   requiredByGitHubAction,
 })
 
-describe('getCommitReleaseStep()', () => {
+describe('createCommitReleaseStep()', () => {
   const connectStep = getConnectStep('vike', repo, null)
   const pushStep: Step = { label: 'Push', run: async () => true, manual: null }
   const repositoryStep = getRequiredStep('"repository" of package.json to be https://github.com/vikejs/vike')
-  const getStep = (isWorkflowOnGitHub: boolean, requiredSteps: PackageJsonStep[] = []) =>
-    getCommitReleaseStep({
+  const getStep = (isWorkflowOnGitHub: boolean, packageJsonSteps: PackageJsonStep[] = []) =>
+    createCommitReleaseStep({
       repo,
       allPackageNames: ['vike'],
       connectSteps: [connectStep],
       ghUnavailableReason: null,
       isWorkflowOnGitHub,
-      requiredSteps,
+      packageJsonSteps,
       pushStep,
     })
 

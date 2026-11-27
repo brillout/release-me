@@ -1,7 +1,7 @@
 export { getConnectStep }
 export { getCommitReleaseStep }
+export { createCommitReleaseStep }
 export { getTrustedPublisherManual }
-export { isReleaseNpmOnGitHub }
 export { npmConnectionCommand }
 export type { ConnectStep }
 
@@ -15,8 +15,8 @@ import { createTrustedPublisher } from './npmTrust.ts'
 import { getTrustedPublisherSteps } from './trustedPublisher.ts'
 import type { PackageJsonStep } from '../packageJsonSteps.ts'
 import type { Step } from '../steps.ts'
-import { runWorkflow } from '../utils/gh.ts'
-import { getFileOnOrigin } from '../utils/gitPush.ts'
+import { getGhUnavailableReason, runWorkflow } from '../utils/gh.ts'
+import { getDefaultBranch, getFileOnOrigin } from '../utils/gitPush.ts'
 import { getRunWorkflowCta, getWorkflowLink } from '../utils/workflowLink.ts'
 import { releaseNpmWorkflowFile } from '../workflowFiles.ts'
 import { highlightCommand } from '../../utils.ts'
@@ -42,33 +42,41 @@ function getConnectStep(
   }
 }
 
+type CommitReleaseOptions = {
+  repo: string
+  allPackageNames: string[]
+  connectSteps: ConnectStep[]
+  /** The packages whose trusted publisher already exists but may not have published yet */
+  packagesToKeep?: string[]
+  /** The package.json changes, among them the ones that the GitHub Action requires (it runs with the default branch on GitHub, so they must be pushed) */
+  packageJsonSteps: PackageJsonStep[]
+  /** The step that pushes the commit (release-npm.yml and the package.json changes) */
+  pushStep: Step | null
+}
 /**
  * Commit-releases the packages that have a new trusted publisher: npm deletes a trusted publisher that doesn't publish
- * within 2 days.
- * @param packagesToKeep The packages whose trusted publisher already exists but may not have published yet
- * @param requiredSteps The package.json changes that the GitHub Action requires (it runs with the default branch on
- * GitHub, so they must be pushed)
- * @param pushStep The step that pushes the commit (release-npm.yml and the package.json changes)
+ * within 2 days. `null` if no package can get a new trusted publisher.
  */
-function getCommitReleaseStep({
+async function getCommitReleaseStep(monorepoRootDir: string, options: CommitReleaseOptions): Promise<Step | null> {
+  const { connectSteps, packagesToKeep = [] } = options
+  if (connectSteps.every((step) => step.notPossibleReason) && packagesToKeep.length === 0) return null
+  return createCommitReleaseStep({
+    ...options,
+    ghUnavailableReason: await getGhUnavailableReason(),
+    isWorkflowOnGitHub: await isReleaseNpmOnGitHub(monorepoRootDir),
+  })
+}
+function createCommitReleaseStep({
   repo,
   allPackageNames,
   connectSteps,
   packagesToKeep = [],
   ghUnavailableReason,
   isWorkflowOnGitHub,
-  requiredSteps,
+  packageJsonSteps,
   pushStep,
-}: {
-  repo: string
-  allPackageNames: string[]
-  connectSteps: ConnectStep[]
-  packagesToKeep?: string[]
-  ghUnavailableReason: string | null
-  isWorkflowOnGitHub: boolean
-  requiredSteps: PackageJsonStep[]
-  pushStep: Step | null
-}): Step {
+}: CommitReleaseOptions & { ghUnavailableReason: string | null; isWorkflowOnGitHub: boolean }): Step {
+  const requiredSteps = packageJsonSteps.filter((step) => step.requiredByGitHubAction)
   const workflowLink = getWorkflowLink(releaseNpmWorkflowFile, repo)
   const workflow = pc.bold(releaseNpmWorkflowFile.fileName)
   // The packages to commit-release: the ones connected (or to connect), and the ones to keep
@@ -138,7 +146,8 @@ function getTrustedPublisherManual(packageNames: string[], repo: string | null):
 }
 
 /** Whether the default branch of `origin` has the current release-npm.yml (as of the last `$ git fetch`) */
-async function isReleaseNpmOnGitHub(monorepoRootDir: string, defaultBranch: string | null): Promise<boolean> {
+async function isReleaseNpmOnGitHub(monorepoRootDir: string): Promise<boolean> {
+  const defaultBranch = await getDefaultBranch(monorepoRootDir)
   if (!defaultBranch) return false
   const { filePath } = releaseNpmWorkflowFile
   const content = await getFileOnOrigin(monorepoRootDir, defaultBranch, filePath)
