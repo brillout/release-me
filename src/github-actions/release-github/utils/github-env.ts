@@ -9,8 +9,8 @@ import execa from 'execa'
 import pc from '@brillout/picocolors'
 import { getChangedFiles } from './git.ts'
 import { createReleasesClient, type ReleasesClient } from './github.ts'
-import { getGitHubRepo } from '../../utils/githubRepo.ts'
-import { assertUsage, highlightCommand, logDetail } from '../../../utils.ts'
+import { getGitHubRepo, noGitHubRepoMessage } from '../../utils/githubRepo.ts'
+import { assertUsage, highlightCommand } from '../../../utils.ts'
 
 // The inputs of a run (the repository, the token, the default branch, the pushed files), read from the GitHub Actions
 // environment, with fallbacks for local runs.
@@ -47,10 +47,7 @@ function getDefaultBranch(): string {
 /** The repository, e.g. `vikejs/vike` */
 async function getRepo(): Promise<string> {
   const repo = process.env.GITHUB_REPOSITORY ?? (await getGitHubRepo())
-  assertUsage(
-    repo,
-    `Couldn't determine the GitHub repository of ${pc.cyan('origin')} ${logDetail('$ git remote get-url origin')}.`,
-  )
+  assertUsage(repo, `${noGitHubRepoMessage}.`)
   return repo
 }
 

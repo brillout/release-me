@@ -21,7 +21,7 @@ import {
 import { getTrustedPublisherManual } from './release-npm/trustedPublisher.ts'
 import { getPackageJsonSteps, type PackageJsonStep } from './packageJsonSteps.ts'
 import { logManualSteps, runSteps, type Step, type StepOutcome } from './steps.ts'
-import { getGitHubRepo } from './utils/githubRepo.ts'
+import { getGitHubRepo, noGitHubRepoMessage } from './utils/githubRepo.ts'
 import { isWorkflowFileUpToDate, releaseNpmWorkflowFile } from './workflowFiles.ts'
 import { assertInstalledAtRoot, getFilesInsideDir, getMonorepoRootDir, getReleaseMePackages } from '../releaseMe.ts'
 import { askConfirmation, isTerminal } from '../utils/ask.ts'
@@ -33,10 +33,7 @@ async function npmConnection() {
   const packages = getReleaseMePackages(await getFilesInsideDir(monorepoRootDir))
   const packageNames = packages.map(({ packageName }) => packageName)
   const repo = await getGitHubRepo(monorepoRootDir)
-  assertUsage(
-    repo,
-    `Couldn't determine the GitHub repository of ${pc.cyan('origin')} ${logDetail('$ git remote get-url origin')}.`,
-  )
+  assertUsage(repo, `${noGitHubRepoMessage}.`)
   assertUsage(
     isWorkflowFileUpToDate(monorepoRootDir, releaseNpmWorkflowFile),
     `${pc.bold(releaseNpmWorkflowFile.filePath)} is missing or outdated: run ${pc.bold(

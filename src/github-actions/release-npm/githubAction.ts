@@ -14,7 +14,7 @@ import execa from 'execa'
 import pc from '@brillout/picocolors'
 import { assertUsage, highlightCommand, logDetail, logTitle, run } from '../../utils.ts'
 import { releaseNpmWorkflowFile } from '../workflowFiles.ts'
-import { getGitHubRepo, parseGitHubRepo } from '../utils/githubRepo.ts'
+import { getGitHubRepo, noGitHubRepoMessage, parseGitHubRepo } from '../utils/githubRepo.ts'
 import { getRunWorkflowCta, getWorkflowLink } from '../utils/workflowLink.ts'
 import type { PackageJson } from '../../releaseMe.ts'
 
@@ -36,10 +36,7 @@ async function logStableRelease(gitTag: string, packageSpec: string) {
 async function triggerCommitRelease(packageName: string, versionNew: string, commitHash: string) {
   logTitle('Trigger commit release')
   const repo = await getGitHubRepo()
-  assertUsage(
-    repo,
-    `Couldn't determine the GitHub repository of ${pc.cyan('origin')} ${logDetail('$ git remote get-url origin')}.`,
-  )
+  assertUsage(repo, `${noGitHubRepoMessage}.`)
   const workflowLink = getWorkflowLink(releaseNpmWorkflowFile, repo)
   const packageSpec = `${packageName}@${versionNew}` as const
   const runWorkflow = getRunWorkflowCta(

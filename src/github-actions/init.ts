@@ -21,7 +21,7 @@ import { getNpmUnavailableReason } from './release-npm/npmTrust.ts'
 import { getDeleteTrustedPublisherManual, getTrustedPublisherManual } from './release-npm/trustedPublisher.ts'
 import { getPackageJsonSteps, type PackageJsonStep } from './packageJsonSteps.ts'
 import { logManualSteps, runSteps, type Step, type StepOutcome } from './steps.ts'
-import { getGitHubRepo } from './utils/githubRepo.ts'
+import { getGitHubRepo, noGitHubRepoMessage } from './utils/githubRepo.ts'
 import { getCurrentBranch, getDefaultBranch, gitPush, isAheadOfOrigin } from './utils/git.ts'
 import {
   getWorkflowFilesToInit,
@@ -212,9 +212,7 @@ async function getNpmSteps(packages: ReleaseMePackage[], repo: string | null, re
   let notOnNpm: string[] = []
 
   if (!repo) {
-    console.log(
-      `Couldn't determine the GitHub repository of ${pc.cyan('origin')} ${logDetail('$ git remote get-url origin')}`,
-    )
+    console.log(noGitHubRepoMessage)
   } else if (renamed) {
     // The trusted publisher of the old workflow still exists, and its releases look like release-npm.yml's
     console.log(

@@ -1,7 +1,15 @@
 export { getGitHubRepo }
 export { parseGitHubRepo }
+export { noGitHubRepoMessage }
 
 import execa from 'execa'
+import pc from '@brillout/picocolors'
+import { logDetail } from '../../utils.ts'
+
+/** When getGitHubRepo() returns `null` */
+const noGitHubRepoMessage = `Couldn't determine the GitHub repository of ${pc.cyan('origin')} ${logDetail(
+  '$ git remote get-url origin',
+)}`
 
 /** The GitHub repository of `origin`, e.g. `vikejs/vike` */
 async function getGitHubRepo(cwd?: string): Promise<string | null> {
