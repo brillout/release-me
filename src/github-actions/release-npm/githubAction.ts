@@ -2,7 +2,6 @@ export { abortIfNotOnNpm }
 export { abortIfRepositoryMismatch }
 export { getNotOnNpmReason }
 export { getRepositoryMismatch }
-export { isMissingOnNpm }
 export { logStableRelease }
 export { triggerCommitRelease }
 
@@ -12,9 +11,10 @@ export { triggerCommitRelease }
 
 import execa from 'execa'
 import pc from '@brillout/picocolors'
-import { assertUsage, logDetail, logTitle, run } from '../../utils.ts'
+import { assertUsage, highlightCommand, logDetail, logTitle, run } from '../../utils.ts'
 import { releaseNpmWorkflowFile } from '../workflowFiles.ts'
-import { getGitHubRepo, parseGitHubRepo } from '../utils/githubRepo.ts'
+import { isMissingOnNpm } from './npmRegistry.ts'
+import { getGitHubRepo, noGitHubRepoMessage, parseGitHubRepo } from '../utils/githubRepo.ts'
 import { getRunWorkflowCta, getWorkflowLink } from '../utils/workflowLink.ts'
 import type { PackageJson } from '../../releaseMe.ts'
 
@@ -36,10 +36,7 @@ async function logStableRelease(gitTag: string, packageSpec: string) {
 async function triggerCommitRelease(packageName: string, versionNew: string, commitHash: string) {
   logTitle('Trigger commit release')
   const repo = await getGitHubRepo()
-  assertUsage(
-    repo,
-    `Couldn't determine the GitHub repository of ${pc.cyan('origin')} ${logDetail('$ git remote get-url origin')}.`,
-  )
+  assertUsage(repo, `${noGitHubRepoMessage}.`)
   const workflowLink = getWorkflowLink(releaseNpmWorkflowFile, repo)
   const packageSpec = `${packageName}@${versionNew}` as const
   const runWorkflow = getRunWorkflowCta(
@@ -80,15 +77,6 @@ async function abortIfNotOnNpm(packageName: string) {
   // No response (e.g. offline, or behind a proxy): let the release proceed
   if (!(await isMissingOnNpm(packageName))) return
   throw new Error(pc.red(pc.bold(`Release aborted, because ${getNotOnNpmReason(packageName)}.`)))
-}
-/** Whether npm's registry replies that the package `packageName` doesn't exist (`false` if it doesn't reply) */
-async function isMissingOnNpm(packageName: string): Promise<boolean> {
-  // The registry of trusted publishing
-  const response = await fetch(`https://registry.npmjs.org/${packageName.replace('/', '%2F')}`, {
-    method: 'HEAD',
-    signal: AbortSignal.timeout(10_000),
-  }).catch(() => null)
-  return response?.status === 404
 }
 function getNotOnNpmReason(packageName: string) {
   return `${packageName} isn't on npm yet, and npm can't set up a trusted publisher for it until it is: publish its first version manually ($ pnpm publish), then set up its trusted publisher (see ${pc.underline(
@@ -136,7 +124,7 @@ async function checkCommitOnGitHub(repo: string, commitHash: string, runWorkflow
       )}` as const
     // `$ gh` exits with 4 when it requires authentication (`$ gh help exit-codes`), and GitHub replies 401 to an invalid token
     if (exitCode === 4 || output?.includes('(HTTP 401)')) {
-      return `The GitHub CLI ${pc.cyan('gh')} isn't logged in ${logDetail('$ gh auth login')}` as const
+      return `The GitHub CLI ${pc.cyan('gh')} isn't logged in (run ${highlightCommand('$ gh auth login')})` as const
     }
     const isMissingCommit = !!output?.includes('(HTTP 422)')
     const reason = isMissingCommit

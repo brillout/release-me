@@ -1,4 +1,7 @@
 export { getTrustedPublisherSteps }
+export { getTrustedPublisherManual }
+export { getDeleteTrustedPublisherManual }
+export { getAccessLink }
 
 import pc from '@brillout/picocolors'
 import { releaseNpmWorkflowFile } from '../workflowFiles.ts'
@@ -6,7 +9,7 @@ import { releaseNpmWorkflowFile } from '../workflowFiles.ts'
 /** The steps to set up, on npmjs.com, the trusted publisher of the packages `packageNames` for the GitHub Action release-npm.yml of the GitHub repository `repo` (e.g. `vikejs/vike`) */
 function getTrustedPublisherSteps(packageNames: string[], repo: string | null): string[] {
   const [owner, repoName] = repo ? repo.split('/') : []
-  const links = packageNames.map((packageName) => pc.underline(`https://www.npmjs.com/package/${packageName}/access`))
+  const links = packageNames.map(getAccessLink)
   const steps =
     links.length === 1 ? [`   1. Go to ${links[0]}`] : ['   1. Go to:', ...links.map((link) => `        ${link}`)]
   steps.push(`   2. Under ${pc.bold('Trusted Publisher')}, click ${pc.bold('GitHub Actions')} and fill in:`)
@@ -24,4 +27,33 @@ function getTrustedPublisherSteps(packageNames: string[], repo: string | null): 
   }
   steps.push(`   3. Click ${pc.bold('Set up connection')}`)
   return steps
+}
+
+/** The manual steps to set up the trusted publishers of the packages `packageNames` on npmjs.com */
+function getTrustedPublisherManual(packageNames: string[], repo: string | null): string[] {
+  const trustedPublisher = `${
+    packageNames.length === 1 ? 'the trusted publisher' : 'the trusted publishers'
+  } of ${packageNames.map((p) => pc.cyan(p)).join(', ')}`
+  return [
+    `Set up ${trustedPublisher} on npmjs.com:`,
+    ...getTrustedPublisherSteps(packageNames, repo),
+    `   ${pc.bold(
+      '⚠️  Use it within 2 days',
+    )} to persist the connection (e.g. make a commit release) after creating it (otherwise the connection creation is cancelled)`,
+  ]
+}
+
+/**
+ * The manual step to delete, on npmjs.com, the trusted publisher of the old workflow `workflowFileName` (e.g.
+ * release.yml) of the packages `packageNames`: before setting up the new one, as npm may allow only one per package
+ */
+function getDeleteTrustedPublisherManual(packageNames: string[], workflowFileName: string): string[] {
+  const deleteIt = `Delete the trusted publisher of ${pc.bold(workflowFileName)} (npm may allow only one per package)`
+  const links = packageNames.map(getAccessLink)
+  return links.length === 1 ? [`${deleteIt} at ${links[0]}`] : [`${deleteIt} at:`, ...links.map((link) => `   ${link}`)]
+}
+
+/** The npmjs.com page that lists the trusted publishers of the package `packageName` */
+function getAccessLink(packageName: string): string {
+  return pc.underline(`https://www.npmjs.com/package/${packageName}/access`)
 }

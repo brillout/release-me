@@ -16,10 +16,11 @@ import {
   getRepo,
 } from '../utils/github-env.ts'
 import { isWorkflowFileUpToDate, releaseGitHubWorkflowFile } from '../../workflowFiles.ts'
+import { githubReleaseSyncCommand } from '../../commands.ts'
 import { fail } from '../../utils/fail.ts'
 import { getRunWorkflowCta, getWorkflowLink } from '../../utils/workflowLink.ts'
 import { getMonorepoRootDir } from '../../../releaseMe.ts'
-import { logDetail } from '../../../utils.ts'
+import { highlightCommand, logDetail } from '../../../utils.ts'
 
 async function githubReleaseSync({ packageArgs, dryRun }: { packageArgs: string[]; dryRun: boolean }): Promise<void> {
   // The directories passed as arguments are relative to where the command is run
@@ -65,10 +66,9 @@ function warnSkipped(skippedReleaseTags: string[]): void {
   const cause = `GitHub only lets a token with the ${pc.bold('workflows')} permission tag a commit whose ${pc.bold(
     '.github/workflows/',
   )} differs from the current one`
-  const syncCmd = '$ pnpm exec release-me github-release-sync'
   if (process.env.GITHUB_ACTIONS) {
     const msg = `Skipped the GitHub Releases ${releases}: their git tags are missing, and the GitHub Action isn't allowed to create them (${cause}, which the GitHub Action can't get). Create them from your machine instead (once): run ${pc.cyan(
-      syncCmd,
+      githubReleaseSyncCommand,
     )} ${logDetail('if GitHub refuses your token too, run $ gh auth refresh -s workflow first')}.`
     // Shown as a warning annotation of the run (annotations don't render colors)
     console.log(`::warning::${pc.rm(msg)}`)
@@ -78,7 +78,9 @@ function warnSkipped(skippedReleaseTags: string[]): void {
     pc.yellow(
       `Skipped the GitHub Releases ${releases}: their git tags are missing, and your token isn't allowed to create them (${cause}). Run ${pc.cyan(
         '$ gh auth refresh -s workflow',
-      )} (or give ${pc.bold('GITHUB_TOKEN')} the ${pc.bold('Workflows')} permission), then re-run ${pc.cyan(syncCmd)}.`,
+      )} (or give ${pc.bold('GITHUB_TOKEN')} the ${pc.bold('Workflows')} permission), then re-run ${pc.cyan(
+        githubReleaseSyncCommand,
+      )}.`,
     ),
   )
 }
@@ -89,7 +91,9 @@ async function logRunWorkflow(packageArgs: string[]) {
   console.log(
     `The environment variable ${pc.bold('GITHUB_TOKEN')} isn't set and the GitHub CLI ${pc.cyan(
       'gh',
-    )} isn't logged in ${logDetail('$ gh auth login')}, so release-me can't sync GitHub Releases from your machine.`,
+    )} isn't logged in (run ${highlightCommand(
+      '$ gh auth login',
+    )}), so release-me can't sync GitHub Releases from your machine.`,
   )
   console.log(
     `To let the GitHub Action ${pc.bold(fileName)} sync them${
