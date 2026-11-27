@@ -51,15 +51,17 @@ function renderChecklist(items: ChecklistItem[], states: ItemState[], cursor: nu
  */
 async function askChecklist(question: string, items: ChecklistItem[]): Promise<boolean[] | null> {
   const { stdin, stdout } = process
+  // With all items checked: the items not possible regardless of the user's choice
+  const initialStates = getChecklistState(items, new Set())
   if (!isTerminal()) {
-    for (const [i, { notPossibleReason }] of getChecklistState(items, new Set()).entries()) {
+    for (const [i, { notPossibleReason }] of initialStates.entries()) {
       if (notPossibleReason) console.log(pc.dim(`${items[i]!.label}: not possible, because ${notPossibleReason}`))
     }
     return null
   }
   const unchecked = new Set<number>()
-  // The items the user can toggle: the ones possible regardless of the other items
-  const isTogglable = (i: number) => !getChecklistState(items, new Set()).at(i)?.notPossibleReason
+  // The items the user can toggle
+  const isTogglable = (i: number) => !initialStates[i]!.notPossibleReason
   let cursor: number | null = items.findIndex((_, i) => isTogglable(i))
   if (cursor === -1) {
     console.log(renderChecklist(items, getChecklistState(items, unchecked), null).join('\n'))
