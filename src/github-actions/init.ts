@@ -4,6 +4,7 @@ export { init }
 
 import pc from '@brillout/picocolors'
 import { getRepositoryMismatch } from './release-npm/githubAction.ts'
+import { setUpTrustedPublishers } from './release-npm/npmTrust.ts'
 import { getTrustedPublisherSteps } from './release-npm/trustedPublisher.ts'
 import { getGitHubRepo } from './utils/githubRepo.ts'
 import {
@@ -78,29 +79,42 @@ async function commitWorkflowFiles(monorepoRootDir: string, changes: WriteResult
   console.log(`Committed ${pc.dim(`(${commitMessage})`)}`)
 }
 
-/** The steps to set up npm's trusted publishing */
+/** Sets up npm's trusted publishing, or logs the steps to set it up */
 async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[], releaseNpmResult: WriteResult) {
   const repo = await getGitHubRepo(monorepoRootDir)
-  const trustedPublisher = `${packages.length === 1 ? "the package's" : "each package's"} trusted publisher`
-  if (releaseNpmResult.status === 'created') {
-    console.log(`Set up ${trustedPublisher}:`)
-  } else if (releaseNpmResult.status === 'renamed') {
-    // A trusted publisher is bound to the workflow filename, which npm can't change
-    const { fileName } = releaseNpmWorkflowFile
-    console.log(
-      `${pc.bold(releaseNpmResult.old.fileName)} was renamed ${pc.bold(fileName)}: set up ${trustedPublisher} anew:`,
-    )
-  } else {
-    console.log(`If you didn't already, set up ${trustedPublisher}:`)
+  const packageNames = packages.map(({ packageName }) => packageName)
+
+  // Only upon setting up release-npm.yml (re-running init doesn't ask for 2FA again). Not upon renaming it: the old
+  // workflow's trusted publisher still exists, and npm allows only one per package.
+  let packageNamesManual = packageNames
+  if (releaseNpmResult.status === 'created' && repo) {
+    packageNamesManual = await setUpTrustedPublishers(packageNames, repo)
+    const packageNamesSetUp = packageNames.filter((packageName) => !packageNamesManual.includes(packageName))
+    if (packageNamesSetUp.length > 0) {
+      const packagesSetUp = packageNamesSetUp.map((p) => pc.bold(p)).join(', ')
+      console.log(`${pc.green('✅')} The trusted publisher of ${packagesSetUp} is set up`)
+    }
   }
-  for (const step of getTrustedPublisherSteps(
-    packages.map(({ packageName }) => packageName),
-    repo,
-  )) {
-    console.log(step)
-  }
-  if (releaseNpmResult.status === 'renamed') {
-    console.log(`   4. Delete the trusted publisher of ${pc.bold(releaseNpmResult.old.fileName)}`)
+
+  if (packageNamesManual.length > 0) {
+    const trustedPublisher = `${packageNamesManual.length === 1 ? "the package's" : "each package's"} trusted publisher`
+    if (releaseNpmResult.status === 'created') {
+      console.log(`Set up ${trustedPublisher}:`)
+    } else if (releaseNpmResult.status === 'renamed') {
+      // A trusted publisher is bound to the workflow filename, which npm can't change
+      const { fileName } = releaseNpmWorkflowFile
+      console.log(
+        `${pc.bold(releaseNpmResult.old.fileName)} was renamed ${pc.bold(fileName)}: set up ${trustedPublisher} anew:`,
+      )
+    } else {
+      console.log(`If you didn't already, set up ${trustedPublisher}:`)
+    }
+    for (const step of getTrustedPublisherSteps(packageNamesManual, repo)) {
+      console.log(step)
+    }
+    if (releaseNpmResult.status === 'renamed') {
+      console.log(`   4. Delete the trusted publisher of ${pc.bold(releaseNpmResult.old.fileName)}`)
+    }
   }
   console.log(
     `   ${pc.bold(
