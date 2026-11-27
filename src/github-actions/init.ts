@@ -86,7 +86,6 @@ async function init(options: WorkflowFileOptions) {
     monorepoRootDir,
     repo,
     defaultBranch,
-    commitStep,
     changes.length > 0 || packageJsonSteps.some((step) => !step.notPossibleReason),
   )
   if (pushStep) steps.push(pushStep)
@@ -155,7 +154,6 @@ async function getPushStep(
   monorepoRootDir: string,
   repo: string | null,
   defaultBranch: string | null,
-  commitStep: Step,
   willCommit: boolean,
 ): Promise<Step | null> {
   const branch = await getCurrentBranch(monorepoRootDir)
@@ -177,7 +175,6 @@ async function getPushStep(
   return {
     label: `Push the commit ${pc.dim(`($ git push origin ${defaultBranch ?? branch})`)}`,
     notPossibleReason: getNotPossibleReason(),
-    getNotPossibleReason: (isDone) => (isDone(commitStep) ? null : 'the commit failed'),
     run: async () => {
       // E.g. nothing was committed (the user unchecked all package.json steps)
       if (!(await isAheadOfOrigin(monorepoRootDir, branch!))) return true
