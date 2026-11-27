@@ -24,8 +24,8 @@ import {
   revokeTrustedPublisher,
   type TrustedPublisher,
 } from './release-npm/npmTrust.ts'
-import { getPackageJsonSteps } from './packageJsonSteps.ts'
-import { logManualSteps, runSteps, type Step } from './steps.ts'
+import { getPackageJsonSteps, type PackageJsonStep } from './packageJsonSteps.ts'
+import { logManualSteps, runSteps, type Step, type StepOutcome } from './steps.ts'
 import { getGitHubRepo } from './utils/githubRepo.ts'
 import { isWorkflowFileUpToDate, releaseNpmWorkflowFile } from './workflowFiles.ts'
 import { assertInstalledAtRoot, getFilesInsideDir, getMonorepoRootDir, getReleaseMePackages } from '../releaseMe.ts'
@@ -89,12 +89,28 @@ async function npmConnection() {
   logTitle('Set up')
   const outcomes = await runSteps(steps)
   logConnected(connectSteps, outcomes, packageNames)
+  logNpmConnectionManualSteps(steps, outcomes, { connectSteps, commitReleaseStep, packageJsonSteps, repo })
+}
 
+/**
+ * The manual steps: the ones of the steps that weren't done, the npmjs.com setup of the packages that weren't connected
+ * (after deleting the old connections: npm may allow only one connection per package), and the package.json fixes (before
+ * the commit release)
+ */
+function logNpmConnectionManualSteps(
+  steps: Step[],
+  outcomes: Map<Step, StepOutcome>,
+  {
+    connectSteps,
+    commitReleaseStep,
+    packageJsonSteps,
+    repo,
+  }: { connectSteps: ConnectStep[]; commitReleaseStep: Step | null; packageJsonSteps: PackageJsonStep[]; repo: string },
+) {
   const notConnected = connectSteps
     .filter((step) => outcomes.get(step) !== 'done')
     .map(({ packageName }) => packageName)
   const manual = notConnected.length > 0 ? [getTrustedPublisherManual(notConnected, repo)] : []
-  // Before the commit release
   const requiredSteps = commitReleaseStep ? packageJsonSteps.filter((step) => step.requiredByGitHubAction) : []
   if (requiredSteps.length > 0) {
     const requirements = requiredSteps.map((step) => step.requiredByGitHubAction).join(', ')
@@ -104,7 +120,6 @@ async function npmConnection() {
       )} (the GitHub Action requires ${requirements})`,
     ])
   }
-  // After deleting the old connections: npm may allow only one connection per package
   logManualSteps(steps, outcomes, { manual, before: commitReleaseStep })
 }
 
