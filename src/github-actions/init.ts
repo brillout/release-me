@@ -11,7 +11,9 @@ import { getGitHubToken } from './release-github/utils/github-env.ts'
 import {
   getCommitReleaseStep,
   getConnectStep,
+  getPackagesLabel,
   getTrustedPublisherManual,
+  logConnected,
   npmConnectionCommand,
   type ConnectStep,
 } from './release-npm/connectionSteps.ts'
@@ -106,7 +108,12 @@ async function init(options: WorkflowFileOptions) {
 
   if (steps.some((step) => !step.alwaysRun)) logTitle('Set up')
   const outcomes = await runSteps(steps)
-  if (npm) npm.logConnected(outcomes)
+  if (npm)
+    logConnected(
+      npm.connectSteps,
+      outcomes,
+      packages.map(({ packageName }) => packageName),
+    )
 
   // The manual steps of npm's trusted publishers: after the package.json steps
   const manualNpm = npm?.getManual(outcomes) ?? []
@@ -207,9 +214,6 @@ async function getGitHubReleaseSyncStep(): Promise<Step> {
 async function getNpmSteps(packages: ReleaseMePackage[], repo: string | null, releaseNpmResult: WriteResult) {
   logTitle('npm trusted publisher')
   const packageNames = packages.map(({ packageName }) => packageName)
-  // Only some packages: which ones
-  const getPackagesLabel = (names: string[]) =>
-    names.length < packageNames.length ? `: ${names.map((p) => pc.bold(p)).join(', ')}` : ''
   const connectSteps: ConnectStep[] = []
   // The packages to set up on npmjs.com, and the ones to publish first
   const manualPackages: string[] = []
@@ -237,13 +241,13 @@ async function getNpmSteps(packages: ReleaseMePackage[], repo: string | null, re
     )
     const inUse = statuses.filter(({ status }) => status === 'in-use').map(({ packageName }) => packageName)
     if (inUse.length > 0) {
-      console.log(`${pc.green('✅')} npm <=> GitHub connection up-to-date${getPackagesLabel(inUse)}`)
+      console.log(`${pc.green('✅')} npm <=> GitHub connection up-to-date${getPackagesLabel(inUse, packageNames)}`)
       console.log(`${pc.bold('👉')} For more info, run ${pc.bold(npmConnectionCommand)}`)
     }
     const toConnect = statuses.filter(({ status }) => status === 'not-in-use')
     if (toConnect.length > 0) {
       const names = toConnect.map(({ packageName }) => packageName)
-      console.log(`${pc.red('❌')} npm <=> GitHub connection not in use yet${getPackagesLabel(names)}`)
+      console.log(`${pc.red('❌')} npm <=> GitHub connection not in use yet${getPackagesLabel(names, packageNames)}`)
     }
     for (const { packageName, status } of statuses) {
       if (status === 'not-on-npm') console.log(`${pc.yellow('⚠️')}  ${pc.cyan(packageName)} isn't on npm yet`)
@@ -269,13 +273,6 @@ async function getNpmSteps(packages: ReleaseMePackage[], repo: string | null, re
 
   return {
     connectSteps,
-    logConnected(outcomes: Map<Step, StepOutcome>) {
-      const connected = connectSteps
-        .filter((step) => outcomes.get(step) === 'done')
-        .map(({ packageName }) => packageName)
-      if (connected.length === 0) return
-      console.log(`${pc.green('✅')} npm <=> GitHub connection set up${getPackagesLabel(connected)}`)
-    },
     /** The manual steps of the trusted publishers that weren't set up */
     getManual(outcomes: Map<Step, StepOutcome>): string[][] {
       const notConnected = connectSteps

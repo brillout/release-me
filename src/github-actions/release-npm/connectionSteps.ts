@@ -2,6 +2,8 @@ export { getConnectStep }
 export { getCommitReleaseStep }
 export { createCommitReleaseStep }
 export { getTrustedPublisherManual }
+export { logConnected }
+export { getPackagesLabel }
 export { npmConnectionCommand }
 export type { ConnectStep }
 
@@ -14,7 +16,7 @@ import pc from '@brillout/picocolors'
 import { createTrustedPublisher } from './npmTrust.ts'
 import { getTrustedPublisherSteps } from './trustedPublisher.ts'
 import type { PackageJsonStep } from '../packageJsonSteps.ts'
-import type { Step } from '../steps.ts'
+import type { Step, StepOutcome } from '../steps.ts'
 import { getGhUnavailableReason, runWorkflow } from '../utils/gh.ts'
 import { getDefaultBranch, getFileOnOrigin } from '../utils/gitPush.ts'
 import { getRunWorkflowCta, getWorkflowLink } from '../utils/workflowLink.ts'
@@ -129,6 +131,18 @@ function createCommitReleaseStep({
       )}${isPushed ? '' : ` after pushing ${workflow}`}, or ${getRunWorkflowCta(workflowLink)}`
     },
   }
+}
+
+/** Logs the packages that the connect steps connected */
+function logConnected(connectSteps: ConnectStep[], outcomes: Map<Step, StepOutcome>, allPackageNames: string[]) {
+  const connected = connectSteps.filter((step) => outcomes.get(step) === 'done').map(({ packageName }) => packageName)
+  if (connected.length === 0) return
+  console.log(`${pc.green('✅')} npm <=> GitHub connection set up${getPackagesLabel(connected, allPackageNames)}`)
+}
+
+/** Which packages, if only some: e.g. `: vike-react, vike-vue` */
+function getPackagesLabel(packageNames: string[], allPackageNames: string[]): string {
+  return packageNames.length < allPackageNames.length ? `: ${packageNames.map((p) => pc.bold(p)).join(', ')}` : ''
 }
 
 /** The manual steps to set up the trusted publishers of the packages `packageNames` on npmjs.com */
