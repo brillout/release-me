@@ -2,7 +2,6 @@ export { abortIfNotOnNpm }
 export { abortIfRepositoryMismatch }
 export { getNotOnNpmReason }
 export { getRepositoryMismatch }
-export { isMissingOnNpm }
 export { logStableRelease }
 export { triggerCommitRelease }
 
@@ -14,6 +13,7 @@ import execa from 'execa'
 import pc from '@brillout/picocolors'
 import { assertUsage, highlightCommand, logDetail, logTitle, run } from '../../utils.ts'
 import { releaseNpmWorkflowFile } from '../workflowFiles.ts'
+import { isMissingOnNpm } from './npmRegistry.ts'
 import { getGitHubRepo, noGitHubRepoMessage, parseGitHubRepo } from '../utils/githubRepo.ts'
 import { getRunWorkflowCta, getWorkflowLink } from '../utils/workflowLink.ts'
 import type { PackageJson } from '../../releaseMe.ts'
@@ -77,15 +77,6 @@ async function abortIfNotOnNpm(packageName: string) {
   // No response (e.g. offline, or behind a proxy): let the release proceed
   if (!(await isMissingOnNpm(packageName))) return
   throw new Error(pc.red(pc.bold(`Release aborted, because ${getNotOnNpmReason(packageName)}.`)))
-}
-/** Whether npm's registry replies that the package `packageName` doesn't exist (`false` if it doesn't reply) */
-async function isMissingOnNpm(packageName: string): Promise<boolean> {
-  // The registry of trusted publishing
-  const response = await fetch(`https://registry.npmjs.org/${packageName.replace('/', '%2F')}`, {
-    method: 'HEAD',
-    signal: AbortSignal.timeout(10_000),
-  }).catch(() => null)
-  return response?.status === 404
 }
 function getNotOnNpmReason(packageName: string) {
   return `${packageName} isn't on npm yet, and npm can't set up a trusted publisher for it until it is: publish its first version manually ($ pnpm publish), then set up its trusted publisher (see ${pc.underline(

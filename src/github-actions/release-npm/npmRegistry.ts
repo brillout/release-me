@@ -1,10 +1,11 @@
 export { getPublishingStatus }
 export { describeWorkflow }
 export { getProvenanceWorkflow }
+export { isMissingOnNpm }
 export type { PublishingStatus }
 
-// Whether a package's npm <=> GitHub connection (npm's trusted publisher) is in use, according to npm's registry (no
-// login needed): whether a release was published by a trusted publisher, and, if the release has provenance (stable
+// What npm's registry (no login needed) tells about a package: whether it exists, and whether its npm <=> GitHub
+// connection (npm's trusted publisher) is in use: whether a release was published by a trusted publisher, and, if the release has provenance (stable
 // releases), by which workflow. To read the connections themselves, see ./npmTrust.ts (it requires an npm login and 2FA).
 
 import { releaseNpmWorkflowFile } from '../workflowFiles.ts'
@@ -36,7 +37,7 @@ type PublishingStatus =
 async function getPublishingStatus(packageName: string, repo: string): Promise<PublishingStatus> {
   let latest: { version: string; publisher: string | null; otherWorkflow: ProvenanceWorkflow | null } | null = null
   for (const distTag of DIST_TAGS) {
-    const release = await fetchJson(`${REGISTRY}/${packageName.replace('/', '%2F')}/${distTag}`)
+    const release = await fetchJson(`${getPackageUrl(packageName)}/${distTag}`)
     if (release === undefined) return { status: 'unknown' }
     if (release === null) continue
     const { version } = release
@@ -87,11 +88,26 @@ function describeWorkflow(workflow: ProvenanceWorkflow): string {
   return [repository, workflow.path].filter(Boolean).join(' ')
 }
 
+/** Whether npm's registry replies that the package `packageName` doesn't exist (`false` if it doesn't reply) */
+async function isMissingOnNpm(packageName: string): Promise<boolean> {
+  const response = await fetchRegistry(getPackageUrl(packageName), 'HEAD')
+  return response?.status === 404
+}
+
+function getPackageUrl(packageName: string): string {
+  return `${REGISTRY}/${packageName.replace('/', '%2F')}`
+}
+
 /** `null` upon 404, `undefined` if the registry didn't reply */
 async function fetchJson(url: string): Promise<any | null | undefined> {
-  const response = await fetch(url, { signal: AbortSignal.timeout(REGISTRY_TIMEOUT) }).catch(() => null)
+  const response = await fetchRegistry(url)
   if (!response) return undefined
   if (response.status === 404) return null
   if (!response.ok) return undefined
   return response.json().catch(() => undefined)
+}
+
+/** `null` if the registry didn't reply (e.g. offline, or behind a proxy) */
+function fetchRegistry(url: string, method?: 'HEAD'): Promise<Response | null> {
+  return fetch(url, { method, signal: AbortSignal.timeout(REGISTRY_TIMEOUT) }).catch(() => null)
 }
