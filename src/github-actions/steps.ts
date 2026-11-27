@@ -8,7 +8,6 @@ export type { StepOutcome }
 // instructions of the steps that aren't run (or that fail) are logged afterwards.
 
 import pc from '@brillout/picocolors'
-import { isTerminal } from '../utils/ask.ts'
 import { askChecklist, type ChecklistItem } from '../utils/checklist.ts'
 import { logTitle } from '../utils/log.ts'
 
@@ -55,8 +54,6 @@ async function runSteps(steps: Step[]): Promise<Map<Step, StepOutcome>> {
           ),
           items,
         )
-  // Without terminal, the checklist isn't shown
-  if (listed.length > 0 && !checked && !isTerminal()) logNotPossibleSteps(listed)
   const isChecked = (step: Step) => !!step.alwaysRun || !!checked?.[listed.indexOf(step)]
 
   const outcomes = new Map<Step, StepOutcome>()
@@ -73,14 +70,6 @@ async function runSteps(steps: Step[]): Promise<Map<Step, StepOutcome>> {
     outcomes.set(step, (await step.run((s) => outcomes.get(s) === 'done')) ? 'done' : 'failed')
   }
   return outcomes
-}
-
-/** The steps that aren't possible, and why */
-function logNotPossibleSteps(steps: Step[]) {
-  for (const step of steps) {
-    if (!step.notPossibleReason) continue
-    console.log(pc.dim(`${step.label}: not possible, because ${step.notPossibleReason}`))
-  }
 }
 
 /**

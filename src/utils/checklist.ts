@@ -46,11 +46,17 @@ function renderChecklist(items: ChecklistItem[], states: ItemState[], cursor: nu
 
 /**
  * Asks the user to check the items (if none is possible: only lists them).
- * @returns Whether each item is checked, or `null` if the user cancelled (<CTRL-C>) or if there is no terminal (the list isn't shown)
+ * @returns Whether each item is checked, or `null` if the user cancelled (<CTRL-C>) or if there is no terminal (then it
+ * only logs the items that aren't possible, and why)
  */
 async function askChecklist(question: string, items: ChecklistItem[]): Promise<boolean[] | null> {
   const { stdin, stdout } = process
-  if (!isTerminal()) return null
+  if (!isTerminal()) {
+    for (const [i, { notPossibleReason }] of getChecklistState(items, new Set()).entries()) {
+      if (notPossibleReason) console.log(pc.dim(`${items[i]!.label}: not possible, because ${notPossibleReason}`))
+    }
+    return null
+  }
   const unchecked = new Set<number>()
   // The items the user can toggle: the ones possible regardless of the other items
   const isTogglable = (i: number) => !getChecklistState(items, new Set()).at(i)?.notPossibleReason
