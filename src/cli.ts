@@ -3,6 +3,7 @@
 import { Argument, InvalidArgumentError, program } from 'commander'
 import pc from '@brillout/picocolors'
 import { releaseMe, type ReleaseTarget, type ReleaseType, releaseTypes } from './releaseMe.ts'
+import { githubReleaseSyncCommand } from './github-actions/commands.ts'
 import { init } from './github-actions/init.ts'
 import { npmConnection } from './github-actions/npmConnection.ts'
 import { ciPublish } from './github-actions/release-npm/cli/ci-publish.ts'
@@ -80,7 +81,7 @@ program
   .command('github-release-delete-all')
   .description(
     `⚠️  Delete all GitHub Releases of the repository (CHANGELOG.md and Git tags are kept: ${pc.bold(
-      '$ pnpm exec release-me github-release-sync',
+      githubReleaseSyncCommand,
     )} re-creates them).`,
   )
   .option('--dry-run', 'only log the deletions, without making them')

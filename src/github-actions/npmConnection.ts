@@ -19,6 +19,7 @@ import {
   type TrustedPublisher,
 } from './release-npm/npmTrust.ts'
 import { getTrustedPublisherManual } from './release-npm/trustedPublisher.ts'
+import { initCommand } from './commands.ts'
 import { getPackageJsonSteps, type PackageJsonStep } from './packageJsonSteps.ts'
 import { logManualSteps, runSteps, type Step, type StepOutcome } from './steps.ts'
 import { getGitHubRepo, noGitHubRepoMessage } from './utils/githubRepo.ts'
@@ -36,9 +37,7 @@ async function npmConnection() {
   assertUsage(repo, `${noGitHubRepoMessage}.`)
   assertUsage(
     isWorkflowFileUpToDate(monorepoRootDir, releaseNpmWorkflowFile),
-    `${pc.bold(releaseNpmWorkflowFile.filePath)} is missing or outdated: run ${pc.bold(
-      '$ pnpm exec release-me init',
-    )} first.`,
+    `${pc.bold(releaseNpmWorkflowFile.filePath)} is missing or outdated: run ${pc.bold(initCommand)} first.`,
   )
 
   // 1. npm's registry
@@ -106,11 +105,7 @@ function logNpmConnectionManualSteps(
   const requiredSteps = commitReleaseStep ? packageJsonSteps.filter((step) => step.requiredByGitHubAction) : []
   if (requiredSteps.length > 0) {
     const requirements = requiredSteps.map((step) => step.requiredByGitHubAction).join(', ')
-    manual.push([
-      `Fix package.json: run ${highlightCommand(
-        '$ pnpm exec release-me init',
-      )} (the GitHub Action requires ${requirements})`,
-    ])
+    manual.push([`Fix package.json: run ${highlightCommand(initCommand)} (the GitHub Action requires ${requirements})`])
   }
   logManualSteps(steps, outcomes, { manual, before: commitReleaseStep })
 }

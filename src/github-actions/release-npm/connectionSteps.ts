@@ -3,7 +3,6 @@ export { getCommitReleaseStep }
 export { createCommitReleaseStep }
 export { logConnected }
 export { getPackagesLabel }
-export { npmConnectionCommand }
 export type { ConnectStep }
 
 // The steps (see ../steps.ts) that set up npm <=> GitHub connections (npm's trusted publishers), shared by
@@ -20,8 +19,6 @@ import { getDefaultBranch, getFileOnOrigin } from '../utils/git.ts'
 import { getRunWorkflowCta, getWorkflowLink } from '../utils/workflowLink.ts'
 import { releaseNpmWorkflowFile } from '../workflowFiles.ts'
 import { highlightCommand } from '../../utils.ts'
-
-const npmConnectionCommand = '$ pnpm exec release-me npm-connection'
 
 type ConnectStep = Step & { packageName: string }
 /** Creates the trusted publisher of the package `packageName` (`$ npm trust github`) */

@@ -13,12 +13,12 @@ import {
   getConnectStep,
   getPackagesLabel,
   logConnected,
-  npmConnectionCommand,
   type ConnectStep,
 } from './release-npm/connectionSteps.ts'
 import { getPublishingStatus, type PublishingStatus } from './release-npm/npmRegistry.ts'
 import { getNpmUnavailableReason } from './release-npm/npmTrust.ts'
 import { getDeleteTrustedPublisherManual, getTrustedPublisherManual } from './release-npm/trustedPublisher.ts'
+import { githubReleaseSyncCommand, initCommand, npmConnectionCommand } from './commands.ts'
 import { getPackageJsonSteps, type PackageJsonStep } from './packageJsonSteps.ts'
 import { logManualSteps, runSteps, type Step, type StepOutcome } from './steps.ts'
 import { getGitHubRepo, noGitHubRepoMessage } from './utils/githubRepo.ts'
@@ -40,8 +40,6 @@ import {
 } from '../releaseMe.ts'
 import { isTerminal } from '../utils/ask.ts'
 import { formatHint, highlightCommand, logCommand, logDetail, logTitle, run } from '../utils.ts'
-
-const initCommand = '$ pnpm exec release-me init'
 
 async function init(options: WorkflowFileOptions) {
   const monorepoRootDir = await getMonorepoRootDir()
@@ -177,16 +175,15 @@ async function getPushStep(monorepoRootDir: string, repo: string | null, willCom
 }
 
 async function getGitHubReleaseSyncStep(): Promise<Step> {
-  const syncCommand = '$ pnpm exec release-me github-release-sync'
   return {
-    label: `Create the GitHub Releases of CHANGELOG.md ${pc.dim(`(one per version, ${syncCommand})`)}`,
+    label: `Create the GitHub Releases of CHANGELOG.md ${pc.dim(`(one per version, ${githubReleaseSyncCommand})`)}`,
     notPossibleReason: (await getGitHubToken())
       ? null
       : `the environment variable ${pc.bold('GITHUB_TOKEN')} isn't set and the GitHub CLI ${pc.cyan(
           'gh',
         )} isn't logged in: run ${highlightCommand('$ gh auth login')}`,
     run: async () => {
-      logCommand(syncCommand)
+      logCommand(githubReleaseSyncCommand)
       try {
         await githubReleaseSync({ packageArgs: [], dryRun: false })
         return true
@@ -195,7 +192,9 @@ async function getGitHubReleaseSyncStep(): Promise<Step> {
         return false
       }
     },
-    manual: `Create the GitHub Releases of CHANGELOG.md (one per version): run ${highlightCommand(syncCommand)}`,
+    manual: `Create the GitHub Releases of CHANGELOG.md (one per version): run ${highlightCommand(
+      githubReleaseSyncCommand,
+    )}`,
   }
 }
 

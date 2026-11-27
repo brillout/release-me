@@ -16,6 +16,7 @@ import {
   getRepo,
 } from '../utils/github-env.ts'
 import { isWorkflowFileUpToDate, releaseGitHubWorkflowFile } from '../../workflowFiles.ts'
+import { githubReleaseSyncCommand } from '../../commands.ts'
 import { fail } from '../../utils/fail.ts'
 import { getRunWorkflowCta, getWorkflowLink } from '../../utils/workflowLink.ts'
 import { getMonorepoRootDir } from '../../../releaseMe.ts'
@@ -65,10 +66,9 @@ function warnSkipped(skippedReleaseTags: string[]): void {
   const cause = `GitHub only lets a token with the ${pc.bold('workflows')} permission tag a commit whose ${pc.bold(
     '.github/workflows/',
   )} differs from the current one`
-  const syncCmd = '$ pnpm exec release-me github-release-sync'
   if (process.env.GITHUB_ACTIONS) {
     const msg = `Skipped the GitHub Releases ${releases}: their git tags are missing, and the GitHub Action isn't allowed to create them (${cause}, which the GitHub Action can't get). Create them from your machine instead (once): run ${pc.cyan(
-      syncCmd,
+      githubReleaseSyncCommand,
     )} ${logDetail('if GitHub refuses your token too, run $ gh auth refresh -s workflow first')}.`
     // Shown as a warning annotation of the run (annotations don't render colors)
     console.log(`::warning::${pc.rm(msg)}`)
@@ -78,7 +78,9 @@ function warnSkipped(skippedReleaseTags: string[]): void {
     pc.yellow(
       `Skipped the GitHub Releases ${releases}: their git tags are missing, and your token isn't allowed to create them (${cause}). Run ${pc.cyan(
         '$ gh auth refresh -s workflow',
-      )} (or give ${pc.bold('GITHUB_TOKEN')} the ${pc.bold('Workflows')} permission), then re-run ${pc.cyan(syncCmd)}.`,
+      )} (or give ${pc.bold('GITHUB_TOKEN')} the ${pc.bold('Workflows')} permission), then re-run ${pc.cyan(
+        githubReleaseSyncCommand,
+      )}.`,
     ),
   )
 }

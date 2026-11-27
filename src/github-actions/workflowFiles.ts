@@ -22,7 +22,7 @@ import { fileURLToPath } from 'url'
 import assert from 'assert'
 import pc from '@brillout/picocolors'
 
-const initCommand = pc.bold('$ pnpm exec release-me init')
+import { initCommand } from './commands.ts'
 
 type WorkflowFile = {
   fileName: string
@@ -47,7 +47,7 @@ function getWorkflowFile(
   // `$ pnpm install` first: if node_modules/ has an older release-me than the lockfile (e.g. after `$ git pull`), `$ pnpm exec release-me init` would downgrade the workflow file
   const outdated = `${filePath} doesn't match the installed release-me's (e.g. after upgrading release-me, or if it was modified): run ${pc.bold(
     '$ pnpm install',
-  )} and ${initCommand}, then push the commit it makes (if any).`
+  )} and ${pc.bold(initCommand)}, then push the commit it makes (if any).`
   const old = fileNameOld ? { fileName: fileNameOld, filePath: getWorkflowFilePath(fileNameOld) } : null
   return { fileName, filePath, option, command, outdated, old }
 }
@@ -134,7 +134,9 @@ function writeWorkflowFiles(monorepoRootDir: string, workflowFilesToWrite: Workf
       throw new Error(
         pc.red(
           pc.bold(
-            `${filePath} already exists and it isn't release-me's: rename or remove it, then re-run ${initCommand}.`,
+            `${filePath} already exists and it isn't release-me's: rename or remove it, then re-run ${pc.bold(
+              initCommand,
+            )}.`,
           ),
         ),
       )
