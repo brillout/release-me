@@ -35,7 +35,7 @@ async function init(options: WorkflowFileOptions) {
 
   // CLI output is read bottom to top: the workflow files last
   if (releaseNpmResult) {
-    logTitle('npm trusted publisher', true)
+    logTitle('Npm <=> GitHub connection', true)
     await setUpTrustedPublishing(monorepoRootDir, packages, releaseNpmResult)
   }
 
@@ -102,8 +102,8 @@ async function setUpTrustedPublishing(
       const packages = names.length < packageNames.length ? `: ${names.map((p) => pc.bold(p)).join(', ')}` : ''
       console.log(`${pc.green('✅')} ${label}${packages}`)
     }
-    logPackages('Trusted publisher up-to-date', result.inUse)
-    logPackages('Trusted publisher set up', result.setUp)
+    logPackages('Npm <=> GitHub connection up-to-date', result.inUse)
+    logPackages('Npm <=> GitHub connection set up', result.setUp)
   }
   if (packageNamesManual.length > 0) {
     const trustedPublisher = `${packageNamesManual.length === 1 ? "the package's" : "each package's"} trusted publisher`
