@@ -97,9 +97,12 @@ async function setUpTrustedPublishing(
     packageNamesManual = result.manual
     packageNamesSetUp = result.setUp
     const logPackages = (label: string, names: string[]) => {
-      if (names.length > 0) console.log(`${pc.green('✅')} ${label}: ${names.map((p) => pc.bold(p)).join(', ')}`)
+      if (names.length === 0) return
+      // Only some packages: which ones
+      const packages = names.length < packageNames.length ? `: ${names.map((p) => pc.bold(p)).join(', ')}` : ''
+      console.log(`${pc.green('✅')} ${label}${packages}`)
     }
-    logPackages('Trusted publisher in use', result.inUse)
+    logPackages('Trusted publisher up-to-date', result.inUse)
     logPackages('Trusted publisher set up', result.setUp)
   }
   if (packageNamesManual.length > 0) {
