@@ -25,10 +25,10 @@ export type { TrustedPublisher }
 //   - A new trusted publisher must publish within 2 days, otherwise it expires.
 //   - It can't enable "Allow npm dist-tag" (which only removes the dist-tag `commit` of commit releases, see ./cli/ci-publish.ts).
 
-import readline from 'node:readline'
 import pc from '@brillout/picocolors'
 import execa from 'execa'
 import { releaseNpmWorkflowFile } from '../workflowFiles.ts'
+import { askQuestion } from '../../utils/ask.ts'
 import { highlightCommand, logDetail } from '../../utils.ts'
 
 const NPM_TRUST_MIN_VERSION = '11.15.0'
@@ -264,17 +264,9 @@ function getOtpRequest(output: string): 'web' | 'classic' | null {
   if (!/EOTP|one-time pass/.test(output)) return null
   return output.includes('authUrl') && output.includes('doneUrl') ? 'web' : 'classic'
 }
-function askOtp(): Promise<string | null> {
-  return new Promise((resolve) => {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
-    let answer: string | null = null
-    rl.question(pc.bold('npm requires a one-time password (2FA): enter it '), (a) => {
-      answer = a.trim()
-      rl.close()
-    })
-    rl.on('SIGINT', () => rl.close())
-    rl.on('close', () => resolve(answer || null))
-  })
+async function askOtp(): Promise<string | null> {
+  const answer = await askQuestion(pc.bold('npm requires a one-time password (2FA): enter it '))
+  return answer?.trim() || null
 }
 
 /** `$ npm trust list --json` prints one JSON object per trusted publisher (nothing if there isn't any). `null` if it can't be parsed. */

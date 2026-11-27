@@ -31,7 +31,7 @@ import { logManualSteps, runSteps, type Step } from './steps.ts'
 import { getGitHubRepo } from './utils/githubRepo.ts'
 import { isWorkflowFileUpToDate, releaseNpmWorkflowFile } from './workflowFiles.ts'
 import { assertInstalledAtRoot, getFilesInsideDir, getMonorepoRootDir, getReleaseMePackages } from '../releaseMe.ts'
-import { askConfirmation } from '../utils/askConfirmation.ts'
+import { askConfirmation } from '../utils/ask.ts'
 import { assertUsage, highlightCommand, logDetail, logTitle } from '../utils.ts'
 
 async function npmConnection() {
