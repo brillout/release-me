@@ -14,16 +14,14 @@ import {
   logConnected,
   type ConnectStep,
 } from './release-npm/connectionSteps.ts'
+import { describeWorkflow, getPublishingStatus, type PublishingStatus } from './release-npm/npmRegistry.ts'
 import {
   createTrustedPublisher,
   describeTrustedPublisher,
-  describeWorkflow,
   getNpmUnavailableReason,
-  getPublishingStatus,
   isExpectedTrustedPublisher,
   listTrustedPublishers,
   revokeTrustedPublisher,
-  type PublishingStatus,
   type TrustedPublisher,
 } from './release-npm/npmTrust.ts'
 import { getPackageJsonSteps } from './packageJsonSteps.ts'

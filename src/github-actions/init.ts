@@ -17,7 +17,8 @@ import {
   npmConnectionCommand,
   type ConnectStep,
 } from './release-npm/connectionSteps.ts'
-import { getNpmUnavailableReason, getPublishingStatus } from './release-npm/npmTrust.ts'
+import { getPublishingStatus } from './release-npm/npmRegistry.ts'
+import { getNpmUnavailableReason } from './release-npm/npmTrust.ts'
 import { getPackageJsonSteps } from './packageJsonSteps.ts'
 import { getManual, logManualSteps, runSteps, type Step, type StepOutcome } from './steps.ts'
 import { getGitHubRepo } from './utils/githubRepo.ts'
