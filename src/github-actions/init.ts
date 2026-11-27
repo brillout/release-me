@@ -18,7 +18,7 @@ import {
 } from './release-npm/connectionSteps.ts'
 import { getPublishingStatus, type PublishingStatus } from './release-npm/npmRegistry.ts'
 import { getNpmUnavailableReason } from './release-npm/npmTrust.ts'
-import { getTrustedPublisherManual } from './release-npm/trustedPublisher.ts'
+import { getDeleteTrustedPublisherManual, getTrustedPublisherManual } from './release-npm/trustedPublisher.ts'
 import { getPackageJsonSteps, type PackageJsonStep } from './packageJsonSteps.ts'
 import { logManualSteps, runSteps, type Step, type StepOutcome } from './steps.ts'
 import { getGitHubRepo } from './utils/githubRepo.ts'
@@ -272,9 +272,8 @@ async function getNpmSteps(packages: ReleaseMePackage[], repo: string | null, re
         )}), then run ${pc.bold(initCommand)} again`,
       ])
       if (notConnected.length > 0) {
-        const lines = getTrustedPublisherManual(notConnected, repo)
-        if (renamed) lines.splice(-1, 0, `   4. Delete the trusted publisher of ${pc.bold(renamed.fileName)}`)
-        manual.push(lines)
+        if (renamed) manual.push(getDeleteTrustedPublisherManual(notConnected, renamed.fileName))
+        manual.push(getTrustedPublisherManual(notConnected, repo))
       }
       return manual
     },
