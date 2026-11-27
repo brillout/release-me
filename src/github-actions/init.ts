@@ -208,27 +208,24 @@ type NpmSteps = Awaited<ReturnType<typeof getNpmSteps>>
 async function getNpmSteps(packages: ReleaseMePackage[], repo: string | null, releaseNpmResult: WriteResult) {
   logTitle('npm trusted publisher')
   const packageNames = packages.map(({ packageName }) => packageName)
+  const renamed = releaseNpmResult.status === 'renamed' ? releaseNpmResult.old : null
+  // release-me can't connect them: all trusted publishers are set up on npmjs.com
+  const isManualOnly = !repo || !!renamed
   const connectSteps: ConnectStep[] = []
-  // The packages to set up on npmjs.com, and the ones to publish first
-  const manualPackages: string[] = []
+  // The packages to publish first
   const notOnNpm: string[] = []
-  const hints: string[] = []
 
   if (!repo) {
     console.log(
       `Couldn't determine the GitHub repository of ${pc.cyan('origin')} ${logDetail('$ git remote get-url origin')}`,
     )
-    manualPackages.push(...packageNames)
-  } else if (releaseNpmResult.status === 'renamed') {
+  } else if (renamed) {
     // The trusted publisher of the old workflow still exists, and its releases look like release-npm.yml's
-    const { old } = releaseNpmResult
     console.log(
-      `${pc.bold(old.fileName)} was renamed ${pc.bold(releaseNpmWorkflowFile.fileName)}: the connection of ${pc.bold(
-        old.fileName,
-      )} doesn't work anymore`,
+      `${pc.bold(renamed.fileName)} was renamed ${pc.bold(
+        releaseNpmWorkflowFile.fileName,
+      )}: the connection of ${pc.bold(renamed.fileName)} doesn't work anymore`,
     )
-    hints.push(formatHint(`To let release-me do it for you, run ${pc.bold(npmConnectionCommand)}`))
-    manualPackages.push(...packageNames)
   } else {
     const statuses = await Promise.all(
       packageNames.map(async (packageName) => ({ packageName, ...(await getPublishingStatus(packageName, repo)) })),
@@ -260,7 +257,6 @@ async function getNpmSteps(packages: ReleaseMePackage[], repo: string | null, re
         notOnNpm.push(packageName)
       } else {
         connectSteps.push(getConnectStep(packageName, repo, "npm's registry didn't reply"))
-        manualPackages.push(packageName)
       }
     }
   }
@@ -269,29 +265,32 @@ async function getNpmSteps(packages: ReleaseMePackage[], repo: string | null, re
     connectSteps,
     /** The manual steps of the trusted publishers that weren't set up */
     getManual(outcomes: Map<Step, StepOutcome>): string[][] {
-      const notConnected = connectSteps
-        .filter((step) => outcomes.get(step) !== 'done')
-        .map(({ packageName }) => packageName)
-        .filter((p) => !manualPackages.includes(p) && !notOnNpm.includes(p))
-      const packageNamesManual = [...manualPackages, ...notConnected]
+      const notConnected = isManualOnly
+        ? packageNames
+        : connectSteps
+            .filter((step) => outcomes.get(step) !== 'done')
+            .map(({ packageName }) => packageName)
+            .filter((p) => !notOnNpm.includes(p))
       const manual: string[][] = notOnNpm.map((packageName) => [
         `Publish the first version of ${pc.cyan(packageName)} manually (${highlightCommand(
           '$ pnpm publish',
         )}), then run ${pc.bold(initCommand)} again`,
       ])
-      if (packageNamesManual.length > 0) {
-        const lines = getTrustedPublisherManual(packageNamesManual, repo)
-        if (releaseNpmResult.status === 'renamed') {
-          lines.splice(-1, 0, `   4. Delete the trusted publisher of ${pc.bold(releaseNpmResult.old.fileName)}`)
-        }
+      if (notConnected.length > 0) {
+        const lines = getTrustedPublisherManual(notConnected, repo)
+        if (renamed) lines.splice(-1, 0, `   4. Delete the trusted publisher of ${pc.bold(renamed.fileName)}`)
         manual.push(lines)
       }
       return manual
     },
     getHints(outcomes: Map<Step, StepOutcome>): string[] {
+      const hints: string[] = []
+      // `$ pnpm exec release-me npm-connection` requires the GitHub repository
+      if (repo && renamed)
+        hints.push(formatHint(`To let release-me do it for you, run ${pc.bold(npmConnectionCommand)}`))
       // E.g. npm allows only one trusted publisher per package, and the package already has one
       if (connectSteps.some((step) => outcomes.get(step) === 'failed')) {
-        return [...hints, formatHint(`To replace the existing connection, run ${pc.bold(npmConnectionCommand)}`)]
+        hints.push(formatHint(`To replace the existing connection, run ${pc.bold(npmConnectionCommand)}`))
       }
       return hints
     },
