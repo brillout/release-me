@@ -59,14 +59,19 @@ async function init(options: WorkflowFileOptions) {
   }
 
   // package.json
-  const changedFiles = new Set<string>()
-  const packageJsonSteps = await getPackageJsonSteps(monorepoRootDir, packages, repo, !!releaseNpmResult, changedFiles)
+  const packageJsonSteps = await getPackageJsonSteps(monorepoRootDir, packages, repo, !!releaseNpmResult)
   const steps: Step[] = [...packageJsonSteps]
   const changes = results.filter(({ status }) => status !== 'up-to-date')
   const commitStep: Step = {
     label: 'Commit',
     alwaysRun: true,
-    run: () => commitChanges(monorepoRootDir, changes, changedFiles),
+    // The package.json files that the package.json steps changed
+    run: (isDone) =>
+      commitChanges(
+        monorepoRootDir,
+        changes,
+        packageJsonSteps.filter(isDone).map((step) => step.packageJsonPath),
+      ),
     manual: null,
   }
   steps.push(commitStep)
@@ -125,7 +130,7 @@ async function init(options: WorkflowFileOptions) {
   for (const hint of hints) console.log(hint)
 }
 
-async function commitChanges(monorepoRootDir: string, changes: WriteResult[], changedFiles: Set<string>) {
+async function commitChanges(monorepoRootDir: string, changes: WriteResult[], packageJsonPaths: string[]) {
   // A renamed workflow file: also its removed old file
   const filePaths = [
     ...changes.flatMap((change) =>
@@ -133,7 +138,7 @@ async function commitChanges(monorepoRootDir: string, changes: WriteResult[], ch
         ? [change.old.filePath, change.workflowFile.filePath]
         : [change.workflowFile.filePath],
     ),
-    ...changedFiles,
+    ...new Set(packageJsonPaths),
   ]
   if (filePaths.length === 0) return true
   const isSetup = changes.some(({ status }) => status === 'created')

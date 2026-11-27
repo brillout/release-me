@@ -16,6 +16,8 @@ import type { Step } from './steps.ts'
 import { getPackageJson, hasReleaseScript, type PackageJson, type ReleaseMePackage } from '../releaseMe.ts'
 
 type PackageJsonStep = Step & {
+  /** The package.json the step changes */
+  packageJsonPath: string
   /** What the GitHub Action release-npm.yml requires, e.g. `a build script in package.json` (`null`: it doesn't require the step) */
   requiredByGitHubAction: string | null
 }
@@ -27,16 +29,12 @@ const releaseScripts = {
   'release:commit': 'release-me commit',
 }
 
-/**
- * @param withReleaseNpm Whether the repository uses the GitHub Action release-npm.yml (which requires package.json#repository)
- * @param changedFiles The package.json files the steps change, to commit
- */
+/** @param withReleaseNpm Whether the repository uses the GitHub Action release-npm.yml (which requires package.json#repository) */
 async function getPackageJsonSteps(
   monorepoRootDir: string,
   packages: ReleaseMePackage[],
   repo: string | null,
   withReleaseNpm: boolean,
-  changedFiles: Set<string>,
 ): Promise<PackageJsonStep[]> {
   const steps: PackageJsonStep[] = []
   const getUncommittedReason = async (packageJsonPath: string) =>
@@ -45,7 +43,6 @@ async function getPackageJsonSteps(
       : null
   const update = (packageJsonPath: string, fields: Record<string, unknown>) => async () => {
     setPackageJsonFields(packageJsonPath, fields)
-    changedFiles.add(packageJsonPath)
     return true
   }
 
@@ -62,6 +59,7 @@ async function getPackageJsonSteps(
       const field = pc.bold(`"packageManager": "${value}"`)
       const fileName = pc.bold(path.relative(monorepoRootDir, packageJsonPath))
       steps.push({
+        packageJsonPath,
         label: `Set ${field} in ${fileName}`,
         notPossibleReason: pnpmVersion ? await getUncommittedReason(packageJsonPath) : "pnpm isn't installed",
         run: update(packageJsonPath, { packageManager: value }),
@@ -80,6 +78,7 @@ async function getPackageJsonSteps(
       const scripts = { ...releaseScripts, ...packageJson.scripts }
       const example = pc.dim(`("release": "release-me patch", …)`)
       steps.push({
+        packageJsonPath,
         label: `Add the release scripts to ${fileName} ${example}`,
         notPossibleReason: await getUncommittedReason(packageJsonPath),
         run: update(packageJsonPath, { scripts }),
@@ -93,6 +92,7 @@ async function getPackageJsonSteps(
     if (!packageJson.scripts?.build) {
       const build = pc.bold('$ pnpm run build')
       steps.push({
+        packageJsonPath,
         label: `Add a ${pc.bold('build')} script to ${fileName}`,
         notPossibleReason: `release-me doesn't know how ${pc.cyan(packageName)} is built`,
         run: async () => false,
@@ -114,6 +114,7 @@ async function getPackageJsonSteps(
       const current = typeof packageJson.repository === 'string' ? packageJson.repository : packageJson.repository?.url
       const detail = `(npm's trusted publishing requires it${current ? `, it's ${current}` : ''})`
       steps.push({
+        packageJsonPath,
         label: `Set ${field} of ${fileName} to ${url}`,
         notPossibleReason: await getUncommittedReason(packageJsonPath),
         run: update(packageJsonPath, { repository }),

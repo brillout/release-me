@@ -129,7 +129,7 @@ async function npmConnection() {
   // The package.json changes that the GitHub Action requires: `$ pnpm exec release-me init` makes them
   let requiredSteps: PackageJsonStep[] = []
   if (connectSteps.some((step) => !step.notPossibleReason) || packagesToKeep.length > 0) {
-    requiredSteps = (await getPackageJsonSteps(monorepoRootDir, packages, repo, true, new Set())).filter(
+    requiredSteps = (await getPackageJsonSteps(monorepoRootDir, packages, repo, true)).filter(
       (step) => step.requiredByGitHubAction,
     )
     const defaultBranch = await getDefaultBranch(monorepoRootDir)

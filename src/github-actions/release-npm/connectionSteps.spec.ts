@@ -11,6 +11,7 @@ const getNotPossibleReason = (step: Step, checked: Step[]) => {
 }
 const getRequiredStep = (requiredByGitHubAction: string): PackageJsonStep => ({
   label: requiredByGitHubAction,
+  packageJsonPath: '/package.json',
   run: async () => true,
   manual: null,
   requiredByGitHubAction,
