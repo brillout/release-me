@@ -77,10 +77,9 @@ function createCommitReleaseStep({
   const workflowLink = getWorkflowLink(releaseNpmWorkflowFile, repo)
   const workflow = pc.bold(releaseNpmWorkflowFile.fileName)
   // The packages to commit-release: the ones connected (or to connect), and the ones to keep
-  const getPackageNames = (isConnected: (step: Step) => boolean) =>
-    [...connectSteps.filter(isConnected).map(({ packageName }) => packageName), ...packagesToKeep].filter(
-      (p, i, all) => all.indexOf(p) === i,
-    )
+  const getPackageNames = (isConnected: (step: Step) => boolean) => [
+    ...new Set([...connectSteps.filter(isConnected).map(({ packageName }) => packageName), ...packagesToKeep]),
+  ]
   return {
     label: `Commit-release, so that npm keeps the new connection ${pc.dim(
       `($ gh workflow run ${releaseNpmWorkflowFile.fileName})`,
