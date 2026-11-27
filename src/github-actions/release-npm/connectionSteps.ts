@@ -13,6 +13,7 @@ import * as path from 'path'
 import pc from '@brillout/picocolors'
 import { createTrustedPublisher } from './npmTrust.ts'
 import { getTrustedPublisherSteps } from './trustedPublisher.ts'
+import type { PackageJsonStep } from '../packageJsonSteps.ts'
 import type { Step } from '../steps.ts'
 import { runWorkflow } from '../utils/gh.ts'
 import { getFileOnOrigin } from '../utils/gitPush.ts'
@@ -52,7 +53,9 @@ function getConnectStep(
  * Commit-releases the packages that have a new trusted publisher: npm deletes a trusted publisher that doesn't publish
  * within 2 days.
  * @param packagesToKeep The packages whose trusted publisher already exists but may not have published yet
- * @param pushStep The step that pushes release-npm.yml (if it isn't on GitHub yet)
+ * @param requiredSteps The package.json changes that the GitHub Action requires (it runs with the default branch on
+ * GitHub, so they must be pushed)
+ * @param pushStep The step that pushes the commit (release-npm.yml and the package.json changes)
  */
 function getCommitReleaseStep({
   repo,
@@ -61,6 +64,7 @@ function getCommitReleaseStep({
   packagesToKeep = [],
   ghUnavailableReason,
   isWorkflowOnGitHub,
+  requiredSteps,
   pushStep,
 }: {
   repo: string
@@ -69,6 +73,7 @@ function getCommitReleaseStep({
   packagesToKeep?: string[]
   ghUnavailableReason: string | null
   isWorkflowOnGitHub: boolean
+  requiredSteps: PackageJsonStep[]
   pushStep: Step | null
 }): Step {
   const workflowLink = getWorkflowLink(releaseNpmWorkflowFile, repo)
@@ -85,7 +90,13 @@ function getCommitReleaseStep({
     notPossibleReason: ghUnavailableReason,
     getNotPossibleReason: (isChecked) => {
       if (getPackageNames(isChecked).length === 0) return 'no package gets a new connection'
-      if (!isWorkflowOnGitHub && !(pushStep && isChecked(pushStep))) return `${workflow} isn't on GitHub yet`
+      // Otherwise the GitHub Action fails, and npm deletes the new connection
+      const missing = requiredSteps.find((step) => !isChecked(step))
+      if (missing) return `the GitHub Action requires ${missing.requiredByGitHubAction}`
+      if (!(pushStep && isChecked(pushStep))) {
+        if (!isWorkflowOnGitHub) return `${workflow} isn't on GitHub yet`
+        if (requiredSteps.length > 0) return "the package.json changes aren't on GitHub yet"
+      }
       return null
     },
     run: async () => {
@@ -106,14 +117,15 @@ function getCommitReleaseStep({
       )
       return true
     },
-    manual: () => {
+    manual: (isDone) => {
       // No new connection
       if (getPackageNames((step) => step.isConnected).length === 0) return null
+      const isPushed = isWorkflowOnGitHub || (!!pushStep && isDone(pushStep))
       return `${pc.bold(
         'Within 2 days',
       )}, make a commit release (otherwise npm deletes the new connection): run ${highlightCommand(
         '$ pnpm exec release-me commit',
-      )}${isWorkflowOnGitHub ? '' : ` after pushing ${workflow}`}, or ${getRunWorkflowCta(workflowLink)}`
+      )}${isPushed ? '' : ` after pushing ${workflow}`}, or ${getRunWorkflowCta(workflowLink)}`
     },
   }
 }

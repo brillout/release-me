@@ -1,5 +1,6 @@
 export { runSteps }
 export { logManualSteps }
+export { getManual }
 export type { Step }
 export type { StepOutcome }
 
@@ -20,8 +21,11 @@ type Step = {
   alwaysRun?: true
   /** @returns Whether it succeeded */
   run: () => Promise<boolean>
-  /** What the user can do instead, if the step isn't run or fails (`null`: nothing, or the caller logs it) */
-  manual: string | null | (() => string | null)
+  /**
+   * What the user can do instead, if the step isn't run or fails (`null`: nothing, or the caller logs it), given the
+   * steps that were done
+   */
+  manual: string | null | ((isDone: (step: Step) => boolean) => string | null)
 }
 type StepOutcome = 'done' | 'failed' | 'unchecked' | 'not-possible'
 
@@ -88,8 +92,7 @@ function logManualSteps(
   const manualSteps: string[][] = []
   for (const step of steps) {
     if (step === extra.before) manualSteps.push(...extra.manual)
-    if (outcomes.get(step) === 'done') continue
-    const manual = typeof step.manual === 'function' ? step.manual() : step.manual
+    const manual = getManual(step, outcomes)
     if (manual) manualSteps.push([manual])
   }
   if (!extra.before || !steps.includes(extra.before)) manualSteps.push(...extra.manual)
@@ -98,4 +101,11 @@ function logManualSteps(
     console.log(`${pc.bold(`${i + 1}.`)} ${first}`)
     for (const line of rest) console.log(line)
   }
+}
+
+/** The manual instructions of the step `step`, if it wasn't done */
+function getManual(step: Step, outcomes: Map<Step, StepOutcome>): string | null {
+  if (outcomes.get(step) === 'done') return null
+  if (typeof step.manual !== 'function') return step.manual
+  return step.manual((s) => outcomes.get(s) === 'done')
 }

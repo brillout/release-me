@@ -18,7 +18,7 @@ import {
 } from './release-npm/connectionSteps.ts'
 import { getNpmUnavailableReason, getPublishingStatus } from './release-npm/npmTrust.ts'
 import { getPackageJsonSteps } from './packageJsonSteps.ts'
-import { logManualSteps, runSteps, type Step } from './steps.ts'
+import { getManual, logManualSteps, runSteps, type Step } from './steps.ts'
 import { getGhUnavailableReason } from './utils/gh.ts'
 import { getGitHubRepo } from './utils/githubRepo.ts'
 import { getCurrentBranch, getDefaultBranch, gitPush, isAheadOfOrigin } from './utils/gitPush.ts'
@@ -95,6 +95,7 @@ async function init(options: WorkflowFileOptions) {
         connectSteps: npm.connectSteps,
         ghUnavailableReason: await getGhUnavailableReason(),
         isWorkflowOnGitHub: await isReleaseNpmOnGitHub(monorepoRootDir, defaultBranch),
+        requiredSteps: packageJsonSteps.filter((step) => step.requiredByGitHubAction),
         pushStep,
       }),
     )
@@ -117,12 +118,7 @@ async function init(options: WorkflowFileOptions) {
       steps.some((step) => !step.alwaysRun && !step.notPossibleReason) &&
       `${pc.bold('👉')} To let release-me do it for you, run ${pc.bold(initCommand)} in a terminal`,
   ].filter((hint): hint is string => !!hint)
-  const hasManualSteps =
-    steps.some(
-      (step) => outcomes.get(step) !== 'done' && (typeof step.manual === 'function' ? step.manual() : step.manual),
-    ) ||
-    manualNpm.length > 0 ||
-    hints.length > 0
+  const hasManualSteps = steps.some((step) => getManual(step, outcomes)) || manualNpm.length > 0 || hints.length > 0
   if (!hasManualSteps) return
   logTitle('Manual steps')
   logManualSteps(steps, outcomes, { manual: manualNpm, before: steps[steps.indexOf(commitStep) + 1] ?? null })
@@ -158,7 +154,10 @@ async function getPushStep(
   willCommit: boolean,
 ): Promise<Step | null> {
   const branch = await getCurrentBranch(monorepoRootDir)
-  if (!willCommit && !(branch && (await isAheadOfOrigin(monorepoRootDir, branch)))) return null
+  // Nothing to commit: only if the default branch has commits to push (e.g. the ones of a previous run)
+  if (!willCommit && !(branch && branch === defaultBranch && (await isAheadOfOrigin(monorepoRootDir, branch)))) {
+    return null
+  }
   const getNotPossibleReason = () => {
     if (!repo) return `${pc.cyan('origin')} isn't a GitHub repository ${logDetail('$ git remote get-url origin')}`
     if (!branch) return `${pc.cyan('HEAD')} isn't a branch`
@@ -244,6 +243,14 @@ async function getNpmSteps(packages: ReleaseMePackage[], repo: string | null, re
       console.log(`${pc.bold('👉')} For more info, run ${pc.bold(npmConnectionCommand)}`)
     }
     const toConnect = statuses.filter(({ status }) => status === 'not-in-use')
+    if (toConnect.length > 0) {
+      const names = toConnect.map(({ packageName }) => packageName)
+      console.log(`${pc.red('❌')} npm <=> GitHub connection not in use yet${getPackagesLabel(names)}`)
+    }
+    for (const { packageName, status } of statuses) {
+      if (status === 'not-on-npm') console.log(`${pc.yellow('⚠️')}  ${pc.cyan(packageName)} isn't on npm yet`)
+      if (status === 'unknown') console.log(`${pc.yellow('⚠️')}  ${pc.cyan(packageName)}: npm's registry didn't reply`)
+    }
     const npmUnavailableReason = toConnect.length > 0 ? await getNpmUnavailableReason() : null
     for (const { packageName, status } of statuses) {
       if (status === 'in-use') continue

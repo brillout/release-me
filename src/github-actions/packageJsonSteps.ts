@@ -1,6 +1,7 @@
 export { getPackageJsonSteps }
 export { setPackageJsonFields }
 export { getRepositoryValue }
+export type { PackageJsonStep }
 
 // The package.json changes that the GitHub Actions of release-me require, as steps of `$ pnpm exec release-me init` (see
 // ./steps.ts)
@@ -13,6 +14,11 @@ import { getRepositoryMismatch } from './release-npm/githubAction.ts'
 import { hasUncommittedChanges } from './utils/gitPush.ts'
 import type { Step } from './steps.ts'
 import { getPackageJson, hasReleaseScript, type PackageJson, type ReleaseMePackage } from '../releaseMe.ts'
+
+type PackageJsonStep = Step & {
+  /** What the GitHub Action release-npm.yml requires, e.g. `a build script in package.json` (`null`: it doesn't require the step) */
+  requiredByGitHubAction: string | null
+}
 
 const releaseScripts = {
   release: 'release-me patch',
@@ -31,8 +37,8 @@ async function getPackageJsonSteps(
   repo: string | null,
   withReleaseNpm: boolean,
   changedFiles: Set<string>,
-): Promise<Step[]> {
-  const steps: Step[] = []
+): Promise<PackageJsonStep[]> {
+  const steps: PackageJsonStep[] = []
   const getUncommittedReason = async (packageJsonPath: string) =>
     (await hasUncommittedChanges(monorepoRootDir, [packageJsonPath]))
       ? `${pc.bold(path.relative(monorepoRootDir, packageJsonPath))} has uncommitted changes`
@@ -60,6 +66,7 @@ async function getPackageJsonSteps(
         notPossibleReason: pnpmVersion ? await getUncommittedReason(packageJsonPath) : "pnpm isn't installed",
         run: update(packageJsonPath, { packageManager: value }),
         manual: `Set ${field} in ${fileName} (the GitHub Actions install that pnpm version)`,
+        requiredByGitHubAction: `${pc.bold('"packageManager"')} in ${fileName}`,
       })
     }
   }
@@ -77,6 +84,8 @@ async function getPackageJsonSteps(
         notPossibleReason: await getUncommittedReason(packageJsonPath),
         run: update(packageJsonPath, { scripts }),
         manual: `Add the release scripts to ${fileName} ${example}`,
+        // The GitHub Action releases the root package of a repository with a single package (see getReleaseMePackages())
+        requiredByGitHubAction: null,
       })
     }
 
@@ -92,6 +101,8 @@ async function getPackageJsonSteps(
         )} script to ${fileName} (release-me runs ${build} before releasing, e.g. ${pc.bold(
           `"build": "tsc"`,
         )}, or ${pc.bold(`"build": "echo 'No build step'"`)})`,
+        // The GitHub Action builds the packages it publishes
+        requiredByGitHubAction: `a ${pc.bold('build')} script in ${fileName}`,
       })
     }
 
@@ -107,6 +118,7 @@ async function getPackageJsonSteps(
         notPossibleReason: await getUncommittedReason(packageJsonPath),
         run: update(packageJsonPath, { repository }),
         manual: `Set ${field} of ${fileName} to ${url} ${detail}`,
+        requiredByGitHubAction: `${field} of ${fileName} to be ${url}`,
       })
     }
   }

@@ -25,6 +25,7 @@ import {
   type PublishingStatus,
   type TrustedPublisher,
 } from './release-npm/npmTrust.ts'
+import { getPackageJsonSteps, type PackageJsonStep } from './packageJsonSteps.ts'
 import { logManualSteps, runSteps, type Step } from './steps.ts'
 import { getGhUnavailableReason } from './utils/gh.ts'
 import { getGitHubRepo } from './utils/githubRepo.ts'
@@ -37,9 +38,8 @@ import { assertUsage, highlightCommand, logDetail, logTitle } from '../utils.ts'
 async function npmConnection() {
   const monorepoRootDir = await getMonorepoRootDir()
   assertInstalledAtRoot(monorepoRootDir)
-  const packageNames = getReleaseMePackages(await getFilesInsideDir(monorepoRootDir)).map(
-    ({ packageName }) => packageName,
-  )
+  const packages = getReleaseMePackages(await getFilesInsideDir(monorepoRootDir))
+  const packageNames = packages.map(({ packageName }) => packageName)
   const repo = await getGitHubRepo(monorepoRootDir)
   assertUsage(
     repo,
@@ -89,10 +89,21 @@ async function npmConnection() {
     const old = list.filter((t) => !isExpectedTrustedPublisher(t, repo) && t.id)
     let connectStep: ConnectStep | null = null
     if (!hasExpected) {
-      // If npm allows only one trusted publisher per package: revoke the old ones, then retry
+      // npm may allow only one trusted publisher per package (https://docs.npmjs.com/cli/v11/commands/npm-trust): revoke
+      // the old ones, then retry. Upon the user's confirmation, as npm may have failed for another reason (e.g. 2FA).
       const revokeOldAndRetry = async () => {
         if (old.length === 0) return false
-        console.log(pc.dim(`(npm refused a second connection: deleting the old one${old.length > 1 ? 's' : ''} first)`))
+        const oldOnes = old.map((t) => pc.bold(describeTrustedPublisher(t))).join(', ')
+        const isConfirmed = await askConfirmation(
+          pc.blue(
+            pc.bold(
+              `npm refused to connect ${pc.cyan(
+                packageName,
+              )} (see above), maybe because npm allows only one connection per package. Press <ENTER> to delete the old connection (${oldOnes}) and retry, or <CTRL-C> to skip.`,
+            ),
+          ),
+        )
+        if (!isConfirmed) return false
         for (const t of old) if (!(await revoke(packageName, t.id!))) return false
         return getConnectStep(packageName, repo, null).run()
       }
@@ -114,7 +125,12 @@ async function npmConnection() {
     }
   }
   const steps: Step[] = [...connectSteps, ...deleteSteps]
+  // The package.json changes that the GitHub Action requires: `$ pnpm exec release-me init` makes them
+  let requiredSteps: PackageJsonStep[] = []
   if (connectSteps.some((step) => !step.notPossibleReason) || packagesToKeep.length > 0) {
+    requiredSteps = (await getPackageJsonSteps(monorepoRootDir, packages, repo, true, new Set())).filter(
+      (step) => step.requiredByGitHubAction,
+    )
     const defaultBranch = await getDefaultBranch(monorepoRootDir)
     steps.push(
       getCommitReleaseStep({
@@ -124,6 +140,7 @@ async function npmConnection() {
         packagesToKeep,
         ghUnavailableReason: await getGhUnavailableReason(),
         isWorkflowOnGitHub: await isReleaseNpmOnGitHub(monorepoRootDir, defaultBranch),
+        requiredSteps,
         pushStep: null,
       }),
     )
@@ -141,9 +158,20 @@ async function npmConnection() {
   }
   const notConnected = connectSteps.filter((step) => !step.isConnected).map(({ packageName }) => packageName)
   const manualNpm = notConnected.length > 0 ? [getTrustedPublisherManual(notConnected, repo)] : []
+  // Before the commit release
+  if (requiredSteps.length > 0) {
+    const requirements = requiredSteps.map((step) => step.requiredByGitHubAction).join(', ')
+    manualNpm.push([
+      `Fix package.json: run ${highlightCommand(
+        '$ pnpm exec release-me init',
+      )} (the GitHub Action requires ${requirements})`,
+    ])
+  }
   if (steps.every((step) => outcomes.get(step) === 'done') && manualNpm.length === 0) return
   logTitle('Manual steps')
-  logManualSteps(steps, outcomes, { manual: manualNpm, before: steps[0] ?? null })
+  // After deleting the old connections: npm may allow only one connection per package
+  const afterDeleteSteps = steps[connectSteps.length + deleteSteps.length] ?? null
+  logManualSteps(steps, outcomes, { manual: manualNpm, before: afterDeleteSteps })
 }
 
 function logPublishingStatus(packageName: string, status: PublishingStatus) {
