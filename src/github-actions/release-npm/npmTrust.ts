@@ -5,7 +5,6 @@ export { listTrustedPublishers }
 export { parseNpmTrustList }
 export { isExpectedTrustedPublisher }
 export { describeTrustedPublisher }
-export { getNpmTrustArgs }
 export { getOtpRequest }
 export { isNpmTrustSupported }
 export type { TrustedPublisher }
@@ -90,10 +89,7 @@ async function throttle() {
 /** Creates the trusted publisher of the GitHub Action release-npm.yml of the GitHub repository `repo`. @returns Whether it succeeded */
 async function createTrustedPublisher(packageName: string, repo: string): Promise<boolean> {
   await throttle()
-  return runNpm(getNpmTrustArgs(packageName, repo))
-}
-function getNpmTrustArgs(packageName: string, repo: string): string[] {
-  return [
+  return runNpm([
     'trust',
     'github',
     packageName,
@@ -104,7 +100,7 @@ function getNpmTrustArgs(packageName: string, repo: string): string[] {
     '--allow-publish',
     // npm doesn't ask to confirm (release-me already asked)
     '--yes',
-  ]
+  ])
 }
 
 /** @returns Whether it succeeded */

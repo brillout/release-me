@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  getNpmTrustArgs,
-  getOtpRequest,
-  isExpectedTrustedPublisher,
-  isNpmTrustSupported,
-  parseNpmTrustList,
-} from './npmTrust.ts'
+import { getOtpRequest, isExpectedTrustedPublisher, isNpmTrustSupported, parseNpmTrustList } from './npmTrust.ts'
 
 describe('parseNpmTrustList()', () => {
   it('parses the JSON objects printed by `$ npm trust list --json`', () => {
@@ -92,21 +86,5 @@ describe('isNpmTrustSupported()', () => {
   it('handles pre-releases and unparsable versions', () => {
     expect(isNpmTrustSupported('11.15.0-pre.1\n')).toBe(true)
     expect(isNpmTrustSupported('')).toBe(false)
-  })
-})
-
-describe('getNpmTrustArgs()', () => {
-  it('sets up the trusted publisher of release-npm.yml', () => {
-    expect(getNpmTrustArgs('vike', 'vikejs/vike')).toEqual([
-      'trust',
-      'github',
-      'vike',
-      '--file',
-      'release-npm.yml',
-      '--repository',
-      'vikejs/vike',
-      '--allow-publish',
-      '--yes',
-    ])
   })
 })

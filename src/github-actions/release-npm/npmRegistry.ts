@@ -1,7 +1,6 @@
 export { getPublishingStatus }
 export { describeWorkflow }
 export { getProvenanceWorkflow }
-export { isPublishedByTrustedPublisher }
 export type { PublishingStatus }
 
 // Whether a package's npm <=> GitHub connection (npm's trusted publisher) is in use, according to npm's registry (no
@@ -57,6 +56,7 @@ async function getPublishingStatus(packageName: string, repo: string): Promise<P
   return { status: 'not-in-use', ...latest }
 }
 
+/** E.g. `_npmUser: { name: 'GitHub Actions', email: 'npm-oidc-no-reply@github.com', trustedPublisher: { id: 'github', oidcConfigId: '…' } }` */
 function isPublishedByTrustedPublisher(release: any): boolean {
   return release?._npmUser?.trustedPublisher?.id === 'github'
 }

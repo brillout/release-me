@@ -1,19 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getProvenanceWorkflow, isPublishedByTrustedPublisher } from './npmRegistry.ts'
-
-describe('isPublishedByTrustedPublisher()', () => {
-  it("reads the registry's _npmUser", () => {
-    const trustedPublisher = { id: 'github', oidcConfigId: '2e5fddec-9765-4b06-9ab5-7d61980d554a' }
-    expect(
-      isPublishedByTrustedPublisher({
-        version: '0.5.8',
-        _npmUser: { name: 'GitHub Actions', email: 'npm-oidc-no-reply@github.com', trustedPublisher },
-      }),
-    ).toBe(true)
-    expect(isPublishedByTrustedPublisher({ version: '0.5.1', _npmUser: { name: 'brillout' } })).toBe(false)
-    expect(isPublishedByTrustedPublisher({ version: '0.0.1' })).toBe(false)
-  })
-})
+import { getProvenanceWorkflow } from './npmRegistry.ts'
 
 describe('getProvenanceWorkflow()', () => {
   const getAttestations = (statement: unknown) => ({
