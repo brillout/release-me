@@ -18,7 +18,7 @@ import {
   revokeTrustedPublisher,
   type TrustedPublisher,
 } from './release-npm/npmTrust.ts'
-import { getTrustedPublisherManual } from './release-npm/trustedPublisher.ts'
+import { getAccessLink, getTrustedPublisherManual } from './release-npm/trustedPublisher.ts'
 import { initCommand } from './commands.ts'
 import { getPackageJsonSteps, type PackageJsonStep } from './packageJsonSteps.ts'
 import { logManualSteps, runSteps, type Step, type StepOutcome } from './steps.ts'
@@ -157,7 +157,7 @@ function getFixSteps(
         run: () => revoke(packageName, t.id!),
         manual: `Delete the old connection of ${pc.cyan(packageName)} (${describeTrustedPublisher(
           t,
-        )}) at ${pc.underline(`https://www.npmjs.com/package/${packageName}/access`)}`,
+        )}) at ${getAccessLink(packageName)}`,
       })
     }
   }
@@ -195,7 +195,7 @@ function getReplaceOld(
 
 function logPublishingStatus(packageName: string, status: PublishingStatus) {
   const pkg = pc.cyan(packageName)
-  const accessLink = pc.dim(pc.underline(`https://www.npmjs.com/package/${packageName}/access`))
+  const accessLink = pc.dim(getAccessLink(packageName))
   if (status.status === 'in-use') {
     const by = status.workflow
       ? `its connection ${logDetail(describeWorkflow(status.workflow))}`

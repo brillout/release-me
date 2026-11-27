@@ -1,6 +1,7 @@
 export { getTrustedPublisherSteps }
 export { getTrustedPublisherManual }
 export { getDeleteTrustedPublisherManual }
+export { getAccessLink }
 
 import pc from '@brillout/picocolors'
 import { releaseNpmWorkflowFile } from '../workflowFiles.ts'
