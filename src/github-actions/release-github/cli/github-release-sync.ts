@@ -19,7 +19,7 @@ import { isWorkflowFileUpToDate, releaseGitHubWorkflowFile } from '../../workflo
 import { fail } from '../../utils/fail.ts'
 import { getRunWorkflowCta, getWorkflowLink } from '../../utils/workflowLink.ts'
 import { getMonorepoRootDir } from '../../../releaseMe.ts'
-import { logDetail } from '../../../utils.ts'
+import { highlightCommand, logDetail } from '../../../utils.ts'
 
 async function githubReleaseSync({ packageArgs, dryRun }: { packageArgs: string[]; dryRun: boolean }): Promise<void> {
   // The directories passed as arguments are relative to where the command is run
@@ -89,7 +89,9 @@ async function logRunWorkflow(packageArgs: string[]) {
   console.log(
     `The environment variable ${pc.bold('GITHUB_TOKEN')} isn't set and the GitHub CLI ${pc.cyan(
       'gh',
-    )} isn't logged in ${logDetail('$ gh auth login')}, so release-me can't sync GitHub Releases from your machine.`,
+    )} isn't logged in (run ${highlightCommand(
+      '$ gh auth login',
+    )}), so release-me can't sync GitHub Releases from your machine.`,
   )
   console.log(
     `To let the GitHub Action ${pc.bold(fileName)} sync them${

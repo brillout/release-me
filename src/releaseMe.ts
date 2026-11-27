@@ -14,6 +14,7 @@ export { getMonorepoRootDir }
 export { getPackageJson }
 export { assertInstalledAtRoot }
 export { getReleaseMePackages }
+export { hasReleaseScript }
 export { updatePackageJsonVersion }
 export { updateVersionMacro }
 export type { PackageJson }
@@ -221,7 +222,7 @@ type PackageJson = {
   name?: string
   version?: string
   private?: boolean
-  repository?: string | { url?: string }
+  repository?: string | { type?: string; url?: string; directory?: string }
   scripts?: Record<string, string>
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>

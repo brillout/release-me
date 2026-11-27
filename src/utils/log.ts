@@ -1,5 +1,6 @@
 export { logDetail }
 export { logTitle }
+export { highlightCommand }
 
 import pc from '@brillout/picocolors'
 
@@ -14,4 +15,9 @@ function logTitle(title: string, noMargin?: true) {
 
 function logDetail(msg: string): string {
   return `(${pc.dim(msg)})`
+}
+
+/** A command the user should run (e.g. `$ npm login`), emphasized */
+function highlightCommand(cmd: string): string {
+  return pc.bold(pc.yellow(cmd))
 }

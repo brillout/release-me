@@ -12,7 +12,7 @@ export { triggerCommitRelease }
 
 import execa from 'execa'
 import pc from '@brillout/picocolors'
-import { assertUsage, logDetail, logTitle, run } from '../../utils.ts'
+import { assertUsage, highlightCommand, logDetail, logTitle, run } from '../../utils.ts'
 import { releaseNpmWorkflowFile } from '../workflowFiles.ts'
 import { getGitHubRepo, parseGitHubRepo } from '../utils/githubRepo.ts'
 import { getRunWorkflowCta, getWorkflowLink } from '../utils/workflowLink.ts'
@@ -136,7 +136,7 @@ async function checkCommitOnGitHub(repo: string, commitHash: string, runWorkflow
       )}` as const
     // `$ gh` exits with 4 when it requires authentication (`$ gh help exit-codes`), and GitHub replies 401 to an invalid token
     if (exitCode === 4 || output?.includes('(HTTP 401)')) {
-      return `The GitHub CLI ${pc.cyan('gh')} isn't logged in ${logDetail('$ gh auth login')}` as const
+      return `The GitHub CLI ${pc.cyan('gh')} isn't logged in (run ${highlightCommand('$ gh auth login')})` as const
     }
     const isMissingCommit = !!output?.includes('(HTTP 422)')
     const reason = isMissingCommit

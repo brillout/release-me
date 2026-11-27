@@ -4,6 +4,7 @@ import { Argument, InvalidArgumentError, program } from 'commander'
 import pc from '@brillout/picocolors'
 import { releaseMe, type ReleaseTarget, type ReleaseType, releaseTypes } from './releaseMe.ts'
 import { init } from './github-actions/init.ts'
+import { npmConnection } from './github-actions/npmConnection.ts'
 import { ciPublish } from './github-actions/release-npm/cli/ci-publish.ts'
 import { githubReleaseSync } from './github-actions/release-github/cli/github-release-sync.ts'
 import { githubReleaseDeleteAll } from './github-actions/release-github/cli/github-release-delete-all.ts'
@@ -40,7 +41,7 @@ program
 program
   .command('init')
   .description(
-    `Create or update the GitHub Actions of release-me (default: the ones already set up, or else both), see ${pc.underline(
+    `Create or update the GitHub Actions of release-me (default: the ones already set up, or else both), and set up the rest (it lists the steps first), see ${pc.underline(
       'https://github.com/brillout/release-me#get-started',
     )}.`,
   )
@@ -50,6 +51,13 @@ program
     'the GitHub Action .github/workflows/release-github.yml that syncs GitHub Releases with CHANGELOG.md',
   )
   .action(init)
+
+program
+  .command('npm-connection')
+  .description(
+    "Show the npm <=> GitHub connection of each package (npm's trusted publisher), and fix it (npm asks for 2FA).",
+  )
+  .action(npmConnection)
 
 // Run by the GitHub Action (see ./github-actions/workflowFiles.ts)
 program.command('ci-publish', { hidden: true }).action(ciPublish)

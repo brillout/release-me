@@ -207,6 +207,7 @@ pnpm exec release-me v0.1.5          # Release a specific version
 pnpm exec release-me commit          # Release the current commit (0.1.2-commit-ff3d6cd)
 pnpm exec release-me patch --yes     # Skip the confirmation
 pnpm exec release-me patch --force   # Release even in unexpected situations (e.g. from another branch than main, or without CHANGELOG.md entry)
+pnpm exec release-me npm-connection  # Show and fix the npm <=> GitHub connection of each package (npm's trusted publisher)
 ```
 
 > [!NOTE]
