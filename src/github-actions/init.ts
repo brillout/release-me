@@ -35,7 +35,7 @@ async function init(options: WorkflowFileOptions) {
 
   // CLI output is read bottom to top: the workflow files last
   if (releaseNpmResult) {
-    logTitle('Npm <=> GitHub connection', true)
+    logTitle('npm trusted publisher', true)
     await setUpTrustedPublishing(monorepoRootDir, packages, releaseNpmResult)
   }
 
