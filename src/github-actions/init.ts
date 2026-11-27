@@ -102,8 +102,8 @@ async function setUpTrustedPublishing(
       const packages = names.length < packageNames.length ? `: ${names.map((p) => pc.bold(p)).join(', ')}` : ''
       console.log(`${pc.green('✅')} ${label}${packages}`)
     }
-    logPackages('Npm <=> GitHub connection up-to-date', result.inUse)
-    logPackages('Npm <=> GitHub connection set up', result.setUp)
+    logPackages('npm <=> GitHub connection up-to-date', result.inUse)
+    logPackages('npm <=> GitHub connection set up', result.setUp)
   }
   if (packageNamesManual.length > 0) {
     const trustedPublisher = `${packageNamesManual.length === 1 ? "the package's" : "each package's"} trusted publisher`
