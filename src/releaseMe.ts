@@ -24,7 +24,8 @@ import execa from 'execa'
 import * as fs from 'fs'
 import assert from 'assert'
 import * as semver from 'semver'
-import { runCommand, assertUsage, logDetail, logTitle, run, run__return } from './utils.ts'
+import { runCommand, assertUsage, logCommand, logDetail, logTitle, run, run__return } from './utils.ts'
+import { askConfirmation } from './utils/ask.ts'
 import { getGitTagPrefix, type GitTag, type GitTagPrefix } from './utils/gitTag.ts'
 import {
   abortIfNotOnNpm,
@@ -38,7 +39,6 @@ import * as path from 'path'
 //  "js-yaml": "4.1.0",
 //  "@types/js-yaml": "4.0.7",
 import yaml from 'js-yaml' */
-import readline from 'readline'
 import pc from '@brillout/picocolors'
 import { ConventionalChangelog } from 'conventional-changelog'
 import { createRequire } from 'module'
@@ -160,7 +160,7 @@ async function releaseMe(args: CliArgs, packageRootDir: string) {
   // Ask confirmation
   // =================
 
-  if (!args.yes) await askConfirmation()
+  if (!args.yes) await confirmRelease()
 
   // =============================
   // Build
@@ -299,7 +299,7 @@ async function removeNpmTag(dir: string, tag: string, packageName: string) {
       // - We just log: the version is already published — a lingering tag is harmless (it merely points to the latest commit release)
       console.log(`(No permission to remove the npm tag ${pc.cyan(tag)}.)`)
     } else {
-      console.log(pc.bold(pc.blue(`$ ${cmd}`)))
+      logCommand(`$ ${cmd}`)
       throw err
     }
   }
@@ -441,33 +441,18 @@ async function showPreview(packageJsonPath: string, changeLogFilePath: string, c
 
   async function logCmd(cmd: string, cmdReal?: string, swallowError?: boolean) {
     cmdReal ??= cmd
-    console.log(pc.bold(pc.blue(`$ ${cmd}`)))
+    logCommand(`$ ${cmd}`)
     await run(cmdReal, { swallowError })
     console.log()
   }
 }
 
 /** Resolves upon <ENTER>. Otherwise (any other answer such as `n`, <CTRL-C>, or the end of stdin): reverts the changes and exits. */
-function askConfirmation(): Promise<void> {
-  return new Promise((resolve) => {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    })
-    let answer: string | null = null
-    rl.question(pc.blue(pc.bold('Press <ENTER> to confirm release, or <CTRL-C> to abort.')), (a) => {
-      answer = a
-      rl.close()
-    })
-    rl.on('SIGINT', () => rl.close()) // https://github.com/nodejs/node/issues/4758#issuecomment-231155557
-    rl.on('close', () => {
-      if (answer?.trim() === '') return resolve()
-      // The prompt's line doesn't end upon <CTRL-C> or the end of stdin
-      if (answer === null) console.log()
-      console.log(pc.red(pc.bold('Release aborted.')))
-      clean(null)
-    })
-  })
+async function confirmRelease(): Promise<void> {
+  if (await askConfirmation(pc.blue(pc.bold('Press <ENTER> to confirm release, or <CTRL-C> to abort.')))) return
+  console.log(pc.red(pc.bold('Release aborted.')))
+  // Exits
+  await clean(null)
 }
 
 async function makeGitCommit(monorepoRootDir: string, gitTag: GitTag) {
