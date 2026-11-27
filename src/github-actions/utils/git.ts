@@ -7,7 +7,7 @@ export { hasUncommittedChanges }
 
 import execa from 'execa'
 import pc from '@brillout/picocolors'
-import { highlightCommand } from '../../utils.ts'
+import { highlightCommand, logCommand } from '../../utils.ts'
 
 /** The default branch of `origin` (e.g. `main`), as known locally, or `null` if unknown */
 async function getDefaultBranch(cwd: string): Promise<string | null> {
@@ -49,7 +49,7 @@ async function getFileOnOrigin(cwd: string, branch: string, filePath: string): P
 /** @returns Whether it succeeded */
 async function gitPush(cwd: string, branch: string): Promise<boolean> {
   const args = ['push', 'origin', branch]
-  console.log(pc.bold(pc.blue(`$ git ${args.join(' ')}`)))
+  logCommand(`$ git ${args.join(' ')}`)
   // stdin: the terminal, for a credential prompt
   const { failed, all: output } = await execa('git', args, {
     cwd,

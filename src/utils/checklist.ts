@@ -7,6 +7,7 @@ export type { ChecklistItem }
 
 import readline from 'node:readline'
 import pc from '@brillout/picocolors'
+import { isTerminal } from './ask.ts'
 
 type ChecklistItem = {
   label: string
@@ -49,7 +50,7 @@ function renderChecklist(items: ChecklistItem[], states: ItemState[], cursor: nu
  */
 async function askChecklist(question: string, items: ChecklistItem[]): Promise<boolean[] | null> {
   const { stdin, stdout } = process
-  if (!stdin.isTTY || !stdout.isTTY) return null
+  if (!isTerminal()) return null
   const unchecked = new Set<number>()
   // The items the user can toggle: the ones possible regardless of the other items
   const isTogglable = (i: number) => !getChecklistState(items, new Set()).at(i)?.notPossibleReason

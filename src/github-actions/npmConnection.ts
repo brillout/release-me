@@ -29,7 +29,7 @@ import { logManualSteps, runSteps, type Step } from './steps.ts'
 import { getGitHubRepo } from './utils/githubRepo.ts'
 import { isWorkflowFileUpToDate, releaseNpmWorkflowFile } from './workflowFiles.ts'
 import { assertInstalledAtRoot, getFilesInsideDir, getMonorepoRootDir, getReleaseMePackages } from '../releaseMe.ts'
-import { askConfirmation } from '../utils/ask.ts'
+import { askConfirmation, isTerminal } from '../utils/ask.ts'
 import { assertUsage, highlightCommand, logDetail, logTitle } from '../utils.ts'
 
 async function npmConnection() {
@@ -234,7 +234,7 @@ async function readTrustedPublishers(
     console.log(pc.dim(`(release-me can't read the connections npm has, because ${npmUnavailableReason})`))
     return null
   }
-  if (!(process.stdin.isTTY && process.stdout.isTTY)) {
+  if (!isTerminal()) {
     console.log(pc.dim('(release-me can read the connections npm has in a terminal: npm asks for 2FA)'))
     return null
   }

@@ -38,7 +38,8 @@ import {
   getReleaseMePackages,
   type ReleaseMePackage,
 } from '../releaseMe.ts'
-import { highlightCommand, logDetail, logTitle, run } from '../utils.ts'
+import { isTerminal } from '../utils/ask.ts'
+import { formatHint, highlightCommand, logCommand, logDetail, logTitle, run } from '../utils.ts'
 
 const initCommand = '$ pnpm exec release-me init'
 
@@ -118,13 +119,12 @@ async function init(options: WorkflowFileOptions) {
 
   // The manual steps of npm's trusted publishers: after the package.json steps
   const manualNpm = npm?.getManual(outcomes) ?? []
-  const isTerminal = process.stdin.isTTY && process.stdout.isTTY
   const hints = [
     ...(npm?.getHints(outcomes) ?? []),
     // Without terminal, release-me can't ask which steps to run
-    !isTerminal &&
+    !isTerminal() &&
       steps.some((step) => !step.alwaysRun && !step.notPossibleReason) &&
-      `${pc.bold('👉')} To let release-me do it for you, run ${pc.bold(initCommand)} in a terminal`,
+      formatHint(`To let release-me do it for you, run ${pc.bold(initCommand)} in a terminal`),
   ].filter((hint): hint is string => !!hint)
   const hasManualSteps = steps.some((step) => getManual(step, outcomes)) || manualNpm.length > 0 || hints.length > 0
   if (!hasManualSteps) return
@@ -198,7 +198,7 @@ async function getGitHubReleaseSyncStep(): Promise<Step> {
           'gh',
         )} isn't logged in: run ${highlightCommand('$ gh auth login')}`,
     run: async () => {
-      console.log(pc.bold(pc.blue(syncCommand)))
+      logCommand(syncCommand)
       try {
         await githubReleaseSync({ packageArgs: [], dryRun: false })
         return true
@@ -234,7 +234,7 @@ async function getNpmSteps(packages: ReleaseMePackage[], repo: string | null, re
         old.fileName,
       )} doesn't work anymore`,
     )
-    hints.push(`${pc.bold('👉')} To let release-me do it for you, run ${pc.bold(npmConnectionCommand)}`)
+    hints.push(formatHint(`To let release-me do it for you, run ${pc.bold(npmConnectionCommand)}`))
     manualPackages.push(...packageNames)
   } else {
     const statuses = await Promise.all(
@@ -243,7 +243,7 @@ async function getNpmSteps(packages: ReleaseMePackage[], repo: string | null, re
     const inUse = statuses.filter(({ status }) => status === 'in-use').map(({ packageName }) => packageName)
     if (inUse.length > 0) {
       console.log(`${pc.green('✅')} npm <=> GitHub connection up-to-date${getPackagesLabel(inUse, packageNames)}`)
-      console.log(`${pc.bold('👉')} For more info, run ${pc.bold(npmConnectionCommand)}`)
+      console.log(formatHint(`For more info, run ${pc.bold(npmConnectionCommand)}`))
     }
     const toConnect = statuses.filter(({ status }) => status === 'not-in-use')
     if (toConnect.length > 0) {
@@ -298,7 +298,7 @@ async function getNpmSteps(packages: ReleaseMePackage[], repo: string | null, re
     getHints(outcomes: Map<Step, StepOutcome>): string[] {
       // E.g. npm allows only one trusted publisher per package, and the package already has one
       if (connectSteps.some((step) => outcomes.get(step) === 'failed')) {
-        return [...hints, `${pc.bold('👉')} To replace the existing connection, run ${pc.bold(npmConnectionCommand)}`]
+        return [...hints, formatHint(`To replace the existing connection, run ${pc.bold(npmConnectionCommand)}`)]
       }
       return hints
     },

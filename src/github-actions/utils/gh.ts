@@ -3,7 +3,7 @@ export { runWorkflow }
 
 import execa from 'execa'
 import pc from '@brillout/picocolors'
-import { highlightCommand, logDetail } from '../../utils.ts'
+import { highlightCommand, logCommand, logDetail } from '../../utils.ts'
 
 /** Why the GitHub CLI `gh` can't be used (it isn't installed, or isn't logged in), otherwise `null` */
 async function getGhUnavailableReason(): Promise<string | null> {
@@ -30,7 +30,7 @@ const RETRY_DELAY = 5_000
 async function runWorkflow(repo: string, workflowFileName: string, inputs: Record<string, string>): Promise<boolean> {
   const args = ['workflow', 'run', workflowFileName, '--repo', repo]
   for (const [name, value] of Object.entries(inputs)) args.push('-f', `${name}=${value}`)
-  console.log(pc.bold(pc.blue(`$ gh ${args.join(' ')}`)))
+  logCommand(`$ gh ${args.join(' ')}`)
   for (let attempt = 1; ; attempt++) {
     const { failed, all: output } = await execa('gh', args, { all: true, reject: false })
     if (!failed) {

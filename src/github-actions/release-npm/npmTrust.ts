@@ -22,7 +22,7 @@ import pc from '@brillout/picocolors'
 import execa from 'execa'
 import { releaseNpmWorkflowFile } from '../workflowFiles.ts'
 import { askQuestion } from '../../utils/ask.ts'
-import { highlightCommand, logDetail } from '../../utils.ts'
+import { highlightCommand, logCommand, logDetail } from '../../utils.ts'
 
 const NPM_TRUST_MIN_VERSION = '11.15.0'
 // npm's recommendation when setting up several packages
@@ -111,7 +111,7 @@ async function revokeTrustedPublisher(packageName: string, id: string): Promise<
 
 /** @returns Whether it succeeded */
 async function runNpm(args: string[]): Promise<boolean> {
-  console.log(pc.bold(pc.blue(`$ npm ${args.join(' ')}`)))
+  logCommand(`$ npm ${args.join(' ')}`)
   // Inherit stdio: npm's 2FA prompt requires stdin and stdout to be the terminal
   const { failed } = await execa('npm', args, { stdio: 'inherit', reject: false })
   console.log()

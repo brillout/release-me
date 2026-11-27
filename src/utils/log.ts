@@ -1,6 +1,8 @@
 export { logDetail }
 export { logTitle }
 export { highlightCommand }
+export { logCommand }
+export { formatHint }
 
 import pc from '@brillout/picocolors'
 
@@ -20,4 +22,14 @@ function logDetail(msg: string): string {
 /** A command the user should run (e.g. `$ npm login`), emphasized */
 function highlightCommand(cmd: string): string {
   return pc.bold(pc.yellow(cmd))
+}
+
+/** A command that release-me runs (e.g. `$ git push origin main`) */
+function logCommand(cmd: string): void {
+  console.log(pc.bold(pc.blue(cmd)))
+}
+
+/** What the user can do next, e.g. `👉 For more info, run $ pnpm exec release-me npm-connection` */
+function formatHint(msg: string): string {
+  return `${pc.bold('👉')} ${msg}`
 }

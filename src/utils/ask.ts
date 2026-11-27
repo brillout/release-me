@@ -1,5 +1,6 @@
 export { askQuestion }
 export { askConfirmation }
+export { isTerminal }
 
 import readline from 'node:readline'
 
@@ -24,4 +25,9 @@ function askQuestion(question: string): Promise<string | null> {
 /** `true` upon <ENTER>, and `false` otherwise (any other answer such as `n`, <CTRL-C>, or the end of stdin) */
 async function askConfirmation(question: string): Promise<boolean> {
   return (await askQuestion(question))?.trim() === ''
+}
+
+/** Whether release-me can ask the user (stdin and stdout are the terminal) */
+function isTerminal(): boolean {
+  return !!(process.stdin.isTTY && process.stdout.isTTY)
 }
