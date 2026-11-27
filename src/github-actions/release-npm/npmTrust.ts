@@ -1,4 +1,5 @@
 export { setUpTrustedPublishers }
+export { getNpmErrorReason }
 export { getNpmTrustArgs }
 export { getTrustedPublisherStatus }
 export { isNpmTrustSupported }
@@ -37,7 +38,7 @@ type TrustedPublisherStatus =
   /** The package has a trusted publisher for another repository or workflow file */
   | { status: 'outdated'; current: TrustedPublisher }
   /** `$ npm trust list` failed (e.g. npm asked for 2FA) */
-  | { status: 'unknown' }
+  | { status: 'unknown'; reason: string }
 
 /**
  * Sets up, with `$ npm trust` and if the user confirms, the trusted publisher of the packages `packageNames` for the
@@ -59,9 +60,8 @@ async function setUpTrustedPublishers(
   /** Not set up: the user sets them up on npmjs.com */
   manual: string[]
 }> {
-  const skip = (reason: string | null) => {
-    // Re-running init: don't repeat it
-    if (reason && isNewWorkflow) console.log(logDetail(reason))
+  const skip = (reason: string) => {
+    console.log(logDetail(reason))
     return { upToDate: [], setUp: [], manual: packageNames }
   }
   const npmVersion = await getNpmVersion()
@@ -83,6 +83,10 @@ async function setUpTrustedPublishers(
   const statuses = await Promise.all(
     packagesOnNpm.map(async (packageName) => ({ packageName, ...(await getStatus(packageName, repo)) })),
   )
+  for (const s of statuses) {
+    if (s.status !== 'unknown') continue
+    console.log(logDetail(`couldn't read the trusted publisher of ${s.packageName} ($ npm trust list): ${s.reason}`))
+  }
   const upToDate = statuses.filter((s) => s.status === 'up-to-date').map((s) => s.packageName)
   const toSetUp = statuses.filter(
     (s) => s.status === 'missing' || s.status === 'outdated' || (s.status === 'unknown' && isNewWorkflow),
@@ -123,13 +127,14 @@ async function setUpTrustedPublishers(
 
 async function getStatus(packageName: string, repo: string): Promise<TrustedPublisherStatus> {
   // Not interactive: npm fails instead of asking for 2FA (it only asks if stdin and stdout are the terminal)
-  const { stdout, failed } = await execa('npm', ['trust', 'list', packageName, '--json'], {
+  const { stdout, stderr, failed } = await execa('npm', ['trust', 'list', packageName, '--json'], {
     stdin: 'ignore',
     reject: false,
   })
-  if (failed) return { status: 'unknown' }
+  if (failed) return { status: 'unknown', reason: getNpmErrorReason(stderr) }
   const trustedPublishers = parseNpmTrustList(stdout)
-  if (!trustedPublishers) return { status: 'unknown' }
+  if (!trustedPublishers)
+    return { status: 'unknown', reason: `unexpected output ${JSON.stringify(stdout.slice(0, 200))}` }
   return getTrustedPublisherStatus(trustedPublishers, repo)
 }
 
@@ -177,6 +182,16 @@ function parseNpmTrustList(stdout: string): TrustedPublisher[] | null {
   }
   if (depth !== 0) return null
   return objects
+}
+
+/** E.g. `npm error code EOTP` => `EOTP` */
+function getNpmErrorReason(stderr: string): string {
+  const code = /^npm error code (\S+)/m.exec(stderr)?.[1]
+  const message = stderr
+    .split('\n')
+    .map((line) => line.replace(/^npm error\s*/, '').trim())
+    .find((line) => line && !line.startsWith('code ') && !line.startsWith('A complete log'))
+  return [code, message].filter(Boolean).join(': ') || 'npm failed'
 }
 
 function describe(trustedPublisher: TrustedPublisher): string {

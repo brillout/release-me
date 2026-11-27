@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { getNpmTrustArgs, getTrustedPublisherStatus, isNpmTrustSupported, parseNpmTrustList } from './npmTrust.ts'
+import {
+  getNpmErrorReason,
+  getNpmTrustArgs,
+  getTrustedPublisherStatus,
+  isNpmTrustSupported,
+  parseNpmTrustList,
+} from './npmTrust.ts'
 
 describe('parseNpmTrustList()', () => {
   it('parses the JSON objects printed by `$ npm trust list --json`', () => {
@@ -96,5 +102,17 @@ describe('getNpmTrustArgs()', () => {
       '--allow-publish',
       '--yes',
     ])
+  })
+})
+
+describe('getNpmErrorReason()', () => {
+  it('extracts the code and message of npm errors', () => {
+    const stderr = [
+      'npm error code EOTP',
+      'npm error This operation requires a one-time password from your authenticator.',
+      'npm error A complete log of this run can be found in: /home/me/.npm/_logs/debug-0.log',
+    ].join('\n')
+    expect(getNpmErrorReason(stderr)).toBe('EOTP: This operation requires a one-time password from your authenticator.')
+    expect(getNpmErrorReason('')).toBe('npm failed')
   })
 })
