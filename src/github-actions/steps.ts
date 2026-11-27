@@ -1,6 +1,5 @@
 export { runSteps }
 export { logManualSteps }
-export { getManual }
 export type { Step }
 export type { StepOutcome }
 
@@ -11,6 +10,7 @@ export type { StepOutcome }
 import pc from '@brillout/picocolors'
 import { isTerminal } from '../utils/ask.ts'
 import { askChecklist, type ChecklistItem } from '../utils/checklist.ts'
+import { logTitle } from '../utils/log.ts'
 
 type Step = {
   label: string
@@ -84,27 +84,31 @@ function logNotPossibleSteps(steps: Step[]) {
 }
 
 /**
- * Logs, numbered, the manual instructions of the steps that weren't done.
- * @param extra More manual instructions (each one has one or more lines), logged before the step `before` (or last), e.g.
- * the ones of the steps whose `manual` is `null`
+ * Logs, numbered, the manual instructions of the steps that weren't done (nothing if there isn't any).
+ * @param extra.manual More manual instructions (each one has one or more lines), logged before the step `extra.before`
+ * (or last), e.g. the ones of the steps whose `manual` is `null`
+ * @param extra.hints Logged after the manual instructions, e.g. a command that does them on behalf of the user
  */
 function logManualSteps(
   steps: Step[],
   outcomes: Map<Step, StepOutcome>,
-  extra: { manual: string[][]; before: Step | null } = { manual: [], before: null },
+  { manual = [], before = null, hints = [] }: { manual?: string[][]; before?: Step | null; hints?: string[] } = {},
 ): void {
   const manualSteps: string[][] = []
   for (const step of steps) {
-    if (step === extra.before) manualSteps.push(...extra.manual)
-    const manual = getManual(step, outcomes)
-    if (manual) manualSteps.push([manual])
+    if (step === before) manualSteps.push(...manual)
+    const stepManual = getManual(step, outcomes)
+    if (stepManual) manualSteps.push([stepManual])
   }
-  if (!extra.before || !steps.includes(extra.before)) manualSteps.push(...extra.manual)
+  if (!before || !steps.includes(before)) manualSteps.push(...manual)
+  if (manualSteps.length === 0 && hints.length === 0) return
+  logTitle('Manual steps')
   for (const [i, lines] of manualSteps.entries()) {
     const [first, ...rest] = lines
     console.log(`${pc.bold(`${i + 1}.`)} ${first}`)
     for (const line of rest) console.log(line)
   }
+  for (const hint of hints) console.log(hint)
 }
 
 /** The manual instructions of the step `step`, if it wasn't done */

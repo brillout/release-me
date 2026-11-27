@@ -20,7 +20,7 @@ import {
 import { getPublishingStatus } from './release-npm/npmRegistry.ts'
 import { getNpmUnavailableReason } from './release-npm/npmTrust.ts'
 import { getPackageJsonSteps, type PackageJsonStep } from './packageJsonSteps.ts'
-import { getManual, logManualSteps, runSteps, type Step, type StepOutcome } from './steps.ts'
+import { logManualSteps, runSteps, type Step, type StepOutcome } from './steps.ts'
 import { getGitHubRepo } from './utils/githubRepo.ts'
 import { getCurrentBranch, getDefaultBranch, gitPush, isAheadOfOrigin } from './utils/git.ts'
 import {
@@ -111,7 +111,7 @@ function getCommitStep(monorepoRootDir: string, changes: WriteResult[], packageJ
   }
 }
 
-/** The manual steps: the ones of the steps that weren't done, the ones of npm's trusted publishers, and the hints */
+/** The manual steps: the ones of the steps that weren't done, the ones of npm's trusted publishers, then the hints */
 function logInitManualSteps(steps: Step[], outcomes: Map<Step, StepOutcome>, npm: NpmSteps | null, commitStep: Step) {
   const manualNpm = npm?.getManual(outcomes) ?? []
   const hints = [
@@ -121,12 +121,8 @@ function logInitManualSteps(steps: Step[], outcomes: Map<Step, StepOutcome>, npm
       steps.some((step) => !step.alwaysRun && !step.notPossibleReason) &&
       formatHint(`To let release-me do it for you, run ${pc.bold(initCommand)} in a terminal`),
   ].filter((hint): hint is string => !!hint)
-  const hasManualSteps = steps.some((step) => getManual(step, outcomes)) || manualNpm.length > 0 || hints.length > 0
-  if (!hasManualSteps) return
-  logTitle('Manual steps')
   // The manual steps of npm's trusted publishers: after the package.json steps
-  logManualSteps(steps, outcomes, { manual: manualNpm, before: steps[steps.indexOf(commitStep) + 1] ?? null })
-  for (const hint of hints) console.log(hint)
+  logManualSteps(steps, outcomes, { manual: manualNpm, before: steps[steps.indexOf(commitStep) + 1], hints })
 }
 
 async function commitChanges(monorepoRootDir: string, changes: WriteResult[], packageJsonPaths: string[]) {

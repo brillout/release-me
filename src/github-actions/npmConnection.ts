@@ -104,8 +104,6 @@ async function npmConnection() {
       )} (the GitHub Action requires ${requirements})`,
     ])
   }
-  if (steps.every((step) => outcomes.get(step) === 'done') && manual.length === 0) return
-  logTitle('Manual steps')
   // After deleting the old connections: npm may allow only one connection per package
   logManualSteps(steps, outcomes, { manual, before: commitReleaseStep })
 }
