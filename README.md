@@ -138,9 +138,6 @@ pnpm exec release-me init --npm
 ```
 
 > [!NOTE]
-> Each package needs a [trusted publisher](https://docs.npmjs.com/trusted-publishers) for `release-npm.yml`. Upon creating `release-npm.yml`, `init` offers to set them up for you with `$ npm trust` (npm >= 11.15.0, logged in to npm, asks for 2FA). For packages it can't set up (e.g. a package that already has a trusted publisher, or that isn't on npm yet), it shows how to set them up on npmjs.com.
-
-> [!NOTE]
 > To make a commit-release:
 > - Run `$ pnpm exec release-me commit` to commit-release the current commit (i.e. `$ git show HEAD`), or
 > - press the **Run workflow** button of the GitHub Action `release-npm.yml`.

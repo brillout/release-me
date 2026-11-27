@@ -1,5 +1,73 @@
 import { describe, expect, it } from 'vitest'
-import { getNpmTrustArgs, isNpmTrustSupported } from './npmTrust.ts'
+import { getNpmTrustArgs, getTrustedPublisherStatus, isNpmTrustSupported, parseNpmTrustList } from './npmTrust.ts'
+
+describe('parseNpmTrustList()', () => {
+  it('parses the JSON objects printed by `$ npm trust list --json`', () => {
+    const stdout = [
+      '{',
+      '  "id": "a1",',
+      '  "type": "github",',
+      '  "file": "release-npm.yml",',
+      '  "repository": "vikejs/vike",',
+      '  "permissions": [',
+      '    "createPackage"',
+      '  ]',
+      '}',
+      '',
+      '{',
+      '  "id": "b2",',
+      '  "type": "gitlab",',
+      '  "file": "a } \\" {.yml"',
+      '}',
+      '',
+    ].join('\n')
+    expect(parseNpmTrustList(stdout)).toEqual([
+      {
+        id: 'a1',
+        type: 'github',
+        file: 'release-npm.yml',
+        repository: 'vikejs/vike',
+        permissions: ['createPackage'],
+      },
+      { id: 'b2', type: 'gitlab', file: 'a } " {.yml' },
+    ])
+  })
+  it('no trusted publisher: npm prints nothing', () => {
+    expect(parseNpmTrustList('')).toEqual([])
+    expect(parseNpmTrustList('\n')).toEqual([])
+  })
+  it('unexpected output', () => {
+    expect(parseNpmTrustList('No trust configurations found')).toBe(null)
+    expect(parseNpmTrustList('{ "id": "a1"')).toBe(null)
+  })
+})
+
+describe('getTrustedPublisherStatus()', () => {
+  const upToDate = { id: 'a1', type: 'github', file: 'release-npm.yml', repository: 'vikejs/vike' }
+  it('up-to-date', () => {
+    expect(getTrustedPublisherStatus([upToDate], 'vikejs/vike')).toEqual({ status: 'up-to-date' })
+    expect(getTrustedPublisherStatus([{ ...upToDate, repository: 'VikeJS/Vike' }], 'vikejs/vike')).toEqual({
+      status: 'up-to-date',
+    })
+    expect(getTrustedPublisherStatus([{ ...upToDate, permissions: ['createPackage'] }], 'vikejs/vike')).toEqual({
+      status: 'up-to-date',
+    })
+  })
+  it('missing', () => {
+    expect(getTrustedPublisherStatus([], 'vikejs/vike')).toEqual({ status: 'missing' })
+  })
+  it('outdated', () => {
+    for (const current of [
+      { ...upToDate, file: 'release.yml' },
+      { ...upToDate, repository: 'brillout/vike' },
+      { ...upToDate, environment: 'production' },
+      { ...upToDate, permissions: ['createStagedPackage'] },
+      { id: 'c3', type: 'gitlab' },
+    ]) {
+      expect(getTrustedPublisherStatus([current], 'vikejs/vike')).toEqual({ status: 'outdated', current })
+    }
+  })
+})
 
 describe('isNpmTrustSupported()', () => {
   it('requires npm >= 11.15.0', () => {

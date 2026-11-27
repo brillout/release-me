@@ -36,7 +36,7 @@ async function init(options: WorkflowFileOptions) {
   // CLI output is read bottom to top: the workflow files last
   if (releaseNpmResult) {
     logTitle('npm trusted publisher', true)
-    await logNpmSetup(monorepoRootDir, packages, releaseNpmResult)
+    await setUpTrustedPublishing(monorepoRootDir, packages, releaseNpmResult)
   }
 
   // The first title has no margin
@@ -79,23 +79,28 @@ async function commitWorkflowFiles(monorepoRootDir: string, changes: WriteResult
   console.log(`Committed ${pc.dim(`(${commitMessage})`)}`)
 }
 
-/** Sets up npm's trusted publishing, or logs the steps to set it up */
-async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[], releaseNpmResult: WriteResult) {
+/** Sets up the trusted publishers of npm (the ones already set up are left untouched), or logs the steps to set them up */
+async function setUpTrustedPublishing(
+  monorepoRootDir: string,
+  packages: ReleaseMePackage[],
+  releaseNpmResult: WriteResult,
+) {
   const repo = await getGitHubRepo(monorepoRootDir)
   const packageNames = packages.map(({ packageName }) => packageName)
 
-  // Only upon setting up release-npm.yml (re-running init doesn't ask for 2FA again). Not upon renaming it: the old
-  // workflow's trusted publisher still exists, and npm allows only one per package.
   let packageNamesManual = packageNames
-  if (releaseNpmResult.status === 'created' && repo) {
-    packageNamesManual = await setUpTrustedPublishers(packageNames, repo)
-    const packageNamesSetUp = packageNames.filter((packageName) => !packageNamesManual.includes(packageName))
-    if (packageNamesSetUp.length > 0) {
-      const packagesSetUp = packageNamesSetUp.map((p) => pc.bold(p)).join(', ')
-      console.log(`${pc.green('✅')} The trusted publisher of ${packagesSetUp} is set up`)
+  let packageNamesSetUp: string[] = []
+  if (repo) {
+    const isNewWorkflow = releaseNpmResult.status === 'created' || releaseNpmResult.status === 'renamed'
+    const result = await setUpTrustedPublishers(packageNames, repo, isNewWorkflow)
+    packageNamesManual = result.manual
+    packageNamesSetUp = result.setUp
+    const logPackages = (label: string, names: string[]) => {
+      if (names.length > 0) console.log(`${pc.green('✅')} ${label}: ${names.map((p) => pc.bold(p)).join(', ')}`)
     }
+    logPackages('Trusted publisher up-to-date', result.upToDate)
+    logPackages('Trusted publisher set up', result.setUp)
   }
-
   if (packageNamesManual.length > 0) {
     const trustedPublisher = `${packageNamesManual.length === 1 ? "the package's" : "each package's"} trusted publisher`
     if (releaseNpmResult.status === 'created') {
@@ -116,11 +121,13 @@ async function logNpmSetup(monorepoRootDir: string, packages: ReleaseMePackage[]
       console.log(`   4. Delete the trusted publisher of ${pc.bold(releaseNpmResult.old.fileName)}`)
     }
   }
-  console.log(
-    `   ${pc.bold(
-      '⚠️  Use it within 2 days',
-    )} to persist the connection (e.g. make a commit release) after creating it (otherwise the connection creation is cancelled)`,
-  )
+  if (packageNamesManual.length > 0 || packageNamesSetUp.length > 0) {
+    console.log(
+      `   ${pc.bold(
+        '⚠️  Use it within 2 days',
+      )} to persist the connection (e.g. make a commit release) after creating it (otherwise the connection creation is cancelled)`,
+    )
+  }
 
   for (const { packageName, packageRootDir } of packages) {
     const { repository } = getPackageJson(packageRootDir).packageJson
