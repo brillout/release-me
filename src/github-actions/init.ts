@@ -90,15 +90,16 @@ async function setUpTrustedPublishing(
 
   let packageNamesManual = packageNames
   let packageNamesSetUp: string[] = []
-  if (repo) {
-    const isNewWorkflow = releaseNpmResult.status === 'created' || releaseNpmResult.status === 'renamed'
-    const result = await setUpTrustedPublishers(packageNames, repo, isNewWorkflow)
+  // Not upon renaming release-npm.yml: the trusted publisher of the old workflow still exists (and its releases would look
+  // like release-npm.yml's), and npm allows only one per package
+  if (repo && releaseNpmResult.status !== 'renamed') {
+    const result = await setUpTrustedPublishers(packageNames, repo)
     packageNamesManual = result.manual
     packageNamesSetUp = result.setUp
     const logPackages = (label: string, names: string[]) => {
       if (names.length > 0) console.log(`${pc.green('✅')} ${label}: ${names.map((p) => pc.bold(p)).join(', ')}`)
     }
-    logPackages('Trusted publisher up-to-date', result.upToDate)
+    logPackages('Trusted publisher in use', result.inUse)
     logPackages('Trusted publisher set up', result.setUp)
   }
   if (packageNamesManual.length > 0) {

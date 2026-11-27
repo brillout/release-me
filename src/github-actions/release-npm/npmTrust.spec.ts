@@ -1,77 +1,49 @@
 import { describe, expect, it } from 'vitest'
 import {
-  getNpmErrorReason,
   getNpmTrustArgs,
-  getTrustedPublisherStatus,
+  getProvenanceWorkflow,
   isNpmTrustSupported,
-  parseNpmTrustList,
+  isPublishedByTrustedPublisher,
 } from './npmTrust.ts'
 
-describe('parseNpmTrustList()', () => {
-  it('parses the JSON objects printed by `$ npm trust list --json`', () => {
-    const stdout = [
-      '{',
-      '  "id": "a1",',
-      '  "type": "github",',
-      '  "file": "release-npm.yml",',
-      '  "repository": "vikejs/vike",',
-      '  "permissions": [',
-      '    "createPackage"',
-      '  ]',
-      '}',
-      '',
-      '{',
-      '  "id": "b2",',
-      '  "type": "gitlab",',
-      '  "file": "a } \\" {.yml"',
-      '}',
-      '',
-    ].join('\n')
-    expect(parseNpmTrustList(stdout)).toEqual([
-      {
-        id: 'a1',
-        type: 'github',
-        file: 'release-npm.yml',
-        repository: 'vikejs/vike',
-        permissions: ['createPackage'],
-      },
-      { id: 'b2', type: 'gitlab', file: 'a } " {.yml' },
-    ])
-  })
-  it('no trusted publisher: npm prints nothing', () => {
-    expect(parseNpmTrustList('')).toEqual([])
-    expect(parseNpmTrustList('\n')).toEqual([])
-  })
-  it('unexpected output', () => {
-    expect(parseNpmTrustList('No trust configurations found')).toBe(null)
-    expect(parseNpmTrustList('{ "id": "a1"')).toBe(null)
+describe('isPublishedByTrustedPublisher()', () => {
+  it("reads the registry's _npmUser", () => {
+    const trustedPublisher = { id: 'github', oidcConfigId: '2e5fddec-9765-4b06-9ab5-7d61980d554a' }
+    expect(
+      isPublishedByTrustedPublisher({
+        version: '0.5.8',
+        _npmUser: { name: 'GitHub Actions', email: 'npm-oidc-no-reply@github.com', trustedPublisher },
+      }),
+    ).toBe(true)
+    expect(isPublishedByTrustedPublisher({ version: '0.5.1', _npmUser: { name: 'brillout' } })).toBe(false)
+    expect(isPublishedByTrustedPublisher({ version: '0.0.1' })).toBe(false)
   })
 })
 
-describe('getTrustedPublisherStatus()', () => {
-  const upToDate = { id: 'a1', type: 'github', file: 'release-npm.yml', repository: 'vikejs/vike' }
-  it('up-to-date', () => {
-    expect(getTrustedPublisherStatus([upToDate], 'vikejs/vike')).toEqual({ status: 'up-to-date' })
-    expect(getTrustedPublisherStatus([{ ...upToDate, repository: 'VikeJS/Vike' }], 'vikejs/vike')).toEqual({
-      status: 'up-to-date',
-    })
-    expect(getTrustedPublisherStatus([{ ...upToDate, permissions: ['createPackage'] }], 'vikejs/vike')).toEqual({
-      status: 'up-to-date',
-    })
+describe('getProvenanceWorkflow()', () => {
+  const getAttestations = (statement: unknown) => ({
+    attestations: [
+      { predicateType: 'https://github.com/npm/attestation/tree/main/specs/publish/v0.1' },
+      {
+        predicateType: 'https://slsa.dev/provenance/v1',
+        bundle: { dsseEnvelope: { payload: Buffer.from(JSON.stringify(statement)).toString('base64') } },
+      },
+    ],
   })
-  it('missing', () => {
-    expect(getTrustedPublisherStatus([], 'vikejs/vike')).toEqual({ status: 'missing' })
-  })
-  it('outdated', () => {
-    for (const current of [
-      { ...upToDate, file: 'release.yml' },
-      { ...upToDate, repository: 'brillout/vike' },
-      { ...upToDate, environment: 'production' },
-      { ...upToDate, permissions: ['createStagedPackage'] },
-      { id: 'c3', type: 'gitlab' },
-    ]) {
-      expect(getTrustedPublisherStatus([current], 'vikejs/vike')).toEqual({ status: 'outdated', current })
+  it('reads the workflow of the SLSA provenance', () => {
+    const workflow = {
+      ref: 'refs/tags/v0.5.8',
+      repository: 'https://github.com/brillout/release-me',
+      path: '.github/workflows/release-npm.yml',
     }
+    expect(
+      getProvenanceWorkflow(getAttestations({ predicate: { buildDefinition: { externalParameters: { workflow } } } })),
+    ).toEqual({ repository: 'https://github.com/brillout/release-me', path: '.github/workflows/release-npm.yml' })
+  })
+  it('no provenance', () => {
+    expect(getProvenanceWorkflow(getAttestations({ predicate: {} }))).toBe(null)
+    expect(getProvenanceWorkflow({ attestations: [] })).toBe(null)
+    expect(getProvenanceWorkflow(null)).toBe(null)
   })
 })
 
@@ -102,17 +74,5 @@ describe('getNpmTrustArgs()', () => {
       '--allow-publish',
       '--yes',
     ])
-  })
-})
-
-describe('getNpmErrorReason()', () => {
-  it('extracts the code and message of npm errors', () => {
-    const stderr = [
-      'npm error code EOTP',
-      'npm error This operation requires a one-time password from your authenticator.',
-      'npm error A complete log of this run can be found in: /home/me/.npm/_logs/debug-0.log',
-    ].join('\n')
-    expect(getNpmErrorReason(stderr)).toBe('EOTP: This operation requires a one-time password from your authenticator.')
-    expect(getNpmErrorReason('')).toBe('npm failed')
   })
 })

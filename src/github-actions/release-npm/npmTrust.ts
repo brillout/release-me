@@ -1,203 +1,155 @@
 export { setUpTrustedPublishers }
-export { getNpmErrorReason }
 export { getNpmTrustArgs }
-export { getTrustedPublisherStatus }
+export { getProvenanceWorkflow }
 export { isNpmTrustSupported }
-export { parseNpmTrustList }
-export type { TrustedPublisher }
+export { isPublishedByTrustedPublisher }
 
-// `$ npm trust` reads and sets up a package's trusted publisher, see https://docs.npmjs.com/cli/v11/commands/npm-trust
+// `$ npm trust github` sets up a package's trusted publisher, see https://docs.npmjs.com/cli/v11/commands/npm-trust
 // - It requires npm >= 11.15.0, an npm login, and 2FA (npm asks for it interactively, so only in a terminal).
 // - The package must already be on npm.
-// - npm allows one trusted publisher per package: replacing it means revoking it first.
+// - npm allows one trusted publisher per package: it fails if the package already has one.
 // - It can't enable "Allow npm dist-tag" (which only removes the dist-tag `commit` of commit releases, see ./cli/ci-publish.ts).
+// Reading a package's trusted publisher (`$ npm trust list`) also requires 2FA: instead, release-me checks on npm's registry
+// whether the package is already published by its trusted publisher (no login needed).
 
 import pc from '@brillout/picocolors'
 import execa from 'execa'
 import { releaseNpmWorkflowFile } from '../workflowFiles.ts'
-import { getNotOnNpmReason, isMissingOnNpm } from './githubAction.ts'
+import { getNotOnNpmReason } from './githubAction.ts'
 import { askConfirmation } from '../../utils/askConfirmation.ts'
 import { logDetail } from '../../utils.ts'
 
 const NPM_TRUST_MIN_VERSION = '11.15.0'
 // npm's recommendation when setting up several packages
 const DELAY_BETWEEN_PACKAGES = 2_000
+// The registry of trusted publishing
+const REGISTRY = 'https://registry.npmjs.org'
+const REGISTRY_TIMEOUT = 10_000
+// The dist-tags of the versions that release-npm.yml publishes (`commit`: unless npm let it remove it, see ./cli/ci-publish.ts)
+const DIST_TAGS = ['latest', 'commit']
 
-/** A trusted publisher, as listed by `$ npm trust list <package> --json` */
-type TrustedPublisher = {
-  id?: string
-  type?: string
-  repository?: string
-  file?: string
-  environment?: string
-  permissions?: string[]
-}
-type TrustedPublisherStatus =
-  | { status: 'up-to-date' }
-  | { status: 'missing' }
-  /** The package has a trusted publisher for another repository or workflow file */
-  | { status: 'outdated'; current: TrustedPublisher }
-  /** `$ npm trust list` failed (e.g. npm asked for 2FA) */
-  | { status: 'unknown'; reason: string }
+type PublishingStatus =
+  /** Its latest stable or commit release is published by its trusted publisher (of release-npm.yml, if the release has provenance) */
+  | 'in-use'
+  | 'not-in-use'
+  | 'not-on-npm'
+  /** npm's registry didn't reply (e.g. offline) */
+  | 'unknown'
 
 /**
- * Sets up, with `$ npm trust` and if the user confirms, the trusted publisher of the packages `packageNames` for the
- * GitHub Action release-npm.yml of the GitHub repository `repo` (e.g. `vikejs/vike`). Doesn't ask if they're all already
- * set up.
- *
- * @param isNewWorkflow Whether init just created (or renamed) release-npm.yml: also set up the packages whose trusted publisher
- * can't be read.
+ * Sets up, with `$ npm trust github` and if the user confirms, the trusted publisher of the packages `packageNames` for the
+ * GitHub Action release-npm.yml of the GitHub repository `repo` (e.g. `vikejs/vike`). Doesn't ask for the packages already
+ * published by their trusted publisher.
  */
 async function setUpTrustedPublishers(
   packageNames: string[],
   repo: string,
-  isNewWorkflow: boolean,
 ): Promise<{
-  /** Already set up */
-  upToDate: string[]
+  /** Already published by their trusted publisher */
+  inUse: string[]
   /** Just set up */
   setUp: string[]
   /** Not set up: the user sets them up on npmjs.com */
   manual: string[]
 }> {
+  const statuses = await Promise.all(
+    packageNames.map(async (packageName) => ({ packageName, status: await getPublishingStatus(packageName, repo) })),
+  )
+  const getPackages = (status: PublishingStatus) =>
+    statuses.filter((s) => s.status === status).map(({ packageName }) => packageName)
+  const inUse = getPackages('in-use')
+  const notOnNpm = getPackages('not-on-npm')
+  for (const packageName of notOnNpm) {
+    console.log(pc.yellow(`Warning: ${getNotOnNpmReason(packageName)}.`))
+  }
+  const toSetUp = getPackages('not-in-use')
+  const manual = [...notOnNpm, ...getPackages('unknown')]
+  if (toSetUp.length === 0) return { inUse, setUp: [], manual }
   const skip = (reason: string) => {
     console.log(logDetail(reason))
-    return { upToDate: [], setUp: [], manual: packageNames }
+    return { inUse, setUp: [], manual: [...manual, ...toSetUp] }
   }
+
+  // npm asks for 2FA, which requires a terminal
+  if (!process.stdin.isTTY || !process.stdout.isTTY) return skip('npm could set it up for you in a terminal')
   const npmVersion = await getNpmVersion()
   if (!npmVersion || !isNpmTrustSupported(npmVersion)) {
     const npmInstalled = npmVersion ? `this machine has npm ${npmVersion}` : "npm isn't installed"
     return skip(`npm >= ${NPM_TRUST_MIN_VERSION} could set it up for you (${npmInstalled})`)
   }
-  if (!(await isLoggedIn())) return skip(`npm could set it up for you if you were logged in ($ npm login)`)
+  if (!(await isLoggedIn())) return skip('npm could set it up for you if you were logged in ($ npm login)')
 
-  const packagesNotOnNpm: string[] = []
-  const packagesOnNpm: string[] = []
-  for (const packageName of packageNames) {
-    ;((await isMissingOnNpm(packageName)) ? packagesNotOnNpm : packagesOnNpm).push(packageName)
-  }
-  for (const packageName of packagesNotOnNpm) {
-    console.log(pc.yellow(`Warning: ${getNotOnNpmReason(packageName)}.`))
-  }
-
-  const statuses = await Promise.all(
-    packagesOnNpm.map(async (packageName) => ({ packageName, ...(await getStatus(packageName, repo)) })),
-  )
-  for (const s of statuses) {
-    if (s.status !== 'unknown') continue
-    console.log(logDetail(`couldn't read the trusted publisher of ${s.packageName} ($ npm trust list): ${s.reason}`))
-  }
-  const upToDate = statuses.filter((s) => s.status === 'up-to-date').map((s) => s.packageName)
-  const toSetUp = statuses.filter(
-    (s) => s.status === 'missing' || s.status === 'outdated' || (s.status === 'unknown' && isNewWorkflow),
-  )
-  const manual = [
-    ...packagesNotOnNpm,
-    ...statuses.filter((s) => s.status === 'unknown' && !isNewWorkflow).map((s) => s.packageName),
-  ]
-  if (toSetUp.length === 0) return { upToDate, setUp: [], manual }
-  const toSetUpNames = toSetUp.map((s) => s.packageName)
-  // npm asks for 2FA, which requires a terminal
-  if (!process.stdin.isTTY || !process.stdout.isTTY)
-    return { upToDate, setUp: [], manual: [...manual, ...toSetUpNames] }
-
-  console.log(`Trusted publishers to set up with ${pc.bold('$ npm trust')}:`)
-  for (const s of toSetUp) {
-    const replaces = s.status === 'outdated' ? ` (replaces the one of ${describe(s.current)})` : ''
-    console.log(`   ${pc.bold(s.packageName)}${replaces}`)
-  }
+  const packages = toSetUp.join(', ')
   const confirmed = await askConfirmation(
-    pc.blue(pc.bold('Press <ENTER> to set them up (npm asks for 2FA), or <CTRL-C> to skip.')),
+    pc.blue(
+      pc.bold(
+        `Press <ENTER> to set up the trusted publisher of ${packages} with $ npm trust (npm asks for 2FA), or <CTRL-C> to skip.`,
+      ),
+    ),
   )
-  if (!confirmed) return { upToDate, setUp: [], manual: [...manual, ...toSetUpNames] }
+  if (!confirmed) return { inUse, setUp: [], manual: [...manual, ...toSetUp] }
 
   const setUp: string[] = []
-  for (const [i, s] of toSetUp.entries()) {
+  for (const [i, packageName] of toSetUp.entries()) {
     if (i > 0) await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_PACKAGES))
-    // npm allows one trusted publisher per package
-    const revoked =
-      s.status !== 'outdated' ||
-      !s.current.id ||
-      (await runNpm(['trust', 'revoke', s.packageName, '--id', s.current.id]))
-    if (revoked && (await runNpm(getNpmTrustArgs(s.packageName, repo)))) setUp.push(s.packageName)
-    else manual.push(s.packageName)
+    // It fails if the package already has a trusted publisher (e.g. set up but not used yet, or for another workflow)
+    if (await runNpm(getNpmTrustArgs(packageName, repo))) setUp.push(packageName)
+    else manual.push(packageName)
   }
-  return { upToDate, setUp, manual }
+  return { inUse, setUp, manual }
 }
 
-async function getStatus(packageName: string, repo: string): Promise<TrustedPublisherStatus> {
-  // Not interactive: npm fails instead of asking for 2FA (it only asks if stdin and stdout are the terminal)
-  const { stdout, stderr, failed } = await execa('npm', ['trust', 'list', packageName, '--json'], {
-    stdin: 'ignore',
-    reject: false,
-  })
-  if (failed) return { status: 'unknown', reason: getNpmErrorReason(stderr) }
-  const trustedPublishers = parseNpmTrustList(stdout)
-  if (!trustedPublishers)
-    return { status: 'unknown', reason: `unexpected output ${JSON.stringify(stdout.slice(0, 200))}` }
-  return getTrustedPublisherStatus(trustedPublishers, repo)
-}
-
-function getTrustedPublisherStatus(trustedPublishers: TrustedPublisher[], repo: string): TrustedPublisherStatus {
-  const isUpToDate = (t: TrustedPublisher) =>
-    (t.type ?? 'github') === 'github' &&
-    t.repository?.toLowerCase() === repo.toLowerCase() &&
-    t.file === releaseNpmWorkflowFile.fileName &&
-    // release-npm.yml doesn't use a GitHub environment
-    !t.environment &&
-    (!t.permissions || t.permissions.includes('createPackage'))
-  if (trustedPublishers.some(isUpToDate)) return { status: 'up-to-date' }
-  const current = trustedPublishers[0]
-  if (!current) return { status: 'missing' }
-  return { status: 'outdated', current }
-}
-
-/** `$ npm trust list --json` prints one JSON object per trusted publisher (nothing if there isn't any). `null` if it can't be parsed. */
-function parseNpmTrustList(stdout: string): TrustedPublisher[] | null {
-  const objects: TrustedPublisher[] = []
-  let depth = 0
-  let start = -1
-  let inString = false
-  for (let i = 0; i < stdout.length; i++) {
-    const char = stdout[i]
-    if (inString) {
-      if (char === '\\') i++
-      else if (char === '"') inString = false
-    } else if (char === '"') {
-      inString = true
-    } else if (char === '{') {
-      if (depth++ === 0) start = i
-    } else if (char === '}') {
-      if (--depth < 0) return null
-      if (depth === 0) {
-        try {
-          objects.push(JSON.parse(stdout.slice(start, i + 1)))
-        } catch {
-          return null
-        }
-      }
-    } else if (depth === 0 && char!.trim() !== '') {
-      return null
-    }
+async function getPublishingStatus(packageName: string, repo: string): Promise<PublishingStatus> {
+  let isOnNpm = false
+  for (const distTag of DIST_TAGS) {
+    const version = await fetchJson(`${REGISTRY}/${packageName.replace('/', '%2F')}/${distTag}`)
+    if (version === undefined) return 'unknown'
+    if (version === null) continue
+    isOnNpm = true
+    if (!isPublishedByTrustedPublisher(version)) continue
+    const attestationsUrl = version.dist?.attestations?.provenance && version.dist.attestations.url
+    // Commit releases don't have provenance (see ./cli/ci-publish.ts)
+    if (!attestationsUrl) return 'in-use'
+    const attestations = await fetchJson(attestationsUrl)
+    const workflow = attestations && getProvenanceWorkflow(attestations)
+    if (!workflow || isReleaseNpmWorkflow(workflow, repo)) return 'in-use'
   }
-  if (depth !== 0) return null
-  return objects
+  return isOnNpm ? 'not-in-use' : 'not-on-npm'
 }
 
-/** E.g. `npm error code EOTP` => `EOTP` */
-function getNpmErrorReason(stderr: string): string {
-  const code = /^npm error code (\S+)/m.exec(stderr)?.[1]
-  const message = stderr
-    .split('\n')
-    .map((line) => line.replace(/^npm error\s*/, '').trim())
-    .find((line) => line && !line.startsWith('code ') && !line.startsWith('A complete log'))
-  return [code, message].filter(Boolean).join(': ') || 'npm failed'
+function isPublishedByTrustedPublisher(version: any): boolean {
+  return version?._npmUser?.trustedPublisher?.id === 'github'
 }
 
-function describe(trustedPublisher: TrustedPublisher): string {
-  const { type, repository, file, environment } = trustedPublisher
-  if ((type ?? 'github') !== 'github') return type!
-  return [repository, file, environment && `environment ${environment}`].filter(Boolean).join(' ')
+type ProvenanceWorkflow = { repository?: string; path?: string }
+/** The GitHub Action that published a release, according to its npm provenance */
+function getProvenanceWorkflow(attestations: any): ProvenanceWorkflow | null {
+  for (const attestation of attestations?.attestations ?? []) {
+    if (attestation?.predicateType !== 'https://slsa.dev/provenance/v1') continue
+    const payload = attestation.bundle?.dsseEnvelope?.payload
+    if (typeof payload !== 'string') continue
+    try {
+      const statement = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'))
+      const workflow = statement?.predicate?.buildDefinition?.externalParameters?.workflow
+      if (workflow) return { repository: workflow.repository, path: workflow.path }
+    } catch {}
+  }
+  return null
+}
+function isReleaseNpmWorkflow(workflow: ProvenanceWorkflow, repo: string): boolean {
+  return (
+    workflow.repository?.toLowerCase() === `https://github.com/${repo}`.toLowerCase() &&
+    workflow.path === releaseNpmWorkflowFile.filePath
+  )
+}
+
+/** `null` upon 404, `undefined` if the registry didn't reply */
+async function fetchJson(url: string): Promise<any | null | undefined> {
+  const response = await fetch(url, { signal: AbortSignal.timeout(REGISTRY_TIMEOUT) }).catch(() => null)
+  if (!response) return undefined
+  if (response.status === 404) return null
+  if (!response.ok) return undefined
+  return response.json().catch(() => undefined)
 }
 
 function getNpmTrustArgs(packageName: string, repo: string): string[] {
