@@ -38,8 +38,7 @@ function renderChecklist(items: ChecklistItem[], states: ItemState[], cursor: nu
   return items.map((item, i) => {
     const { checked, notPossibleReason } = states[i]!
     const pointer = i === cursor ? pc.cyan('❯') : ' '
-    if (notPossibleReason)
-      return `${pointer}  ─  ${pc.dim(`${item.label}: not possible, because ${notPossibleReason}`)}`
+    if (notPossibleReason) return `${pointer}  ─  ${pc.dim(formatNotPossible(item.label, notPossibleReason))}`
     return `${pointer} ${checked ? pc.green('[x]') : '[ ]'} ${item.label}`
   })
 }
@@ -55,7 +54,7 @@ async function askChecklist(question: string, items: ChecklistItem[]): Promise<b
   const initialStates = getChecklistState(items, new Set())
   if (!isTerminal()) {
     for (const [i, { notPossibleReason }] of initialStates.entries()) {
-      if (notPossibleReason) console.log(pc.dim(`${items[i]!.label}: not possible, because ${notPossibleReason}`))
+      if (notPossibleReason) console.log(pc.dim(formatNotPossible(items[i]!.label, notPossibleReason)))
     }
     return null
   }
@@ -120,4 +119,8 @@ async function askChecklist(question: string, items: ChecklistItem[]): Promise<b
     }
     stdin.on('keypress', onKeypress)
   })
+}
+
+function formatNotPossible(label: string, notPossibleReason: string): string {
+  return `${label}: not possible, because ${notPossibleReason}`
 }
