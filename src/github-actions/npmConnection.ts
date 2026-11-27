@@ -7,13 +7,7 @@ export { npmConnection }
 //    the old ones (e.g. the ones of release.yml, or of another repository).
 
 import pc from '@brillout/picocolors'
-import {
-  getCommitReleaseStep,
-  getConnectStep,
-  getTrustedPublisherManual,
-  logConnected,
-  type ConnectStep,
-} from './release-npm/connectionSteps.ts'
+import { getCommitReleaseStep, getConnectStep, logConnected, type ConnectStep } from './release-npm/connectionSteps.ts'
 import { describeWorkflow, getPublishingStatus, type PublishingStatus } from './release-npm/npmRegistry.ts'
 import {
   createTrustedPublisher,
@@ -24,6 +18,7 @@ import {
   revokeTrustedPublisher,
   type TrustedPublisher,
 } from './release-npm/npmTrust.ts'
+import { getTrustedPublisherManual } from './release-npm/trustedPublisher.ts'
 import { getPackageJsonSteps, type PackageJsonStep } from './packageJsonSteps.ts'
 import { logManualSteps, runSteps, type Step, type StepOutcome } from './steps.ts'
 import { getGitHubRepo } from './utils/githubRepo.ts'

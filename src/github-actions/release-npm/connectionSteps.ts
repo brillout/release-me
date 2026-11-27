@@ -1,7 +1,6 @@
 export { getConnectStep }
 export { getCommitReleaseStep }
 export { createCommitReleaseStep }
-export { getTrustedPublisherManual }
 export { logConnected }
 export { getPackagesLabel }
 export { npmConnectionCommand }
@@ -14,7 +13,6 @@ import * as fs from 'fs'
 import * as path from 'path'
 import pc from '@brillout/picocolors'
 import { createTrustedPublisher } from './npmTrust.ts'
-import { getTrustedPublisherSteps } from './trustedPublisher.ts'
 import type { PackageJsonStep } from '../packageJsonSteps.ts'
 import type { Step, StepOutcome } from '../steps.ts'
 import { getGhUnavailableReason, runWorkflow } from '../utils/gh.ts'
@@ -143,20 +141,6 @@ function logConnected(connectSteps: ConnectStep[], outcomes: Map<Step, StepOutco
 /** Which packages, if only some: e.g. `: vike-react, vike-vue` */
 function getPackagesLabel(packageNames: string[], allPackageNames: string[]): string {
   return packageNames.length < allPackageNames.length ? `: ${packageNames.map((p) => pc.bold(p)).join(', ')}` : ''
-}
-
-/** The manual steps to set up the trusted publishers of the packages `packageNames` on npmjs.com */
-function getTrustedPublisherManual(packageNames: string[], repo: string | null): string[] {
-  const trustedPublisher = `${
-    packageNames.length === 1 ? 'the trusted publisher' : 'the trusted publishers'
-  } of ${packageNames.map((p) => pc.cyan(p)).join(', ')}`
-  return [
-    `Set up ${trustedPublisher} on npmjs.com:`,
-    ...getTrustedPublisherSteps(packageNames, repo),
-    `   ${pc.bold(
-      '⚠️  Use it within 2 days',
-    )} to persist the connection (e.g. make a commit release) after creating it (otherwise the connection creation is cancelled)`,
-  ]
 }
 
 /** Whether the default branch of `origin` has the current release-npm.yml (as of the last `$ git fetch`) */

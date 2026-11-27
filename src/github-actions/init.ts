@@ -12,13 +12,13 @@ import {
   getCommitReleaseStep,
   getConnectStep,
   getPackagesLabel,
-  getTrustedPublisherManual,
   logConnected,
   npmConnectionCommand,
   type ConnectStep,
 } from './release-npm/connectionSteps.ts'
 import { getPublishingStatus, type PublishingStatus } from './release-npm/npmRegistry.ts'
 import { getNpmUnavailableReason } from './release-npm/npmTrust.ts'
+import { getTrustedPublisherManual } from './release-npm/trustedPublisher.ts'
 import { getPackageJsonSteps, type PackageJsonStep } from './packageJsonSteps.ts'
 import { logManualSteps, runSteps, type Step, type StepOutcome } from './steps.ts'
 import { getGitHubRepo } from './utils/githubRepo.ts'

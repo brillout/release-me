@@ -1,4 +1,5 @@
 export { getTrustedPublisherSteps }
+export { getTrustedPublisherManual }
 
 import pc from '@brillout/picocolors'
 import { releaseNpmWorkflowFile } from '../workflowFiles.ts'
@@ -24,4 +25,18 @@ function getTrustedPublisherSteps(packageNames: string[], repo: string | null): 
   }
   steps.push(`   3. Click ${pc.bold('Set up connection')}`)
   return steps
+}
+
+/** The manual steps to set up the trusted publishers of the packages `packageNames` on npmjs.com */
+function getTrustedPublisherManual(packageNames: string[], repo: string | null): string[] {
+  const trustedPublisher = `${
+    packageNames.length === 1 ? 'the trusted publisher' : 'the trusted publishers'
+  } of ${packageNames.map((p) => pc.cyan(p)).join(', ')}`
+  return [
+    `Set up ${trustedPublisher} on npmjs.com:`,
+    ...getTrustedPublisherSteps(packageNames, repo),
+    `   ${pc.bold(
+      '⚠️  Use it within 2 days',
+    )} to persist the connection (e.g. make a commit release) after creating it (otherwise the connection creation is cancelled)`,
+  ]
 }
