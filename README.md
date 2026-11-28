@@ -50,6 +50,10 @@ Publish your npm packages.
     }
    ```
 
+   > ℹ️  **Monorepo**
+   >
+   > Add it for every package you want to release.
+
 3. Add `release` scripts:
 
    ```diff
@@ -69,22 +73,7 @@ Publish your npm packages.
 
    > ℹ️  **Monorepo**
    >
-   > Add them (and a `build` script) to each package you want to release:
-   >
-   > ```diff
-   >  // packages/my-package/package.json
-   >  {
-   >    "name": "my-package",
-   >    "version": "0.0.0",
-   >    "scripts": {
-   >      "build": "echo 'Build step before releasing'",
-   > +    "release": "release-me patch",
-   > +    "release:minor": "release-me minor",
-   > +    "release:major": "release-me major",
-   > +    "release:commit": "release-me commit"
-   >    }
-   >  }
-   > ```
+   > Add them to each package you want to release.
    >
    > 👉 A package is released by `@brillout/release-me` if and only if it defines a script that runs `release-me`.
    >
