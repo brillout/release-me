@@ -146,7 +146,7 @@ You can set up GitHub Actions:
 
 ### Npm Release
 
-Instead of publishing from your machine (which requires npm 2FA), you can let a GitHub Action publish to npm (without 2FA and without an npm secret token).
+Instead of publishing from your machine (which requires 2FA), you can let a GitHub Action publish to npm (without 2FA and without an npm secret token).
 
 To set it up, run the following command which will:
 1. Create a `.github/workflows/release-npm.yml` file
