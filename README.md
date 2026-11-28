@@ -146,7 +146,7 @@ You can use two GitHub Actions:
 
 ### Npm Release
 
-Instead of publishing from your machine (which requires npm 2FA), you can let a GitHub Action publish to npm (without 2FA and without an npm secret token).
+Instead of publishing from your machine (which requires npm 2FA), you can let GitHub Actions publish to npm (without 2FA and without an npm secret token).
 
 To set it up, run the following command which will:
 1. Create a `.github/workflows/release-npm.yml` file
@@ -161,7 +161,7 @@ pnpm exec release-me init --npm
 
 ### GitHub Release
 
-You can let a GitHub Action synchronize your GitHub Releases with `CHANGELOG.md`.
+You can let GitHub Actions synchronize your GitHub Releases with `CHANGELOG.md`.
 
 To set it up, run the following command which will create a `.github/workflows/release-github.yml` file.
 
