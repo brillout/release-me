@@ -118,15 +118,15 @@ BREAKING CHANGE: Replace `someFunction(someArg)` with `someFunction({ someArg })
 > [!NOTE]
 > When introducing a breaking change, in order to respect the [semver](https://semver.org) convention, don't `$ pnpm exec release-me patch` but `$ pnpm exec release-me major` instead (or `$ pnpm exec release-me minor` if your package's version is `0.y.z`).
 
+> [!NOTE]
+> If the repository has only one package, `CHANGELOG.md` can live either at the repository root or inside the directory containing the package's `package.json` file. (You can move it, and @brillout/release-me will pick it up.)
+
 ### Monorepo
 
 Each package has its own `CHANGELOG.md` (`packages/my-package/CHANGELOG.md`), with the following commits:
 
 - If the commit has a scope (e.g. `fix(some-package): some commit`), it is included only if the scope matches the package's `package.json#name`.
 - If the commit has no scope (e.g. `fix: some commit`), it is included only if it modifies a file within the package's root directory (i.e. the directory where the package's `package.json` lives).
-
-> [!NOTE]
-> If the repository has only one package and `CHANGELOG.md` already exists at the monorepo root, then `CHANGELOG.md` lives at the monorepo root.
 
 <br/>
 
