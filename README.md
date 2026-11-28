@@ -72,9 +72,11 @@ Publish your npm packages.
 
    > ℹ️  **Commit releases**
    >
-   > Run `pnpm run release:commit` to publish the current commit to npm as a pre-release. Its version includes the short commit hash, so you can test that exact commit with a command such as `pnpm add my-package@0.0.0-commit-ff3d6cd`.
+   > Run `pnpm run release:commit` to publish the current commit to npm as a pre-release `my-package@0.0.0-commit-abc1234`.
    >
-   > With the **Release Npm** GitHub Action set up, you can also select **Run workflow** and enter the commit SHA. Review the commit before publishing it this way because its code runs with npm publish rights.
+   > With the [Release Npm GitHub Action](#npm-release), you can also use the **Run workflow** button on GitHub instead.
+   >
+   > ⚠️ **Only commit-release commits you trust** (e.g. review a pull request before commit-releasing it).
 
    > ℹ️  **Monorepo**
    >
