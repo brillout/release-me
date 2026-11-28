@@ -76,10 +76,10 @@ Publish your npm packages.
    >    "version": "0.0.0",
    >    "scripts": {
    >      "build": "echo 'Build step before releasing'",
-   > +    "release": "pnpm --recursive --sequential run release --yes",
-   > +    "release:minor": "pnpm --recursive --sequential run release:minor --yes",
-   > +    "release:major": "pnpm --recursive --sequential run release:major --yes",
-   > +    "release:commit": "pnpm --recursive --sequential run release:commit --yes",
+   > +    "release": "release-me patch",
+   > +    "release:minor": "release-me minor",
+   > +    "release:major": "release-me major",
+   > +    "release:commit": "release-me commit"
    >    }
    >  }
    > ```
