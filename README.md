@@ -67,7 +67,24 @@ Publish your npm packages.
 
    > ℹ️  **Monorepo**
    >
-   > In a monorepo, add them (and a `build` script) to each package you want to release: a package is released by `@brillout/release-me` if and only if it defines a script that runs `release-me`.
+   > Add them (and a `build` script) to each package you want to release:
+   >
+   > ```diff
+   >  // packages/my-package/package.json
+   >  {
+   >    "name": "my-package",
+   >    "version": "0.0.0",
+   >    "scripts": {
+   >      "build": "echo 'Build step before releasing'",
+   > +    "release": "pnpm --recursive --sequential run release --yes",
+   > +    "release:minor": "pnpm --recursive --sequential run release:minor --yes",
+   > +    "release:major": "pnpm --recursive --sequential run release:major --yes",
+   > +    "release:commit": "pnpm --recursive --sequential run release:commit --yes",
+   >    }
+   >  }
+   > ```
+   >
+   > 👉 A package is released by `@brillout/release-me` if and only if it defines a script that runs `release-me`.
    >
    > To release all packages at once, add `release` scripts to the monorepo root's `package.json`:
    >
