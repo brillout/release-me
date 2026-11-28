@@ -27,11 +27,15 @@ Publish your npm packages.
 
 ## Get started
 
-1. Install `@brillout/release-me` (at your repository's root `package.json`):
+1. Install `@brillout/release-me`:
 
    ```shell
    pnpm add -D @brillout/release-me
    ```
+
+   > ℹ️  **Monorepo**
+   >
+   > Install it at your repository root.
 
 2. Make sure your `package.json` defines a `build` script (`@brillout/release-me` runs it before releasing):
 
