@@ -106,7 +106,7 @@ Publish your npm packages.
    pnpm exec release-me init
    ```
 
-5. From now one, make sure to follow [Conventional Commits](#conventional-commits) for proper `CHANGELOG.md` generation
+5. From now one, make sure to follow [Conventional Commits](#conventional-commits) for proper `CHANGELOG.md` generation.
 
 <br/>
 
