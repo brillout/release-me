@@ -132,12 +132,9 @@ Each package has its own `CHANGELOG.md` (`packages/my-package/CHANGELOG.md`), wi
 
 ## GitHub Actions
 
-`$ pnpm exec release-me init` sets up both GitHub Actions of `@brillout/release-me`:
-- [Npm Release](#npm-release) (`.github/workflows/release-npm.yml`) publishes to npm.
-- [GitHub Release](#github-release) (`.github/workflows/release-github.yml`) keeps GitHub Releases in sync with `CHANGELOG.md`.
-
-> [!NOTE]
-> To set up only one of them, use `--npm` or `--github`.
+You can use two GitHub Actions:
+- `.github/workflows/release-npm.yml` => publishes to npm
+- `.github/workflows/release-github.yml` => keeps GitHub Releases in sync with `CHANGELOG.md`
 
 ### Npm Release
 
