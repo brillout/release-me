@@ -153,7 +153,7 @@ It:
 2. sets up the Npm <=> GitHub connection ([npm trusted publishing](https://docs.npmjs.com/trusted-publishers)).
 
 > [!WARNING]
-> - Anyone with write access can publish: only give repository write access to people you trust
+> Anyone with write access can publish: **only give repository write access to people you trust**.
 
 ### GitHub Release
 
