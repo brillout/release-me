@@ -70,6 +70,10 @@ Publish your npm packages.
     }
    ```
 
+   > ℹ️  **Commit releases**
+   >
+   > TODO/ai: add note about commit releases
+
    > ℹ️  **Monorepo**
    >
    > Add them to each package you want to release: a package is released by `@brillout/release-me` if and only if it defines a script that runs `release-me`.
@@ -148,13 +152,7 @@ It:
 1. Creates the `.github/workflows/release-npm.yml` file, and
 2. sets up the Npm <=> GitHub connection ([npm trusted publishing](https://docs.npmjs.com/trusted-publishers)).
 
-> [!NOTE]
-> To make a commit-release:
-> - Run `$ pnpm exec release-me commit` to commit-release the current commit (i.e. `$ git show HEAD`), or
-> - press the **Run workflow** button of the GitHub Action `release-npm.yml`.
-
 > [!WARNING]
-> - Only commit-release commits you trust (e.g. review a pull request before commit-releasing it)
 > - Anyone with write access can publish: only give repository write access to people you trust
 
 ### GitHub Release
