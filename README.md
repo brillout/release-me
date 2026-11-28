@@ -112,7 +112,7 @@ Publish your npm packages.
 
 ## Conventional Commits
 
-Follow Conventional Commits ([conventionalcommits.org](https://www.conventionalcommits.org)), so that `@brillout/release-me` can generate `CHANGELOG.md` from your commits:
+Follow Conventional Commits ([conventionalcommits.org](https://www.conventionalcommits.org)), so that `@brillout/release-me` can generate `CHANGELOG.md` using your commit messages:
 
 - `fix:` => bug fix or some polishing (e.g. improved error message).
 - `feat:` => new feature, i.e. new functionality.
