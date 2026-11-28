@@ -29,7 +29,7 @@ Publish your npm packages.
 
 ## Get started
 
-1. Add `@brillout/release-me` to the `devDependencies` of your repository's root `package.json`:
+1. Install `@brillout/release-me` (at your repository's root `package.json`):
 
    ```shell
    pnpm add -D @brillout/release-me
@@ -48,7 +48,7 @@ Publish your npm packages.
     }
    ```
 
-3. Add the `release` scripts:
+3. Add `release` scripts:
 
    ```diff
     // package.json
