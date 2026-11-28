@@ -72,7 +72,7 @@ Publish your npm packages.
 
    > ℹ️  **Commit releases**
    >
-   > Run `pnpm run release:commit` to publish the current commit to npm as a pre-release `my-package@0.0.0-commit-abc1234`.
+   > Run `pnpm run release:commit` to publish the current commit to npm as a pre-release `my-package@1.2.3-commit-abc1234`.
    >
    > With the [Release Npm GitHub Action](#npm-release), you can also use the **Run workflow** button on GitHub instead.
    >
