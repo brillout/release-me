@@ -96,7 +96,7 @@ Publish your npm packages.
    >  }
    > ```
 
-4. Set up [`@brillout/release-me`'s  GitHub Actions](#github-actions):
+4. Set up [the  GitHub Actions](#github-actions):
 
    ```shell
    pnpm exec release-me init
