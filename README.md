@@ -124,10 +124,10 @@ BREAKING CHANGE: Replace `someFunction(someArg)` with `someFunction({ someArg })
 ```
 
 > [!NOTE]
-> If the repository has only one package, `CHANGELOG.md` can live either at the repository root or inside the directory containing the package's `package.json` file. (You can move it, and @brillout/release-me will pick it up.)
+> When introducing a breaking change, in order to respect the [semver](https://semver.org) convention, don't `$ pnpm exec release-me patch` but `$ pnpm exec release-me major` instead (or `$ pnpm exec release-me minor` if your package's version is `0.y.z`).
 
 > [!NOTE]
-> When introducing a breaking change, in order to respect the [semver](https://semver.org) convention, don't `$ pnpm exec release-me patch` but `$ pnpm exec release-me major` instead (or `$ pnpm exec release-me minor` if your package's version is `0.y.z`).
+> If the repository has only one package, `CHANGELOG.md` can live either at the repository root or inside the directory containing the package's `package.json` file. (You can move it, and @brillout/release-me will pick it up.)
 
 ### Monorepo
 
