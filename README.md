@@ -65,19 +65,20 @@ Publish your npm packages.
     }
    ```
 
-   In a monorepo, add them (and a `build` script) to each package you want to release (a package is released by `@brillout/release-me` if and only if it defines a script that runs `release-me`). To release all packages at once, add `release` scripts to the monorepo root's `package.json`:
-
-   ```diff
-    // package.json
-    {
-      "scripts": {
-   +    "release": "pnpm --recursive --sequential run release --yes",
-   +    "release:minor": "pnpm --recursive --sequential run release:minor --yes",
-   +    "release:major": "pnpm --recursive --sequential run release:major --yes",
-   +    "release:commit": "pnpm --recursive --sequential run release:commit --yes",
-      }
-    }
-   ```
+> [!NOTE]
+> In a monorepo, add them (and a `build` script) to each package you want to release (a package is released by `@brillout/release-me` if and only if it defines a script that runs `release-me`). To release all packages at once, add `release` scripts to the monorepo root's `package.json`:
+>
+> ```diff
+>  // package.json
+>  {
+>    "scripts": {
+> +    "release": "pnpm --recursive --sequential run release --yes",
+> +    "release:minor": "pnpm --recursive --sequential run release:minor --yes",
+> +    "release:major": "pnpm --recursive --sequential run release:major --yes",
+> +    "release:commit": "pnpm --recursive --sequential run release:commit --yes",
+>    }
+>  }
+> ```
 
 4. Set up [`@brillout/release-me`'s  GitHub Actions](#github-actions):
 
