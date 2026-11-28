@@ -125,8 +125,7 @@ fix: make someFunction() take an argument object
 BREAKING CHANGE: Replace `someFunction(someArg)` with `someFunction({ someArg })`.
 ```
 
-> ℹ️  **Versioning breaking changes**
->
+> [!NOTE]
 > When introducing a breaking change, in order to respect the [semver](https://semver.org) convention, don't `$ pnpm exec release-me patch` but `$ pnpm exec release-me major` instead (or `$ pnpm exec release-me minor` if your package's version is `0.y.z`).
 
 ### Monorepo
@@ -136,8 +135,7 @@ Each package has its own `CHANGELOG.md` (`packages/my-package/CHANGELOG.md`), wi
 - If the commit has a scope (e.g. `fix(some-package): some commit`), it is included only if the scope matches the package's `package.json#name`.
 - If the commit has no scope (e.g. `fix: some commit`), it is included only if it modifies a file within the package's root directory (i.e. the directory where the package's `package.json` lives).
 
-> ℹ️  **Root changelog**
->
+> [!NOTE]
 > If the repository has only one package and `CHANGELOG.md` already exists at the monorepo root, then `CHANGELOG.md` lives at the monorepo root.
 
 <br/>
@@ -148,8 +146,7 @@ Each package has its own `CHANGELOG.md` (`packages/my-package/CHANGELOG.md`), wi
 - [Npm Release](#npm-release) (`.github/workflows/release-npm.yml`) publishes to npm.
 - [GitHub Release](#github-release) (`.github/workflows/release-github.yml`) keeps GitHub Releases in sync with `CHANGELOG.md`.
 
-> ℹ️  **Setting up a single action**
->
+> [!NOTE]
 > To set up only one of them, use `--npm` or `--github`.
 
 ### Npm Release
@@ -160,8 +157,7 @@ Instead of publishing from your machine (which requires npm 2FA), you can let `@
 pnpm exec release-me init --npm
 ```
 
-> ℹ️  **Publishing a commit release**
->
+> [!NOTE]
 > To make a commit-release:
 > - Run `$ pnpm exec release-me commit` to commit-release the current commit (i.e. `$ git show HEAD`), or
 > - press the **Run workflow** button of the GitHub Action `release-npm.yml`.
@@ -170,8 +166,7 @@ pnpm exec release-me init --npm
 > - Only commit-release commits you trust (e.g. review a pull request before commit-releasing it)
 > - Anyone with write access can publish: only give repository write access to people you trust
 
-> ℹ️  **Trusted publishing and provenance**
->
+> [!NOTE]
 > - The GitHub Action `release-npm.yml` uses [npm's trusted publishing](https://docs.npmjs.com/trusted-publishers)
 > - Stable releases get npm [provenance](https://docs.npmjs.com/generating-provenance-statements), commit releases don't
 
@@ -214,12 +209,10 @@ To trigger the first sync, manually trigger the action by running:
 pnpm exec release-me github-release-sync
 ```
 
-> ℹ️  **First sync**
->
+> [!NOTE]
 > The first sync creates A LOT of GitHub Releases: one for every version listed in `CHANGELOG.md`.
 
-> ℹ️  **Editing release notes**
->
+> [!NOTE]
 > `CHANGELOG.md` is the source of truth: **upon each push of a `CHANGELOG.md` change to `main`, GitHub Releases are created, updated, and deleted to match exactly `CHANGELOG.md`**. Always edit `CHANGELOG.md` instead of a GitHub Release: the next sync overwrites any edit made to a GitHub Release.
 
 <br/>
@@ -237,6 +230,5 @@ pnpm exec release-me patch --force   # Release even in unexpected situations (e.
 pnpm exec release-me npm-connection  # Show and fix the npm <=> GitHub connection of each package (npm's trusted publisher)
 ```
 
-> ℹ️  **Commit releases**
->
+> [!NOTE]
 > A commit release doesn't change your repository (no release commit, no Git tag), and it has no npm dist-tag.
