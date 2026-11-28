@@ -220,6 +220,3 @@ pnpm exec release-me patch --yes     # Skip the confirmation
 pnpm exec release-me patch --force   # Release even in unexpected situations (e.g. from another branch than main, or without CHANGELOG.md entry)
 pnpm exec release-me npm-connection  # Show and fix the npm <=> GitHub connection of each package (npm's trusted publisher)
 ```
-
-> [!NOTE]
-> A commit release doesn't change your repository (no release commit, no Git tag), and it has no npm dist-tag.
