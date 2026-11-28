@@ -52,7 +52,7 @@ Publish your npm packages.
 
    > ℹ️  **Monorepo**
    >
-   > Add it for every package you want to release.
+   > Make sure it's defined for every package you want to release.
 
 3. Add `release` scripts:
 
@@ -73,9 +73,7 @@ Publish your npm packages.
 
    > ℹ️  **Monorepo**
    >
-   > Add them to each package you want to release.
-   >
-   > 👉 A package is released by `@brillout/release-me` if and only if it defines a script that runs `release-me`.
+   > Add them to each package you want to release: a package is released by `@brillout/release-me` if and only if it defines a script that runs `release-me`.
    >
    > To release all packages at once, add `release` scripts to the monorepo root's `package.json`:
    >
