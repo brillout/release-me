@@ -27,7 +27,7 @@ Publish your npm packages.
 
 ## Get started
 
-1. Install `@brillout/release-me`:
+1. Install:
 
    ```shell
    pnpm add -D @brillout/release-me
