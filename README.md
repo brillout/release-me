@@ -72,9 +72,12 @@ Publish your npm packages.
    > To release all packages at once, add `release` scripts to the monorepo root's `package.json`:
    >
    > ```diff
-   >  // package.json
+   >  // packages/my-package/package.json
    >  {
+   >    "name": "my-package",
+   >    "version": "0.0.0",
    >    "scripts": {
+   >      "build": "echo 'Build step before releasing'",
    > +    "release": "pnpm --recursive --sequential run release --yes",
    > +    "release:minor": "pnpm --recursive --sequential run release:minor --yes",
    > +    "release:major": "pnpm --recursive --sequential run release:major --yes",
