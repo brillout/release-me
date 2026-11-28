@@ -5,7 +5,6 @@ Publish your npm packages.
 [Features](#features)  
 [Get started](#get-started)  
 [Conventional Commits](#conventional-commits)  
-&nbsp;&nbsp;&nbsp;&nbsp;[Monorepo](#monorepo)  
 [GitHub Actions](#github-actions)  
 &nbsp;&nbsp;&nbsp;&nbsp;[Npm Release](#npm-release)  
 &nbsp;&nbsp;&nbsp;&nbsp;[GitHub Release](#github-release)  
