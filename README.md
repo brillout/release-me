@@ -97,6 +97,8 @@ Publish your npm packages.
 
 5. From now on, make sure to follow [Conventional Commits](#conventional-commits) for correct `CHANGELOG.md` generation.
 
+That's it.
+
 <br/>
 
 ## Conventional Commits
