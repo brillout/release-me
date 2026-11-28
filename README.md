@@ -29,7 +29,7 @@ Publish your npm packages.
 
 ## Get started
 
-1. Install `@brillout/release-me` as a dev dependency at the repository root.
+1. Install `@brillout/release-me` (at your repository's root `package.json`):
 
    ```shell
    pnpm add -D @brillout/release-me
@@ -67,7 +67,7 @@ Publish your npm packages.
 
    > ℹ️  **Monorepo**
    >
-   > Add the release scripts and a `build` script to each package you want to release.
+   > Add them (and a `build` script) to each package you want to release:
    >
    > ```diff
    >  // packages/my-package/package.json
@@ -75,16 +75,16 @@ Publish your npm packages.
    >    "name": "my-package",
    >    "version": "0.0.0",
    >    "scripts": {
-   > +    "build": "echo 'Build step before releasing'",
-   > +    "release": "release-me patch",
-   > +    "release:minor": "release-me minor",
-   > +    "release:major": "release-me major",
-   > +    "release:commit": "release-me commit"
+   >      "build": "echo 'Build step before releasing'",
+   > +    "release": "pnpm --recursive --sequential run release --yes",
+   > +    "release:minor": "pnpm --recursive --sequential run release:minor --yes",
+   > +    "release:major": "pnpm --recursive --sequential run release:major --yes",
+   > +    "release:commit": "pnpm --recursive --sequential run release:commit --yes",
    >    }
    >  }
    > ```
    >
-   > 👉 A script that runs `release-me` marks a workspace package for release.
+   > 👉 A package is released by `@brillout/release-me` if and only if it defines a script that runs `release-me`.
    >
    > To release all packages at once, add `release` scripts to the monorepo root's `package.json`:
    >
@@ -95,7 +95,7 @@ Publish your npm packages.
    > +    "release": "pnpm --recursive --sequential run release --yes",
    > +    "release:minor": "pnpm --recursive --sequential run release:minor --yes",
    > +    "release:major": "pnpm --recursive --sequential run release:major --yes",
-   > +    "release:commit": "pnpm --recursive --sequential run release:commit --yes"
+   > +    "release:commit": "pnpm --recursive --sequential run release:commit --yes",
    >    }
    >  }
    > ```
