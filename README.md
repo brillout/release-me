@@ -140,7 +140,7 @@ Each package has its own `CHANGELOG.md` (`packages/my-package/CHANGELOG.md`), wi
 
 ## GitHub Actions
 
-You can use two GitHub Actions:
+You can set up GitHub Actions:
 - `.github/workflows/release-npm.yml` => publishes to npm
 - `.github/workflows/release-github.yml` => keeps GitHub Releases in sync with `CHANGELOG.md`
 
