@@ -23,7 +23,7 @@ Publish your npm packages.
 - Shows a preview of the release, and asks for confirmation before releasing.
 - "Commit releases": publish any commit as a pre-release, e.g. [`0.4.177-commit-ff3d6cd`](https://www.npmjs.com/package/vike/v/0.4.177-commit-ff3d6cd).
 - Updates `const PROJECT_VERSION = '0.1.2'` of `PROJECT_VERSION.ts` files.
-- Tight integration and only supports [`pnpm`](https://pnpm.io) (it's a feature, not a bug).
+- Only supports [`pnpm`](https://pnpm.io) with tight integration (it's a feature, not a bug).
 
 <br/>
 
