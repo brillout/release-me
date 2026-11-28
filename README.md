@@ -144,15 +144,15 @@ You can use two GitHub Actions:
 
 ### Npm Release
 
-Instead of publishing from your machine (which requires npm 2FA), you can let `@brillout/release-me`'s GitHub Action publish to npm (without 2FA and without an npm secret token):
+Instead of publishing from your machine (which requires npm 2FA), you can let `@brillout/release-me`'s GitHub Action publish to npm (without 2FA and without an npm secret token).
+
+To set it up, run the following command which will:
+1. Create the `.github/workflows/release-npm.yml` file
+2. Set up the Npm <=> GitHub connection ([npm trusted publishing](https://docs.npmjs.com/trusted-publishers))
 
 ```shell
 pnpm exec release-me init --npm
 ```
-
-It:
-1. Creates the `.github/workflows/release-npm.yml` file, and
-2. sets up the Npm <=> GitHub connection ([npm trusted publishing](https://docs.npmjs.com/trusted-publishers)).
 
 > [!WARNING]
 > Anyone with write access can publish: **only give repository write access to people you trust**.
