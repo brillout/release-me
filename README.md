@@ -144,6 +144,10 @@ Instead of publishing from your machine (which requires npm 2FA), you can let `@
 pnpm exec release-me init --npm
 ```
 
+It:
+1. Creates the `.github/workflows/release-npm.yml` file, and
+2. sets up the Npm <=> GitHub connection ([npm trusted publishing](https://docs.npmjs.com/trusted-publishers)).
+
 > [!NOTE]
 > To make a commit-release:
 > - Run `$ pnpm exec release-me commit` to commit-release the current commit (i.e. `$ git show HEAD`), or
@@ -152,10 +156,6 @@ pnpm exec release-me init --npm
 > [!WARNING]
 > - Only commit-release commits you trust (e.g. review a pull request before commit-releasing it)
 > - Anyone with write access can publish: only give repository write access to people you trust
-
-> [!NOTE]
-> - The GitHub Action `release-npm.yml` uses [npm's trusted publishing](https://docs.npmjs.com/trusted-publishers)
-> - Stable releases get npm [provenance](https://docs.npmjs.com/generating-provenance-statements), commit releases don't
 
 ### GitHub Release
 
